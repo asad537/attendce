@@ -60,6 +60,7 @@ export default function ProjectTickets() {
     const [activeTab, setActiveTab] = useState<'all'|'comments'|'history'|'worklog'>('all');
     const [commentText, setCommentText] = useState("");
     const [showTimeTracking, setShowTimeTracking] = useState(false);
+    const [search, setSearch] = useState("");
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -167,6 +168,17 @@ export default function ProjectTickets() {
         catch (err) { toast.error(getErrorMessage(err)); load(); }
     };
 
+    const visibleTickets = tickets.filter(ticket => {
+        const query = search.trim().toLowerCase();
+        return !query || ticket.title.toLowerCase().includes(query) || ticket.assignee?.name?.toLowerCase().includes(query) || `kan-${ticket.id}`.includes(query);
+    });
+    const columnTheme = {
+        todo: { icon: '☷', accent: 'text-indigo-600', soft: 'bg-indigo-50', border: 'border-indigo-300' },
+        in_progress: { icon: '▣', accent: 'text-orange-500', soft: 'bg-orange-50', border: 'border-orange-300' },
+        in_review: { icon: '▧', accent: 'text-violet-600', soft: 'bg-violet-50', border: 'border-violet-300' },
+        done: { icon: '✓', accent: 'text-emerald-600', soft: 'bg-emerald-50', border: 'border-emerald-300' },
+    } as const;
+
     const uploadAttachment = async (ticket: Ticket, file: File) => {
         try {
             const data = new FormData();
@@ -263,20 +275,13 @@ export default function ProjectTickets() {
 
 
     return (
-        <div className="p-4 sm:p-6 space-y-5">
-            <div className="card flex items-center justify-between">
-                <div>
-                    <p className="text-xs font-semibold text-indigo-600">
-                        PROJECT WORKSPACE
-                    </p>
-                    <h1 className="text-2xl font-bold">{projectName}</h1>
-                    <p className="text-sm text-gray-500">
-                        Tickets Board · Create tickets and assign them to your
-                        team.
-                    </p>
-                </div>
+        <div className="space-y-5 bg-gray-50/70 p-4 sm:p-6">
+            <div className="flex items-center gap-3 px-1 text-gray-900"><span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-xl text-indigo-600">⊞</span><span className="text-lg font-bold">Project Workspace</span><span className="text-gray-300">›</span></div>
+            <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+              <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Project</p><h1 className="mt-1 text-2xl font-bold text-gray-950">{projectName}</h1><p className="mt-1 text-sm text-gray-500">Tickets Board · Create tickets and assign them to your team.</p></div>
                 <button
-                    className="btn-primary"
+                    className="btn-primary w-full px-5 py-2.5 shadow-lg shadow-indigo-200 sm:w-auto"
                     onClick={() => {
                         setEditing(null);
                         setForm({
@@ -292,28 +297,44 @@ export default function ProjectTickets() {
                 >
                     + Create ticket
                 </button>
+              </div>
+              <div className="grid grid-cols-2 border-t border-gray-100 md:grid-cols-5">{[
+                ['Total Tickets', tickets.length, '◎', 'text-indigo-600 bg-indigo-50'],
+                ['To Do', tickets.filter(t => t.status === 'todo').length, '▣', 'text-indigo-600 bg-indigo-50'],
+                ['In Progress', tickets.filter(t => t.status === 'in_progress').length, '▤', 'text-orange-500 bg-orange-50'],
+                ['In Review', tickets.filter(t => t.status === 'in_review').length, '▧', 'text-violet-600 bg-violet-50'],
+                ['Done', tickets.filter(t => t.status === 'done').length, '✓', 'text-emerald-600 bg-emerald-50'],
+              ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 p-4 last:border-r-0 md:border-b-0"><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${color}`}>{icon}</span><div><p className="text-xs font-medium text-gray-500">{label}</p><p className="text-xl font-bold text-gray-950">{value}</p></div></div>)}</div>
+            </section>
+
+            <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+              <label className="relative block w-full lg:max-w-sm"><span className="absolute inset-y-0 left-3 flex items-center text-gray-400">⌕</span><input className="input h-11 pl-9 pr-9" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} />{search && <button onClick={() => setSearch('')} className="absolute inset-y-0 right-3 text-gray-400">×</button>}</label>
+              <div className="flex flex-wrap items-center gap-2"><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">⌁ &nbsp; Filters</span><span className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">▥ Board</span></div>
             </div>
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 min-[1700px]:grid-cols-4">
                 {cols.map((c) => (
                     <div
                         key={c.key}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => moveTicket(Number(event.dataTransfer.getData('ticketId')), c.key)}
-                        className="min-h-72 rounded-xl bg-gray-100/50 p-3"
+                        className="min-h-[34rem] rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
-                        <div className="mb-3 flex justify-between font-semibold text-gray-700">
-                            <span>
-                                {c.name}{" "}
-                                <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                        <div className={`mb-4 flex items-center justify-between border-b-2 pb-4 ${columnTheme[c.key].border}`}>
+                            <span className="flex items-center gap-2 font-bold text-gray-900"><i className={`grid h-9 w-9 place-items-center rounded-xl not-italic ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</i>
+                                {c.name}
+                                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                                     {
-                                        tickets.filter(
+                                        visibleTickets.filter(
                                             (t) => t.status === c.key,
                                         ).length
                                     }
                                 </span>
                             </span>
+                            <span className="text-gray-400">•••</span>
                         </div>
-                        {tickets
+                        <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors hover:bg-gray-50 ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>
+                        {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
                                 <div
@@ -321,7 +342,7 @@ export default function ProjectTickets() {
                                     draggable
                                     onDragStart={(event) => event.dataTransfer.setData('ticketId', String(t.id))}
                                     onClick={() => setDetail(t)}
-                                    className="mb-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                                    className="mb-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <p className="font-medium text-[14px] leading-5 text-gray-900 pr-2">
@@ -447,23 +468,7 @@ export default function ProjectTickets() {
                                     </div>
                                 </div>
                             ))}
-                        <button
-                            className="w-full rounded-lg hover:bg-gray-200 py-2 text-sm font-medium text-gray-600 transition-colors"
-                            onClick={() => {
-                                setEditing(null);
-                                setForm({
-                                    title: "",
-                                    description: "",
-                                    status: c.key,
-                                    priority: "medium",
-                                    due_date: "",
-                                    assignee_id: "",
-                                });
-                                setOpen(true);
-                            }}
-                        >
-                            + Create issue
-                        </button>
+                        {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 place-items-center text-center"><div><div className={`mx-auto grid h-16 w-16 place-items-center rounded-2xl text-3xl ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</div><p className="mt-4 font-semibold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-400">Create an issue or drag one here</p></div></div>}
                     </div>
                 ))}
             </div>
