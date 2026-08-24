@@ -28,6 +28,16 @@ export default function ProjectTickets() {
    }
  };
 
+ const updateAssignee = async (ticket: Ticket, newAssigneeId: string) => {
+   try {
+     await api.put(`/tickets/${ticket.id}`, { title: ticket.title, description: ticket.description, status: ticket.status, priority: ticket.priority || 'medium', assignee_id: newAssigneeId || null });
+     load();
+     toast.success('Assignee updated');
+   } catch(err) {
+     toast.error('Failed to update assignee');
+   }
+ };
+
  const getPriorityIcon = (p?: string) => {
    if (p === 'high' || p === 'urgent') return <span className="text-red-500 font-bold text-lg leading-none cursor-pointer pt-1">↑</span>;
    if (p === 'low') return <span className="text-blue-500 font-bold text-lg leading-none cursor-pointer pt-1">↓</span>;
@@ -50,10 +60,10 @@ export default function ProjectTickets() {
    </div>
    <div className="flex items-center justify-between">
      <div className="flex items-center gap-2">
-       <input type="checkbox" className="w-4 h-4 rounded border-[#323940] bg-transparent text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
+       <input type="checkbox" className="w-4 h-4 rounded border-0 bg-white text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
        <span className="text-[12px] font-semibold text-[#8C9BAB] hover:text-blue-400 transition-colors">KAN-{t.id}</span>
      </div>
-     <div className="flex items-center gap-2.5">
+     <div className="flex items-center gap-3">
         <div className="relative inline-flex items-center justify-center w-6 h-6 hover:bg-[#323940] rounded transition-colors" title={`Priority: ${t.priority || 'medium'}`} onClick={(e)=>e.stopPropagation()}>
           <select className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" value={t.priority || 'medium'} onChange={(e) => updatePriority(t, e.target.value)}>
             <option value="low">Low</option>
@@ -63,7 +73,11 @@ export default function ProjectTickets() {
           </select>
           {getPriorityIcon(t.priority)}
         </div>
-        <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold text-white shadow-sm ring-2 ring-[#22272B]" title={t.assignee?.name || 'Unassigned'}>
+        <div className="relative inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#00875A] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#22272B] hover:ring-indigo-400 transition-all cursor-pointer" title={t.assignee?.name || 'Unassigned'} onClick={(e)=>e.stopPropagation()}>
+          <select className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" value={t.assignee?.id || ''} onChange={(e) => updateAssignee(t, e.target.value)}>
+            <option value="">Unassigned</option>
+            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
           {t.assignee?.name ? t.assignee.name.substring(0, 2).toUpperCase() : '?'}
         </div>
      </div>
