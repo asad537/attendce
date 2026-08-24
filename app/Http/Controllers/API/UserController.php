@@ -86,6 +86,13 @@ class UserController extends Controller
         // Default status
         $data['status'] = $data['status'] ?? 'active';
 
+        // If a manager or TL is creating the user, automatically set manager_id
+        // to themselves unless one was explicitly provided
+        $creator = $request->user();
+        if (($creator->isManager() || $creator->isTl()) && empty($data['manager_id'])) {
+            $data['manager_id'] = $creator->id;
+        }
+
         $user = User::create($data);
         $user->assignRole($data['role']);
 
