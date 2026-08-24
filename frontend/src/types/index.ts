@@ -1,6 +1,6 @@
 // ─── Auth & User ─────────────────────────────────────────────────────────────
 
-export type Role = 'employee' | 'manager' | 'ceo';
+export type Role = 'employee' | 'tl' | 'manager' | 'ceo';
 export type EmploymentType = 'full_time' | 'part_time' | 'contract' | 'intern';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 export type CurrentStatus = 'working' | 'on_break' | 'checked_out' | 'absent' | 'on_leave' | 'work_from_home';
@@ -82,7 +82,7 @@ export interface CreateEmployeePayload {
   birth_date: string;           // YYYY-MM-DD
   email: string;
   phone: string;
-  role: 'employee' | 'manager';
+  role: 'employee' | 'tl' | 'manager';
   employment_type: EmploymentType;
   department_id: number;
   designation_id: number;

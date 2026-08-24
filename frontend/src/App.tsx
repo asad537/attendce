@@ -21,6 +21,7 @@ import CeoDashboard from './pages/ceo/CeoDashboard';
 import CeoAttendance from './pages/ceo/CeoAttendance';
 import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
+import CeoDepartments from './pages/ceo/CeoDepartments';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -31,6 +32,7 @@ function App() {
     if (!user) return '/login';
     switch (user.role) {
       case 'employee': return '/employee/dashboard';
+      case 'tl':       return '/tl/dashboard';
       case 'manager':  return '/manager/dashboard';
       case 'ceo':      return '/ceo/dashboard';
       default:         return '/login';
@@ -68,6 +70,18 @@ function App() {
         </Route>
       </Route>
 
+      {/* ── Team Lead routes — same pages as manager, scoped by backend ── */}
+      <Route path="/tl" element={<ProtectedRoute allowedRoles={['tl']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard"     element={<ManagerDashboard />} />
+          <Route path="attendance"    element={<AttendanceHistory />} />
+          <Route path="leaves"        element={<LeaveManagement />} />
+          <Route path="my-attendance" element={<AttendanceHistory />} />
+          <Route path="my-leaves"     element={<LeaveManagement />} />
+        </Route>
+      </Route>
+
       {/* ── CEO routes — NO check-in/out, NO personal leave management ── */}
       <Route path="/ceo" element={<ProtectedRoute allowedRoles={['ceo']} />}>
         <Route element={<DashboardLayout />}>
@@ -76,6 +90,7 @@ function App() {
           <Route path="attendance"      element={<CeoAttendance />} />
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees"       element={<CeoEmployees />} />
+          <Route path="departments"     element={<CeoDepartments />} />
         </Route>
       </Route>
 

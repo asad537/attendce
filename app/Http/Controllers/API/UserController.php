@@ -31,7 +31,8 @@ class UserController extends Controller
             return response()->json(['users' => [new UserResource($auth->load(['department', 'designation', 'shift']))]]);
         }
 
-        if ($auth->isManager()) {
+        // Managers and TLs see their own direct reports + themselves
+        if ($auth->isManager() || $auth->isTl()) {
             $query->where(function ($q) use ($auth) {
                 $q->where('manager_id', $auth->id)->orWhere('id', $auth->id);
             });

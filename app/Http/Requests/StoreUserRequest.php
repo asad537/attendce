@@ -22,7 +22,7 @@ class StoreUserRequest extends FormRequest
             'phone'           => 'required|string|regex:/^\+?[0-9\s\-\(\)]{7,20}$/',
 
             // ── Role & Employment ─────────────────────────────────
-            'role'            => 'required|in:employee,manager',
+            'role'            => 'required|in:employee,tl,manager',
             'employment_type' => 'required|in:full_time,part_time,contract,intern',
             'status'          => 'sometimes|in:active,inactive,suspended',
 
@@ -58,7 +58,7 @@ class StoreUserRequest extends FormRequest
             'phone.required'         => 'Phone number is required.',
             'phone.regex'            => 'Phone number format is invalid.',
             'role.required'          => 'Role is required.',
-            'role.in'                => 'Role must be employee or manager.',
+            'role.in'                => 'Role must be employee, team lead, or manager.',
             'employment_type.required' => 'Employment type is required.',
             'department_id.required' => 'Department is required.',
             'department_id.exists'   => 'Selected department does not exist.',

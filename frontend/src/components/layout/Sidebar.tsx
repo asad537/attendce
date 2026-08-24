@@ -10,10 +10,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // Employee
+  // ── Employee ──────────────────────────────────────────────────────────────
   {
     label: 'Dashboard', path: '/employee',
-    roles: ['employee', 'manager', 'ceo'],
+    roles: ['employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
   {
@@ -26,7 +26,8 @@ const navItems: NavItem[] = [
     roles: ['employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   },
-  // Manager
+
+  // ── Manager ───────────────────────────────────────────────────────────────
   {
     label: 'Dashboard', path: '/manager',
     roles: ['manager'],
@@ -42,7 +43,35 @@ const navItems: NavItem[] = [
     roles: ['manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
-  // CEO
+
+  // ── Team Lead (TL) ────────────────────────────────────────────────────────
+  {
+    label: 'Dashboard', path: '/tl',
+    roles: ['tl'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+  },
+  {
+    label: 'Team Attendance', path: '/tl/attendance',
+    roles: ['tl'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  },
+  {
+    label: 'Leave Approvals', path: '/tl/leaves',
+    roles: ['tl'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
+  {
+    label: 'My Attendance', path: '/tl/my-attendance',
+    roles: ['tl'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
+  },
+  {
+    label: 'My Leaves', path: '/tl/my-leaves',
+    roles: ['tl'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  },
+
+  // ── CEO ───────────────────────────────────────────────────────────────────
   {
     label: 'Dashboard', path: '/ceo',
     roles: ['ceo'],
@@ -90,6 +119,13 @@ const navItems: NavItem[] = [
   },
 ];
 
+const roleLabel: Record<string, string> = {
+  employee: 'Employee',
+  tl:       'Team Lead',
+  manager:  'Manager',
+  ceo:      'CEO',
+};
+
 interface SidebarProps {
   onClose?: () => void;
 }
@@ -101,17 +137,24 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const filtered = navItems.filter((item) => user && item.roles.includes(user.role));
 
   const isActive = (path: string) => {
-    if (path === '/employee' || path === '/manager' || path === '/ceo') {
-      return location.pathname === path;
+    // exact match for root dashboard paths
+    if (['/employee', '/manager', '/ceo', '/tl'].includes(path)) {
+      return location.pathname === path || location.pathname === path + '/dashboard';
     }
     return location.pathname.startsWith(path);
   };
 
-  const roleColors = { employee: 'badge-green', manager: 'badge-blue', ceo: 'badge-purple' };
+  const roleColors: Record<string, string> = {
+    employee: 'badge-green',
+    tl:       'badge-cyan',
+    manager:  'badge-blue',
+    ceo:      'badge-purple',
+  };
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-100">
-      {/* Brand */}
+
+      {/* ── Brand ────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
         <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,32 +162,19 @@ export default function Sidebar({ onClose }: SidebarProps) {
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-gray-900 text-sm leading-tight">AttendanceIQ</p>
+          <p className="font-bold text-gray-900 text-sm leading-tight">ERP System</p>
           <p className="text-xs text-gray-400">Workforce Management</p>
         </div>
         {onClose && (
           <button onClick={onClose} className="ml-auto text-gray-400 hover:text-gray-600 lg:hidden">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         )}
       </div>
 
-      {/* User Info */}
-      <div className="px-4 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm flex-shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-gray-900 text-sm truncate">{user?.name}</p>
-            <span className={`${roleColors[user?.role || 'employee']} text-xs`}>
-              {user?.role?.toUpperCase()}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
+      {/* ── Nav ──────────────────────────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {filtered.map((item) => (
           <Link
@@ -165,8 +195,22 @@ export default function Sidebar({ onClose }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="p-3 border-t border-gray-100">
+      {/* ── User strip + Logout ──────────────────────────────────────────── */}
+      <div className="p-3 border-t border-gray-100 space-y-1">
+        {/* compact user row */}
+        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50">
+          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs flex-shrink-0">
+            {user?.name?.charAt(0)?.toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-gray-900 truncate leading-tight">{user?.name}</p>
+            <p className={`text-xs ${roleColors[user?.role || 'employee']} leading-tight`}>
+              {roleLabel[user?.role || 'employee']}
+            </p>
+          </div>
+        </div>
+
+        {/* sign out */}
         <button
           onClick={() => logout()}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
