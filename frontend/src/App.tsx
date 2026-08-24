@@ -25,6 +25,7 @@ import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
 import CeoProjects from './pages/ceo/CeoProjects';
 import ProjectTickets from './pages/ceo/ProjectTickets';
+import MyTickets from './pages/shared/MyTickets';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -99,10 +100,16 @@ function App() {
         </Route>
       </Route>
 
-      <Route path="/projects" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
+      <Route path="/projects" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<CeoProjects />} />
           <Route path=":projectId" element={<ProjectTickets />} />
+        </Route>
+      </Route>
+
+      <Route path="/my-tickets" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<MyTickets />} />
         </Route>
       </Route>
 

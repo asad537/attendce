@@ -13,12 +13,23 @@ class ProjectTicketController extends Controller
     private function authorizeProject(Request $request, Project $project): void
     {
         $user = $request->user();
-        if ($user->isEmployee() || (!$user->isCeo() && $project->created_by !== $user->id && $project->project_lead_id !== $user->id)) abort(403);
+        if ($user->isCeo()) return;
+        if ($project->created_by == $user->id || $project->project_lead_id == $user->id) return;
+        if (ProjectTicket::where('project_id', $project->id)->where('assignee_id', $user->id)->exists()) return;
+        abort(403);
     }
     public function index(Request $request, Project $project)
     {
         $this->authorizeProject($request, $project);
-        return response()->json(['tickets' => ProjectTicket::with('assignee:id,first_name,last_name,name,email,role')->where('project_id', $project->id)->get()]);
+        $user = $request->user();
+        
+        $query = ProjectTicket::with('assignee:id,first_name,last_name,name,email,role')->where('project_id', $project->id);
+        
+        if (!$user->isCeo() && $project->created_by != $user->id && $project->project_lead_id != $user->id) {
+            $query->where('assignee_id', $user->id);
+        }
+
+        return response()->json(['tickets' => $query->get()]);
     }
     public function store(Request $request, Project $project)
     {
@@ -28,10 +39,7 @@ class ProjectTicketController extends Controller
         unset($data['attachment']);
         if (!empty($data['assignee_id'])) {
             $assignee = User::findOrFail($data['assignee_id']);
-            $allowedRoles = $request->user()->isCeo() ? ['manager', 'tl'] : ['tl', 'employee'];
-            if (!in_array($assignee->role, $allowedRoles, true)) {
-                return response()->json(['message' => 'This user cannot be assigned a ticket from your role.'], 422);
-            }
+            // Allowed to assign to any valid user
         }
         $data['project_id'] = $project->id; $data['created_by'] = $request->user()->id;
         $ticket = ProjectTicket::create($data);

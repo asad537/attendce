@@ -7,7 +7,25 @@ import { useAuth } from "../../contexts/AuthContext";
 import { projectService } from "../../services/projectService";
 import Modal from "../../components/common/Modal";
 import TicketModal from "../../components/common/TicketModal";
+import TimeTrackingModal from "../../components/common/TimeTrackingModal";
+import PriorityDropdown, { getPriorityIconSVG } from "../../components/common/PriorityDropdown";
 import { User } from "../../types";
+
+const formatMinutesToJira = (totalMins: number) => {
+    if (!totalMins) return '0m';
+    const weeks = Math.floor(totalMins / (5 * 8 * 60));
+    let rem = totalMins % (5 * 8 * 60);
+    const days = Math.floor(rem / (8 * 60));
+    rem = rem % (8 * 60);
+    const hours = Math.floor(rem / 60);
+    const mins = rem % 60;
+    const parts = [];
+    if (weeks > 0) parts.push(`${weeks}w`);
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (mins > 0) parts.push(`${mins}m`);
+    return parts.join(' ');
+};
 
 type Ticket = {
     id: number;
@@ -39,8 +57,9 @@ export default function ProjectTickets() {
     const [subtasks, setSubtasks] = useState<{id:number, title:string, is_completed:boolean}[]>([]);
     const [newSubtask, setNewSubtask] = useState("");
     const [feed, setFeed] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState("all");
+    const [activeTab, setActiveTab] = useState<'all'|'comments'|'history'|'worklog'>('all');
     const [commentText, setCommentText] = useState("");
+    const [showTimeTracking, setShowTimeTracking] = useState(false);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -55,12 +74,12 @@ export default function ProjectTickets() {
                 userService.getList({ per_page: 200 }),
                 projectService.getAll(),
             ]);
-            setTickets(t.data.tickets);
+            const fetchedTickets = t.data.tickets;
+            setTickets(fetchedTickets);
+
             setUsers(
                 u.data.filter((user) =>
-                    currentUser?.role === "ceo"
-                        ? ["manager", "tl"].includes(user.role)
-                        : ["tl", "employee"].includes(user.role),
+                    ["manager", "tl", "employee"].includes(user.role)
                 ),
             );
             setProjectName(
@@ -220,25 +239,7 @@ export default function ProjectTickets() {
         }
     };
 
-    const getPriorityIcon = (p?: string) => {
-        if (p === "high" || p === "urgent")
-            return (
-                <span className="text-red-500 font-bold text-lg leading-none cursor-pointer pt-1">
-                    ↑
-                </span>
-            );
-        if (p === "low")
-            return (
-                <span className="text-blue-500 font-bold text-lg leading-none cursor-pointer pt-1">
-                    ↓
-                </span>
-            );
-        return (
-            <span className="text-orange-500 font-bold text-lg leading-none cursor-pointer pt-1">
-                =
-            </span>
-        ); // medium/default
-    };
+
 
     return (
         <div className="space-y-5">
@@ -372,38 +373,14 @@ export default function ProjectTickets() {
                                         </div>
                                         <div className="flex items-center gap-3">
                                             <div
-                                                className="relative inline-flex items-center justify-center w-6 h-6 hover:bg-gray-100 rounded transition-colors"
+                                                className="relative inline-flex items-center justify-center rounded-md bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                                                 title={`Priority: ${t.priority || "medium"}`}
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
                                             >
-                                                <select
-                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                    value={
-                                                        t.priority || "medium"
-                                                    }
-                                                    onChange={(e) =>
-                                                        updatePriority(
-                                                            t,
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                >
-                                                    <option value="low">
-                                                        Low
-                                                    </option>
-                                                    <option value="medium">
-                                                        Medium
-                                                    </option>
-                                                    <option value="high">
-                                                        High
-                                                    </option>
-                                                    <option value="urgent">
-                                                        Urgent
-                                                    </option>
-                                                </select>
-                                                {getPriorityIcon(t.priority)}
+                                                <PriorityDropdown 
+                                                    value={t.priority || "medium"}
+                                                    onChange={(val) => updatePriority(t, val)}
+                                                    iconOnly={true}
+                                                />
                                             </div>
                                             <div
                                                 className="relative inline-flex h-7 max-w-36 items-center justify-center truncate whitespace-nowrap rounded-md bg-indigo-50 px-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-all cursor-pointer"
@@ -520,7 +497,6 @@ export default function ProjectTickets() {
             >
                 {detail && (
                     <div className="flex flex-col md:flex-row gap-8">
-                        {/* Left Column - Content */}
                         <div className="flex-1 space-y-6">
                             <div>
                                 <input 
@@ -530,7 +506,6 @@ export default function ProjectTickets() {
                                         setDetail({...detail, title: e.target.value});
                                     }}
                                     onBlur={() => {
-                                        // Save title on blur
                                         api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title });
                                         load();
                                     }}
@@ -540,7 +515,7 @@ export default function ProjectTickets() {
                             <div className="space-y-3">
                                 <h3 className="text-[15px] font-semibold text-gray-800">Description</h3>
                                 <textarea
-                                    className="w-full min-h-[100px] bg-transparent border border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 text-[14px] text-gray-700 p-2 rounded transition-colors resize-y"
+                                    className="w-full min-h-[100px] border border-gray-400 hover:border-gray-600 focus:border-gray-900 focus:ring-0 text-[14px] text-gray-800 p-3 rounded transition-colors resize-y"
                                     placeholder="Add a description..."
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
@@ -607,7 +582,6 @@ export default function ProjectTickets() {
                                     <span onClick={()=>setActiveTab("all")} className={`font-medium cursor-pointer ${activeTab==='all' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>All</span>
                                     <span onClick={()=>setActiveTab("comments")} className={`font-medium cursor-pointer ${activeTab==='comments' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>Comments</span>
                                     <span onClick={()=>setActiveTab("history")} className={`font-medium cursor-pointer ${activeTab==='history' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>History</span>
-                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">Work log</span>
                                 </div>
                                 <div className="flex gap-3 mt-4">
                                     <div className="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-[12px] font-bold text-white mt-1">
@@ -628,13 +602,10 @@ export default function ProjectTickets() {
                                             <button onClick={()=>handleAddComment(undefined, "Status update...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
                                             <button onClick={()=>handleAddComment(undefined, "Thanks...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
                                         </div>
-                                        <div className="text-[11px] text-gray-400 mt-4">
-                                            Pro tip: press <span className="font-bold bg-gray-100 border border-gray-200 px-1 rounded text-gray-500">M</span> to comment
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="mt-6 space-y-4">
-                                    {feed.filter(f => activeTab === 'all' || (activeTab === 'comments' && f.type === 'comment') || (activeTab === 'history' && f.type === 'activity')).map((item) => (
+                                    {feed.filter(f => activeTab === 'all' || (activeTab === 'comments' && f.type === 'comment') || (activeTab === 'history' && (f.type === 'activity' || f.type === 'worklog'))).map((item) => (
                                         <div key={item.id} className="flex gap-3">
                                             <div className="w-8 h-8 rounded-full bg-indigo-600 flex-shrink-0 flex items-center justify-center text-[12px] font-bold text-white">
                                                 {item.user?.name ? item.user.name.substring(0,2).toUpperCase() : '?'}
@@ -648,7 +619,9 @@ export default function ProjectTickets() {
                                                     <div className="mt-1 text-[14px] text-gray-800">{item.body}</div>
                                                 ) : (
                                                     <div className="mt-1 text-[13px] text-gray-600">
-                                                        {item.activity_type === 'created' ? (
+                                                        {item.type === 'worklog' ? (
+                                                            <span>logged <strong className="text-gray-900">{formatMinutesToJira(item.time_spent)}</strong></span>
+                                                        ) : item.activity_type === 'created' ? (
                                                             <span>created this issue</span>
                                                         ) : item.activity_type === 'assignee_changed' ? (
                                                             <span>changed assignee from <strong className="text-gray-900">{item.old_value}</strong> to <strong className="text-gray-900">{item.new_value}</strong></span>
@@ -668,7 +641,6 @@ export default function ProjectTickets() {
                             </div>
                         </div>
 
-                        {/* Right Column - Details */}
                         <div className="w-full md:w-[340px] space-y-6">
                             <select 
                                 className="w-auto bg-indigo-50 text-indigo-700 font-medium text-[13px] border border-indigo-200 rounded px-3 py-1.5 cursor-pointer hover:bg-indigo-100 focus:ring-indigo-500"
@@ -688,9 +660,6 @@ export default function ProjectTickets() {
                             <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
                                 <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                                     <h3 className="text-[14px] font-semibold text-gray-800">Details</h3>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                    </button>
                                 </div>
                                 <div className="p-4 space-y-4">
                                     <div className="flex items-center">
@@ -717,28 +686,14 @@ export default function ProjectTickets() {
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Priority</span>
-                                        <div className="relative inline-flex items-center gap-2 hover:bg-gray-50 border border-transparent hover:border-gray-200 p-1 -ml-1 rounded cursor-pointer transition-colors">
-                                            {getPriorityIcon(detail.priority)}
-                                            <span className="text-[13px] font-medium text-gray-800 capitalize">{detail.priority || 'Medium'}</span>
-                                            <select 
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                value={detail.priority || "medium"}
-                                                onChange={(e) => {
-                                                    setDetail({...detail, priority: e.target.value as any});
-                                                    api.put(`/tickets/${detail.id}`, { ...detail, priority: e.target.value });
-                                                    load();
-                                                }}
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                <option value="urgent">Urgent</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="w-[120px] text-[13px] font-medium text-gray-500">Labels</span>
-                                        <span className="text-[13px] text-gray-800">None</span>
+                                        <PriorityDropdown 
+                                            value={detail.priority || "medium"}
+                                            onChange={(val) => {
+                                                setDetail({...detail, priority: val as any});
+                                                api.put(`/tickets/${detail.id}`, { ...detail, priority: val });
+                                                load();
+                                            }}
+                                        />
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
@@ -746,10 +701,47 @@ export default function ProjectTickets() {
                                     </div>
                                 </div>
                             </div>
+                            
+                            <div className="border border-gray-200 rounded-lg overflow-hidden mt-6">
+                                <div className="bg-gray-50 border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+                                    <span className="text-[13px] font-semibold text-gray-700">Time tracking</span>
+                                    <button onClick={() => setShowTimeTracking(true)} className="text-indigo-600 hover:text-indigo-700 text-[13px] font-medium flex items-center gap-1">
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Log work
+                                    </button>
+                                </div>
+                                <div className="p-4 bg-white">
+                                    {feed.some(f => f.type === 'worklog') ? (
+                                        <div className="space-y-2">
+                                            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2 overflow-hidden flex">
+                                                <div className="bg-indigo-500 h-1.5 rounded-full" style={{width: '60%'}}></div>
+                                                <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: '20%'}}></div>
+                                            </div>
+                                            <div className="flex justify-between text-[12px] text-gray-500">
+                                                <span>Logged: {formatMinutesToJira(feed.filter(f => f.type === 'worklog').reduce((sum, item) => sum + (item.time_spent || 0), 0))}</span>
+                                                {feed.find(f => f.type === 'worklog' && f.time_remaining !== null) && (
+                                                    <span>Remaining: {formatMinutesToJira(feed.find(f => f.type === 'worklog' && f.time_remaining !== null)?.time_remaining || 0)}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[13px] text-gray-500 text-center py-2">No time logged yet</p>
+                                    )}
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 )}
             </TicketModal>
+            {detail && (
+                <TimeTrackingModal 
+                    open={showTimeTracking} 
+                    onClose={() => setShowTimeTracking(false)} 
+                    ticketId={detail.id} 
+                    onSuccess={() => { loadActivity(detail.id); load(); }} 
+                />
+            )}
         </div>
     );
 }

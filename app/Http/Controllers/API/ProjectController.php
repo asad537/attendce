@@ -14,12 +14,15 @@ class ProjectController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        if ($user->isEmployee()) abort(403, 'Employees cannot access projects.');
 
         $projects = Project::with(['projectLead:id,first_name,last_name,name,email,role', 'creator:id,first_name,last_name,name,email,role'])
             ->when(!$user->isCeo(), function ($query) use ($user) {
                 $query->where(function ($scope) use ($user) {
-                    $scope->where('created_by', $user->id)->orWhere('project_lead_id', $user->id);
+                    $scope->where('created_by', $user->id)
+                          ->orWhere('project_lead_id', $user->id)
+                          ->orWhereHas('tickets', function ($q) use ($user) {
+                              $q->where('assignee_id', $user->id);
+                          });
                 });
             })->latest()->get();
 
@@ -42,9 +45,7 @@ class ProjectController extends Controller
 
         if (!empty($data['project_lead_id'])) {
             $lead = User::findOrFail($data['project_lead_id']);
-            if (!in_array($lead->role, ['ceo', 'manager', 'tl'], true)) {
-                return response()->json(['message' => 'Project lead must be a CEO, manager, or team lead.'], 422);
-            }
+            // Allow any valid user to be assigned as project lead
         }
 
         $data['created_by'] = $user->id;
@@ -58,7 +59,7 @@ class ProjectController extends Controller
     public function update(Request $request, Project $project): JsonResponse
     {
         $user = $request->user();
-        if (!($user->isCeo() || (($user->isManager() || $user->isTl()) && ($project->created_by === $user->id || $project->project_lead_id === $user->id)))) {
+        if (!($user->isCeo() || (($user->isManager() || $user->isTl()) && ($project->created_by == $user->id || $project->project_lead_id == $user->id)))) {
             abort(403, 'You are not allowed to update this project.');
         }
 
@@ -71,7 +72,7 @@ class ProjectController extends Controller
 
         if (array_key_exists('project_lead_id', $data) && $data['project_lead_id']) {
             $lead = User::findOrFail($data['project_lead_id']);
-            if (!in_array($lead->role, ['ceo', 'manager', 'tl'], true)) return response()->json(['message' => 'Project lead must be a CEO, manager, or team lead.'], 422);
+            // Allow any valid user to be assigned as project lead
         }
 
         $project->update($data);

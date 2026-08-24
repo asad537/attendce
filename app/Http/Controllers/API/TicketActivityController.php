@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ProjectTicket;
 use App\Models\TicketComment;
 use App\Models\TicketActivity;
+use App\Models\TicketWorklog;
 use Illuminate\Http\Request;
 
 class TicketActivityController extends Controller
@@ -14,9 +15,10 @@ class TicketActivityController extends Controller
     {
         $project = $ticket->project;
         $user = $request->user();
-        if ($user->isEmployee() || (!$user->isCeo() && $project->created_by !== $user->id && $project->project_lead_id !== $user->id)) {
-            abort(403);
-        }
+        if ($user->isCeo()) return;
+        if ($project->created_by == $user->id || $project->project_lead_id == $user->id) return;
+        if (ProjectTicket::where('project_id', $project->id)->where('assignee_id', $user->id)->exists()) return;
+        abort(403);
     }
 
     public function activity(Request $request, ProjectTicket $ticket)
@@ -51,7 +53,21 @@ class TicketActivityController extends Controller
                 ];
             });
 
-        $feed = collect($comments)->merge($activities)->sortByDesc('created_at')->values();
+        $worklogs = TicketWorklog::with('user:id,first_name,last_name,name,email,role')
+            ->where('ticket_id', $ticket->id)
+            ->get()
+            ->map(function ($w) {
+                return [
+                    'id' => 'worklog_'.$w->id,
+                    'type' => 'worklog',
+                    'time_spent' => $w->time_spent,
+                    'time_remaining' => $w->time_remaining,
+                    'user' => $w->user,
+                    'created_at' => $w->created_at
+                ];
+            });
+
+        $feed = collect($comments)->merge($activities)->merge($worklogs)->sortByDesc('created_at')->values();
 
         return response()->json(['feed' => $feed]);
     }
@@ -59,17 +75,59 @@ class TicketActivityController extends Controller
     public function storeComment(Request $request, ProjectTicket $ticket)
     {
         $this->authorizeTicket($request, $ticket);
-
+        
         $data = $request->validate([
-            'body' => 'required|string|max:1000'
+            'body' => 'required|string|max:2000'
         ]);
-
-        $comment = TicketComment::create([
-            'ticket_id' => $ticket->id,
+        
+        $comment = $ticket->comments()->create([
             'user_id' => $request->user()->id,
             'body' => $data['body']
         ]);
 
-        return response()->json(['comment' => $comment->load('user')], 201);
+        return response()->json(['message' => 'Comment added', 'comment' => $comment->load('user')], 201);
+    }
+
+    private function parseJiraTime($timeStr) {
+        if (!$timeStr) return 0;
+        $minutes = 0;
+        preg_match_all('/(\d+)\s*(w|d|h|m)/i', $timeStr, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            $val = (int)$match[1];
+            $unit = strtolower($match[2]);
+            if ($unit === 'w') $minutes += $val * 5 * 8 * 60; // 1w = 40h
+            else if ($unit === 'd') $minutes += $val * 8 * 60; // 1d = 8h
+            else if ($unit === 'h') $minutes += $val * 60;
+            else if ($unit === 'm') $minutes += $val;
+        }
+        return $minutes;
+    }
+
+    public function storeWorklog(Request $request, ProjectTicket $ticket)
+    {
+        $this->authorizeTicket($request, $ticket);
+        
+        $data = $request->validate([
+            'time_spent' => 'required|string',
+            'time_remaining' => 'nullable|string'
+        ]);
+
+        $timeSpentMins = $this->parseJiraTime($data['time_spent']);
+        if ($timeSpentMins <= 0) {
+            return response()->json(['message' => 'Invalid time spent format'], 422);
+        }
+
+        $timeRemainingMins = null;
+        if (!empty($data['time_remaining'])) {
+            $timeRemainingMins = $this->parseJiraTime($data['time_remaining']);
+        }
+
+        $worklog = $ticket->worklogs()->create([
+            'user_id' => $request->user()->id,
+            'time_spent' => $timeSpentMins,
+            'time_remaining' => $timeRemainingMins,
+        ]);
+
+        return response()->json(['message' => 'Work logged successfully', 'worklog' => $worklog->load('user')], 201);
     }
 }

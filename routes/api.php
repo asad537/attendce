@@ -15,6 +15,7 @@ use App\Http\Controllers\API\TicketActivityController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\ShiftController;
 use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\UserTicketController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -64,6 +65,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
     // Projects — employees cannot create or access projects.
+    Route::get('/my-tickets', [UserTicketController::class, 'myTickets']);
+    
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
@@ -75,6 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/ticket-subtasks/{subtask}', [ProjectTicketController::class, 'updateSubtask']);
     Route::get('/tickets/{ticket}/activity', [TicketActivityController::class, 'activity']);
     Route::post('/tickets/{ticket}/comments', [TicketActivityController::class, 'storeComment']);
+    Route::post('/tickets/{ticket}/worklogs', [TicketActivityController::class, 'storeWorklog']);
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);

@@ -11,4 +11,5 @@ class Project extends Model
 
     public function projectLead() { return $this->belongsTo(User::class, 'project_lead_id'); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function tickets() { return $this->hasMany(ProjectTicket::class); }
 }
