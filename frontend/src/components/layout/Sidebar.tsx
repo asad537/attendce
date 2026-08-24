@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { projectService } from '../../services/projectService';
+import { Project } from '../../types';
 
 interface NavItem {
   label: string;
@@ -149,6 +151,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
 
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    if (user && ['ceo', 'manager', 'tl'].includes(user.role)) {
+      projectService.getAll().then(setProjects).catch(() => {});
+    }
+  }, [user]);
+
   const filtered = navItems.filter((item) => user && item.roles.includes(user.role));
 
   const isActive = (path: string) => {
@@ -192,21 +202,37 @@ export default function Sidebar({ onClose }: SidebarProps) {
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
         {filtered.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={onClose}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              isActive(item.path)
-                ? 'bg-indigo-50 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            }`}
-          >
-            <span className={isActive(item.path) ? 'text-indigo-600' : 'text-gray-400'}>
-              {item.icon}
-            </span>
-            {item.label}
-          </Link>
+          <React.Fragment key={item.path}>
+            <Link
+              to={item.path}
+              onClick={onClose}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive(item.path)
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              <span className={isActive(item.path) ? 'text-indigo-600' : 'text-gray-400'}>
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+            
+            {item.label === 'Projects' && projects.length > 0 && (
+              <div className="ml-9 mt-1 space-y-1 mb-2 border-l-2 border-gray-100 pl-2">
+                {projects.map((p) => (
+                  <Link
+                    key={p.id}
+                    to="/projects"
+                    onClick={onClose}
+                    className="block px-3 py-2 text-xs font-medium text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors truncate"
+                  >
+                    {p.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </React.Fragment>
         ))}
       </nav>
 
