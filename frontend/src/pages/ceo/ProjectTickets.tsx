@@ -156,7 +156,7 @@ export default function ProjectTickets() {
     const loadSubtasks = async (ticketId: number) => {
         try {
             const res = await api.get(`/tickets/${ticketId}/subtasks`);
-            setSubtasks(res.data);
+            setSubtasks(res.data.subtasks || []);
         } catch (err) {
             console.error(err);
         }
@@ -496,7 +496,7 @@ export default function ProjectTickets() {
                         <div className="flex-1 space-y-6">
                             <div>
                                 <input 
-                                    className="w-full bg-transparent border-0 border-b border-transparent hover:border-[#323940] focus:border-[#4C9AFF] focus:ring-0 text-2xl font-bold text-[#B6C2CF] p-1 -ml-1 transition-colors"
+                                    className="w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 text-2xl font-bold text-gray-900 p-1 -ml-1 transition-colors"
                                     value={detail.title} 
                                     onChange={(e) => {
                                         setDetail({...detail, title: e.target.value});
@@ -510,9 +510,9 @@ export default function ProjectTickets() {
                             </div>
 
                             <div className="space-y-3">
-                                <h3 className="text-[15px] font-semibold text-[#B6C2CF]">Description</h3>
+                                <h3 className="text-[15px] font-semibold text-gray-800">Description</h3>
                                 <textarea
-                                    className="w-full min-h-[100px] bg-transparent border border-transparent hover:border-[#323940] focus:border-[#4C9AFF] focus:ring-0 text-[14px] text-[#B6C2CF] p-2 rounded transition-colors resize-y"
+                                    className="w-full min-h-[100px] bg-transparent border border-transparent hover:border-gray-300 focus:border-indigo-500 focus:ring-0 text-[14px] text-gray-700 p-2 rounded transition-colors resize-y"
                                     placeholder="Add a description..."
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
@@ -524,9 +524,9 @@ export default function ProjectTickets() {
                             </div>
 
                             <div className="space-y-3">
-                                <h3 className="text-[15px] font-semibold text-[#B6C2CF]">Attachments</h3>
-                                <div className="rounded border border-dashed border-[#323940] p-4 text-center">
-                                    <label className="cursor-pointer text-sm font-medium text-[#B6C2CF] hover:text-white bg-[#2C333A] hover:bg-[#323940] px-3 py-1.5 rounded transition-colors">
+                                <h3 className="text-[15px] font-semibold text-gray-800">Attachments</h3>
+                                <div className="rounded border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
+                                    <label className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded shadow-sm transition-colors">
                                         Add attachment
                                         <input
                                             className="hidden"
@@ -550,17 +550,17 @@ export default function ProjectTickets() {
                                                 type="checkbox" 
                                                 checked={st.is_completed}
                                                 onChange={(e) => toggleSubtask(st.id, e.target.checked)}
-                                                className="w-4 h-4 rounded border-[#323940] bg-transparent text-blue-600 focus:ring-0 cursor-pointer"
+                                                className="w-4 h-4 rounded border-gray-300 bg-white text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                             />
-                                            <span className={`text-[14px] ${st.is_completed ? 'line-through text-[#8C9BAB]' : 'text-[#B6C2CF]'}`}>
+                                            <span className={`text-[14px] ${st.is_completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
                                                 {st.title}
                                             </span>
                                         </div>
                                     ))}
                                     <div className="flex items-center gap-3 pt-2">
-                                        <svg className="w-4 h-4 text-[#8C9BAB]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                                         <input 
-                                            className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-[#B6C2CF] placeholder-[#8C9BAB] p-0"
+                                            className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-400 p-0"
                                             placeholder="Add subtask (press Enter)"
                                             value={newSubtask}
                                             onChange={e => setNewSubtask(e.target.value)}
@@ -571,8 +571,8 @@ export default function ProjectTickets() {
                             </div>
                             
                             <div className="space-y-3">
-                                <h3 className="text-[15px] font-semibold text-[#B6C2CF]">Linked work items</h3>
-                                <div className="rounded border border-[#323940] p-4 text-center text-[#8C9BAB] text-[13px]">
+                                <h3 className="text-[15px] font-semibold text-gray-800">Linked work items</h3>
+                                <div className="rounded border border-gray-200 bg-gray-50 p-4 text-center text-gray-500 text-[13px]">
                                     No linked work items
                                 </div>
                             </div>
@@ -581,7 +581,7 @@ export default function ProjectTickets() {
                         {/* Right Column - Details */}
                         <div className="w-full md:w-[340px] space-y-6">
                             <select 
-                                className="w-auto bg-[#0052CC] text-white font-medium text-[13px] border-0 rounded px-3 py-1.5 cursor-pointer hover:bg-[#0065FF] focus:ring-0"
+                                className="w-auto bg-indigo-50 text-indigo-700 font-medium text-[13px] border border-indigo-200 rounded px-3 py-1.5 cursor-pointer hover:bg-indigo-100 focus:ring-indigo-500"
                                 value={detail.status}
                                 onChange={(e) => {
                                     api.put(`/tickets/${detail.id}`, { ...detail, status: e.target.value });
@@ -595,21 +595,21 @@ export default function ProjectTickets() {
                                 <option value="done">Done</option>
                             </select>
 
-                            <div className="rounded-lg border border-[#323940] bg-[#1D2125]">
-                                <div className="px-4 py-3 border-b border-[#323940] flex items-center justify-between">
-                                    <h3 className="text-[14px] font-semibold text-[#B6C2CF]">Details</h3>
-                                    <button className="text-[#8C9BAB] hover:text-[#B6C2CF]">
+                            <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <h3 className="text-[14px] font-semibold text-gray-800">Details</h3>
+                                    <button className="text-gray-400 hover:text-gray-600">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                                     </button>
                                 </div>
                                 <div className="p-4 space-y-4">
                                     <div className="flex items-center">
-                                        <span className="w-[120px] text-[13px] text-[#8C9BAB]">Assignee</span>
-                                        <div className="relative inline-flex items-center gap-2 hover:bg-[#2C333A] p-1 -ml-1 rounded cursor-pointer transition-colors">
-                                            <div className="w-6 h-6 rounded-full bg-[#00875A] flex items-center justify-center text-[10px] font-bold text-white">
+                                        <span className="w-[120px] text-[13px] font-medium text-gray-500">Assignee</span>
+                                        <div className="relative inline-flex items-center gap-2 hover:bg-gray-50 border border-transparent hover:border-gray-200 p-1 -ml-1 rounded cursor-pointer transition-colors">
+                                            <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold text-white">
                                                 {detail.assignee?.name ? detail.assignee.name.substring(0,2).toUpperCase() : '?'}
                                             </div>
-                                            <span className="text-[13px] text-[#B6C2CF]">{detail.assignee?.name || 'Unassigned'}</span>
+                                            <span className="text-[13px] font-medium text-gray-800">{detail.assignee?.name || 'Unassigned'}</span>
                                             <select 
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                 value={detail.assignee?.id || ""}
@@ -626,10 +626,10 @@ export default function ProjectTickets() {
                                         </div>
                                     </div>
                                     <div className="flex items-center">
-                                        <span className="w-[120px] text-[13px] text-[#8C9BAB]">Priority</span>
-                                        <div className="relative inline-flex items-center gap-2 hover:bg-[#2C333A] p-1 -ml-1 rounded cursor-pointer transition-colors">
+                                        <span className="w-[120px] text-[13px] font-medium text-gray-500">Priority</span>
+                                        <div className="relative inline-flex items-center gap-2 hover:bg-gray-50 border border-transparent hover:border-gray-200 p-1 -ml-1 rounded cursor-pointer transition-colors">
                                             {getPriorityIcon(detail.priority)}
-                                            <span className="text-[13px] text-[#B6C2CF] capitalize">{detail.priority || 'Medium'}</span>
+                                            <span className="text-[13px] font-medium text-gray-800 capitalize">{detail.priority || 'Medium'}</span>
                                             <select 
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                 value={detail.priority || "medium"}
@@ -647,12 +647,12 @@ export default function ProjectTickets() {
                                         </div>
                                     </div>
                                     <div className="flex items-center">
-                                        <span className="w-[120px] text-[13px] text-[#8C9BAB]">Labels</span>
-                                        <span className="text-[13px] text-[#B6C2CF]">None</span>
+                                        <span className="w-[120px] text-[13px] font-medium text-gray-500">Labels</span>
+                                        <span className="text-[13px] text-gray-800">None</span>
                                     </div>
                                     <div className="flex items-center">
-                                        <span className="w-[120px] text-[13px] text-[#8C9BAB]">Due date</span>
-                                        <span className="text-[13px] text-[#B6C2CF]">{detail.due_date?.slice(0, 10) || "None"}</span>
+                                        <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
+                                        <span className="text-[13px] text-gray-800">{detail.due_date?.slice(0, 10) || "None"}</span>
                                     </div>
                                 </div>
                             </div>
