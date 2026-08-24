@@ -21,7 +21,7 @@ function StatCard({ label, value, note, tone, icon }: { label: string; value: nu
   return <article className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
     <div className="flex items-center justify-between"><p className={`font-semibold ${color.text}`}>{label}</p><span className={`rounded-xl px-2.5 py-2 ${color.icon}`}>{icon}</span></div>
     <p className="mt-6 text-3xl font-bold text-gray-950">{value}</p><p className="mt-1 text-sm text-gray-500">{note}</p>
-    <svg className="absolute inset-x-5 bottom-0 h-10 w-[calc(100%-2.5rem)] opacity-30" viewBox="0 0 300 40" preserveAspectRatio="none"><path d="M0 36 C45 36 55 34 85 35 S120 24 145 35 S185 2 220 17 S255 28 300 4" fill="none" stroke={color.line} strokeWidth="2"/><path d="M0 36 C45 36 55 34 85 35 S120 24 145 35 S185 2 220 17 S255 28 300 4 L300 40 L0 40Z" fill={color.line}/></svg>
+    <svg className="absolute bottom-0 left-5 right-5 h-10 w-[calc(100%-2.5rem)] opacity-30" viewBox="0 0 300 42" preserveAspectRatio="none" aria-hidden="true"><path d="M3 36 C45 36 55 34 85 35 S120 24 145 35 S185 3 220 17 S255 28 297 5" fill="none" stroke={color.line} strokeWidth="2" strokeLinecap="round"/><path d="M3 36 C45 36 55 34 85 35 S120 24 145 35 S185 3 220 17 S255 28 297 5 L297 42 L3 42Z" fill={color.line}/></svg>
   </article>;
 }
 
