@@ -541,8 +541,8 @@ export default function ProjectTickets() {
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <h3 className="text-[15px] font-semibold text-[#B6C2CF]">Subtasks</h3>
+                            <div className="space-y-3 pt-4">
+                                <h3 className="text-[14px] font-semibold text-gray-500">Subtasks</h3>
                                 <div className="space-y-2">
                                     {subtasks.map(st => (
                                         <div key={st.id} className="flex items-center gap-3 group">
@@ -559,21 +559,46 @@ export default function ProjectTickets() {
                                     ))}
                                     <div className="flex items-center gap-3 pt-2">
                                         <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                                        <input 
-                                            className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-400 p-0"
-                                            placeholder="Add subtask (press Enter)"
-                                            value={newSubtask}
-                                            onChange={e => setNewSubtask(e.target.value)}
-                                            onKeyDown={handleAddSubtask}
-                                        />
+                                        <div className="flex-1 border border-gray-900 rounded p-1.5 focus-within:border-indigo-500 transition-colors">
+                                            <input 
+                                                className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-400 p-0"
+                                                placeholder="Add subtask (press Enter)"
+                                                value={newSubtask}
+                                                onChange={e => setNewSubtask(e.target.value)}
+                                                onKeyDown={handleAddSubtask}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div className="space-y-3">
-                                <h3 className="text-[15px] font-semibold text-gray-800">Linked work items</h3>
-                                <div className="rounded border border-gray-200 bg-gray-50 p-4 text-center text-gray-500 text-[13px]">
-                                    No linked work items
+                            <div className="space-y-4 pt-6 mt-2">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[15px] font-semibold text-gray-800">Activity</h3>
+                                </div>
+                                <div className="flex items-center gap-4 text-[13px]">
+                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">All</span>
+                                    <span className="font-medium bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded cursor-pointer">Comments</span>
+                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">History</span>
+                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">Work log</span>
+                                </div>
+                                <div className="flex gap-3 mt-4">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-[12px] font-bold text-white mt-1">
+                                        {currentUser?.name ? currentUser.name.substring(0,2).toUpperCase() : 'ME'}
+                                    </div>
+                                    <div className="flex-1 border border-gray-300 rounded-lg p-3 hover:border-gray-400 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all bg-white shadow-sm">
+                                        <input 
+                                            className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-500 p-0"
+                                            placeholder="Add a comment..."
+                                        />
+                                        <div className="flex items-center gap-2 mt-3">
+                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Can I get more info...?</button>
+                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
+                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
+                                        </div>
+                                        <div className="text-[11px] text-gray-400 mt-4">
+                                            Pro tip: press <span className="font-bold bg-gray-100 border border-gray-200 px-1 rounded text-gray-500">M</span> to comment
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
