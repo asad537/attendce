@@ -9,12 +9,16 @@ class AddTlRoleToUsersTable extends Migration
 {
     public function up()
     {
-        // MySQL: modify the enum to include 'tl'
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo') NOT NULL DEFAULT 'employee'");
+        // SQLite stores enum columns as text, so it already accepts the new value.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo') NOT NULL DEFAULT 'employee'");
+        }
     }
 
     public function down()
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','ceo') NOT NULL DEFAULT 'employee'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','ceo') NOT NULL DEFAULT 'employee'");
+        }
     }
 }

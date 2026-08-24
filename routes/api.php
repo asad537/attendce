@@ -9,6 +9,7 @@ use App\Http\Controllers\API\DesignationController;
 use App\Http\Controllers\API\HolidayController;
 use App\Http\Controllers\API\LeaveController;
 use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\ProjectController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\ShiftController;
 use App\Http\Controllers\API\UserController;
@@ -59,6 +60,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{user}',    [UserController::class, 'show']);
     Route::put('/users/{user}',    [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+    // Projects — employees cannot create or access projects.
+    Route::get('/projects',  [ProjectController::class, 'index']);
+    Route::post('/projects', [ProjectController::class, 'store']);
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);

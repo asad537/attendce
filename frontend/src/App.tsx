@@ -22,6 +22,7 @@ import CeoAttendance from './pages/ceo/CeoAttendance';
 import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
+import CeoProjects from './pages/ceo/CeoProjects';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -91,6 +92,12 @@ function App() {
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees" element={<CeoEmployees />} />
           <Route path="departments" element={<CeoDepartments />} />
+        </Route>
+      </Route>
+
+      <Route path="/projects" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<CeoProjects />} />
         </Route>
       </Route>
 
