@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Support\Facades\URL;
 
 class User extends Authenticatable
 {
@@ -152,7 +153,9 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar ? asset('storage/' . $this->avatar) : null;
+        return $this->avatar
+            ? URL::temporarySignedRoute('users.avatar', now()->addMinutes(10), ['user' => $this->id])
+            : null;
     }
 
     public function getCurrentStatusAttribute(): string

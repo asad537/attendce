@@ -11,6 +11,18 @@ use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
+    private function canAssignUser(User $actor, int $targetId): bool
+    {
+        return User::active()
+            ->whereKey($targetId)
+            ->when(!$actor->isCeo(), function ($query) use ($actor) {
+                $query->where(function ($scope) use ($actor) {
+                    $scope->whereKey($actor->id)->orWhere('manager_id', $actor->id);
+                });
+            })
+            ->exists();
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -44,8 +56,7 @@ class ProjectController extends Controller
         ]);
 
         if (!empty($data['project_lead_id'])) {
-            $lead = User::findOrFail($data['project_lead_id']);
-            // Allow any valid user to be assigned as project lead
+            abort_unless($this->canAssignUser($user, (int) $data['project_lead_id']), 403, 'You cannot assign this project lead.');
         }
 
         $data['created_by'] = $user->id;
@@ -71,8 +82,7 @@ class ProjectController extends Controller
         ]);
 
         if (array_key_exists('project_lead_id', $data) && $data['project_lead_id']) {
-            $lead = User::findOrFail($data['project_lead_id']);
-            // Allow any valid user to be assigned as project lead
+            abort_unless($this->canAssignUser($user, (int) $data['project_lead_id']), 403, 'You cannot assign this project lead.');
         }
 
         $project->update($data);

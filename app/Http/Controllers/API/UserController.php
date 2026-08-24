@@ -52,7 +52,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate((int) $request->get('per_page', 20));
+        $users = $query->paginate(max(1, min((int) $request->get('per_page', 20), 100)));
 
         return response()->json([
             'data' => UserResource::collection($users->items()),
@@ -71,32 +71,6 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         $data = $request->validated();
-
-        $actor = $request->user();
-        $privilegedFields = [
-            'role', 'employment_type', 'status', 'department_id',
-            'designation_id', 'shift_id', 'manager_id', 'join_date',
-        ];
-
-        // A profile update must never double as an organization/role update.
-        if (!$actor->isCeo() && $actor->id === $user->id) {
-            foreach ($privilegedFields as $field) {
-                if ($request->exists($field)) {
-                    return response()->json(['message' => 'You cannot change your own role or organization assignment.'], 403);
-                }
-            }
-        }
-
-        // Managers and TLs can administer only the role levels beneath them.
-        if (!$actor->isCeo() && $actor->id !== $user->id) {
-            $allowedRoles = $actor->isManager() ? ['employee', 'tl'] : ['employee'];
-            if (isset($data['role']) && !in_array($data['role'], $allowedRoles, true)) {
-                return response()->json(['message' => 'You cannot assign that role.'], 403);
-            }
-            if (array_key_exists('manager_id', $data) && (int) $data['manager_id'] !== $actor->id) {
-                return response()->json(['message' => 'You cannot move this user outside your team.'], 403);
-            }
-        }
 
         // Derive the `name` column from first + last for backward compatibility
         $data['name'] = trim($data['first_name'] . ' ' . $data['last_name']);
@@ -174,6 +148,32 @@ class UserController extends Controller
 
         $data = $request->validated();
 
+        $actor = $request->user();
+        $privilegedFields = [
+            'role', 'employment_type', 'status', 'department_id',
+            'designation_id', 'shift_id', 'manager_id', 'join_date',
+        ];
+
+        // Self-service profile updates cannot change authorization or employment state.
+        if (!$actor->isCeo() && $actor->id === $user->id) {
+            foreach ($privilegedFields as $field) {
+                if ($request->exists($field)) {
+                    return response()->json(['message' => 'You cannot change your own role or organization assignment.'], 403);
+                }
+            }
+        }
+
+        // Managers and TLs may administer only lower roles within their own team.
+        if (!$actor->isCeo() && $actor->id !== $user->id) {
+            $allowedRoles = $actor->isManager() ? ['employee', 'tl'] : ['employee'];
+            if (isset($data['role']) && !in_array($data['role'], $allowedRoles, true)) {
+                return response()->json(['message' => 'You cannot assign that role.'], 403);
+            }
+            if (array_key_exists('manager_id', $data) && (int) $data['manager_id'] !== (int) $actor->id) {
+                return response()->json(['message' => 'You cannot move this user outside your team.'], 403);
+            }
+        }
+
         // Rebuild the legacy `name` column when first/last are updated
         $firstName = $data['first_name'] ?? $user->first_name;
         $lastName  = $data['last_name']  ?? $user->last_name;
@@ -194,12 +194,16 @@ class UserController extends Controller
         unset($data['current_password'], $data['new_password'], $data['new_password_confirmation']);
 
         if ($request->hasFile('avatar')) {
-            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = $request->file('avatar')->store('avatars');
         }
 
         $user->update($data);
 
-        if (!empty($passwordChanged)) {
+        $securityStateChanged = isset($data['role']) && $data['role'] !== $oldRole;
+        $securityStateChanged = $securityStateChanged
+            || (isset($data['status']) && $data['status'] !== 'active');
+
+        if (!empty($passwordChanged) || $securityStateChanged) {
             $user->tokens()->delete();
         }
 
@@ -223,5 +227,16 @@ class UserController extends Controller
         $user->delete();
         AuditService::log('user_deleted', 'user', "User {$name} deleted", $request->user()->id, User::class, $user->id);
         return response()->json(['message' => 'Employee deleted.']);
+    }
+
+    public function avatar(User $user)
+    {
+        abort_unless($user->avatar, 404);
+        abort_unless(\Storage::disk('local')->exists($user->avatar), 404);
+
+        return \Storage::disk('local')->response($user->avatar, null, [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
     }
 }

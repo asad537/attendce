@@ -10,6 +10,19 @@ use Illuminate\Http\Request;
 
 class ProjectTicketController extends Controller
 {
+    private function canAssignUser(Request $request, int $targetId): bool
+    {
+        $actor = $request->user();
+        return User::active()
+            ->whereKey($targetId)
+            ->when(!$actor->isCeo(), function ($query) use ($actor) {
+                $query->where(function ($scope) use ($actor) {
+                    $scope->whereKey($actor->id)->orWhere('manager_id', $actor->id);
+                });
+            })
+            ->exists();
+    }
+
     private function canManageProject(Request $request, Project $project): bool
     {
         $user = $request->user();
@@ -50,8 +63,7 @@ class ProjectTicketController extends Controller
         if ($request->hasFile('attachment')) { $data['attachment_name'] = $request->file('attachment')->getClientOriginalName(); $data['attachment_path'] = $request->file('attachment')->store('ticket-attachments'); }
         unset($data['attachment']);
         if (!empty($data['assignee_id'])) {
-            $assignee = User::findOrFail($data['assignee_id']);
-            // Allowed to assign to any valid user
+            abort_unless($this->canAssignUser($request, (int) $data['assignee_id']), 403, 'You cannot assign this ticket to that user.');
         }
         $data['project_id'] = $project->id; $data['created_by'] = $request->user()->id;
         $ticket = ProjectTicket::create($data);
@@ -70,6 +82,9 @@ class ProjectTicketController extends Controller
         $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','attachment'=>'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240','assignee_id'=>'nullable|exists:users,id']);
         if (!$this->canManageProject($request, $ticket->project)) {
             $data = array_intersect_key($data, array_flip(['status']));
+        }
+        if (!empty($data['assignee_id'])) {
+            abort_unless($this->canAssignUser($request, (int) $data['assignee_id']), 403, 'You cannot assign this ticket to that user.');
         }
         if ($request->hasFile('attachment') && $this->canManageProject($request, $ticket->project)) { $data['attachment_name'] = $request->file('attachment')->getClientOriginalName(); $data['attachment_path'] = $request->file('attachment')->store('ticket-attachments'); }
         unset($data['attachment']);

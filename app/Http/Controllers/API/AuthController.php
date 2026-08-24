@@ -68,14 +68,19 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Current password is incorrect.'], 422);
             }
             $user->password = Hash::make($validated['new_password']);
+            $passwordChanged = true;
         }
 
         if ($request->hasFile('avatar')) {
-            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $request->file('avatar')->store('avatars');
         }
 
         $user->fill(\Arr::only($validated, ['name', 'phone', 'address', 'emergency_contact']));
         $user->save();
+
+        if (!empty($passwordChanged)) {
+            $user->tokens()->delete();
+        }
 
         return response()->json([
             'message' => 'Profile updated.',

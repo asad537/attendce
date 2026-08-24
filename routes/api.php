@@ -27,9 +27,12 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public ──────────────────────────────────────────────────────────────
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::get('/users/{user}/avatar', [UserController::class, 'avatar'])
+    ->middleware(['signed', 'throttle:60,1'])
+    ->name('users.avatar');
 
 // ── Authenticated ────────────────────────────────────────────────────────
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Auth
     Route::post('/logout',         [AuthController::class, 'logout']);

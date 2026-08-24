@@ -38,7 +38,7 @@ class LeaveController extends Controller
         if ($request->filled('user_id') && !$user->isEmployee()) $query->where('user_id', $request->user_id);
         if ($request->filled('year'))    $query->whereYear('start_date', $request->year);
 
-        $leaves = $query->paginate((int) $request->get('per_page', 15));
+        $leaves = $query->paginate(max(1, min((int) $request->get('per_page', 15), 100)));
 
         return response()->json([
             'data' => LeaveResource::collection($leaves->items()),
@@ -94,9 +94,7 @@ class LeaveController extends Controller
             return Storage::disk('local')->download($leave->attachment);
         }
 
-        // Backward-compatible access for attachments created before private storage.
-        abort_unless(Storage::disk('public')->exists($leave->attachment), 404);
-        return Storage::disk('public')->download($leave->attachment);
+        abort(404);
     }
 
     /** POST /api/leaves/{id}/manager-review */

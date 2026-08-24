@@ -1,187 +1,83 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { attendanceService, breakService } from '../../services/attendanceService';
+import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
 import { Attendance, Leave, TeamMemberStatus } from '../../types';
-import StatusBadge from '../../components/common/StatusBadge';
 import { PageLoader } from '../../components/common/LoadingSpinner';
-import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import StatusBadge from '../../components/common/StatusBadge';
 
-export default function ManagerDashboard() {
+const palette = {
+  workforce: { text: 'text-indigo-600', icon: 'bg-indigo-50', line: '#6366f1' },
+  present: { text: 'text-emerald-600', icon: 'bg-emerald-50', line: '#10b981' },
+  absent: { text: 'text-rose-500', icon: 'bg-rose-50', line: '#f43f5e' },
+  leave: { text: 'text-amber-500', icon: 'bg-amber-50', line: '#f59e0b' },
+};
+
+function StatCard({ label, value, note, tone, icon }: { label: string; value: number; note: string; tone: keyof typeof palette; icon: string }) {
+  const color = palette[tone];
+  return <article className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="flex items-center justify-between"><p className={`font-semibold ${color.text}`}>{label}</p><span className={`rounded-xl px-2.5 py-2 ${color.icon}`}>{icon}</span></div>
+    <p className="mt-6 text-3xl font-bold text-gray-950">{value}</p><p className="mt-1 text-sm text-gray-500">{note}</p>
+    <svg className="absolute inset-x-5 bottom-0 h-10 w-[calc(100%-2.5rem)] opacity-30" viewBox="0 0 300 40" preserveAspectRatio="none"><path d="M0 36 C45 36 55 34 85 35 S120 24 145 35 S185 2 220 17 S255 28 300 4" fill="none" stroke={color.line} strokeWidth="2"/><path d="M0 36 C45 36 55 34 85 35 S120 24 145 35 S185 2 220 17 S255 28 300 4 L300 40 L0 40Z" fill={color.line}/></svg>
+  </article>;
+}
+
+export default function ManagerDashboard({ executive = false }: { executive?: boolean }) {
   const { user, refreshUser } = useAuth();
-  const basePath = user?.role === 'tl' ? '/tl' : '/manager';
+  const basePath = executive ? '/ceo' : user?.role === 'tl' ? '/tl' : '/manager';
+  const approvalPath = executive ? '/ceo/leave-approvals' : user?.role === 'tl' ? '/tl/leaves' : '/manager/leave-approvals';
   const [attendance, setAttendance] = useState<Attendance | null>(null);
-  const [myStatus, setMyStatus]     = useState<string>('absent');
-  const [team, setTeam]             = useState<TeamMemberStatus[]>([]);
-  const [pending, setPending]       = useState<Leave[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [actionLoading, setAction]  = useState(false);
+  const [team, setTeam] = useState<TeamMemberStatus[]>([]);
+  const [pending, setPending] = useState<Leave[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [todayRes, teamRes, leaveRes] = await Promise.all([
-        attendanceService.getToday(),
-        attendanceService.getTeamStatus(),
-        leaveService.getList({ status: 'pending', per_page: 5 }),
-      ]);
-      setAttendance(todayRes.attendance);
-      setMyStatus(todayRes.current_status);
-      setTeam(teamRes);
-      setPending(leaveRes.data);
-    } catch { toast.error('Failed to load dashboard'); }
-    finally { setLoading(false); }
+      const [today, teamStatus, leaves] = await Promise.all([attendanceService.getToday(), attendanceService.getTeamStatus(), leaveService.getList({ status: 'pending', per_page: 5 })]);
+      setAttendance(today.attendance); setTeam(teamStatus); setPending(leaves.data);
+    } catch { toast.error('Failed to load dashboard'); } finally { setLoading(false); }
   }, []);
-
   useEffect(() => { load(); }, [load]);
 
-  const handleCheckIn = async () => {
-    setAction(true);
-    try {
-      const att = await attendanceService.checkIn({ work_mode: 'office' });
-      setAttendance(att); setMyStatus('working');
-      await refreshUser();
-      toast.success('Checked in!');
-    } catch (e: any) { toast.error(e.response?.data?.message || 'Check-in failed'); }
-    finally { setAction(false); }
-  };
+  const stats = useMemo(() => ({
+    present: team.filter(m => ['working', 'on_break', 'checked_out', 'work_from_home'].includes(m.current_status)).length,
+    absent: team.filter(m => m.current_status === 'absent').length,
+    leave: team.filter(m => m.current_status === 'on_leave').length,
+  }), [team]);
+  const total = team.length;
+  const percent = (n: number) => total ? Math.round(n / total * 100) : 0;
 
-  const handleCheckOut = async () => {
-    setAction(true);
+  const toggleAttendance = async () => {
+    setActionLoading(true);
     try {
-      const att = await attendanceService.checkOut();
-      setAttendance(att); setMyStatus('checked_out');
-      toast.success(`Checked out — ${att.working_hours.toFixed(2)}h worked`);
-    } catch (e: any) { toast.error(e.response?.data?.message || 'Check-out failed'); }
-    finally { setAction(false); }
+      if (!attendance?.check_in) await attendanceService.checkIn({ work_mode: 'office' }); else if (!attendance.check_out) await attendanceService.checkOut();
+      await Promise.all([load(), refreshUser()]); toast.success('Attendance updated');
+    } catch { toast.error('Attendance update failed'); } finally { setActionLoading(false); }
   };
-
   if (loading) return <PageLoader />;
 
-  const stats = {
-    working: team.filter((t) => t.current_status === 'working').length,
-    onBreak: team.filter((t) => t.current_status === 'on_break').length,
-    absent:  team.filter((t) => t.current_status === 'absent').length,
-    onLeave: team.filter((t) => t.current_status === 'on_leave').length,
-  };
+  const donut = `conic-gradient(#10b981 0 ${percent(stats.present)}%, #f43f5e ${percent(stats.present)}% ${percent(stats.present + stats.absent)}%, #f59e0b ${percent(stats.present + stats.absent)}% ${percent(stats.present + stats.absent + stats.leave)}%, #d1d5db 0)`;
+  return <div className="space-y-5 p-4 sm:p-6">
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><h1 className="text-2xl font-bold text-gray-950">Welcome back, {user?.name} 👋</h1><p className="mt-1 text-sm text-gray-500">Here&apos;s what&apos;s happening with {executive ? 'your company' : user?.role === 'tl' ? 'your team' : 'your department'} today.</p></div><div className="rounded-xl bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700">▣ &nbsp;{format(new Date(), 'EEEE, MMMM d, yyyy')}</div></header>
 
-  return (
-    <div className="p-4 lg:p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Manager Dashboard</h1>
-        <p className="text-gray-500 text-sm">{user?.department?.name} · {format(new Date(), 'EEEE, MMMM d')}</p>
-      </div>
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <StatCard label="Total Workforce" value={total} note="Active team members" tone="workforce" icon="♧" />
+      <StatCard label="Present Today" value={stats.present} note={`${percent(stats.present)}% of team`} tone="present" icon="◉" />
+      <StatCard label="Absent Today" value={stats.absent} note={`${percent(stats.absent)}% of team`} tone="absent" icon="◍" />
+      <StatCard label="On Leave" value={stats.leave} note={`${percent(stats.leave)}% of team`} tone="leave" icon="◐" />
+    </section>
 
-      {/* Personal check-in + team stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* My check-in */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-gray-900 text-sm">My Attendance</h2>
-            <StatusBadge status={myStatus} pulse={myStatus === 'working'} />
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-center mb-4">
-            <div>
-              <p className="text-xs text-gray-500">Check In</p>
-              <p className="font-semibold">{attendance?.check_in ? format(new Date(attendance.check_in), 'HH:mm') : '–'}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Check Out</p>
-              <p className="font-semibold">{attendance?.check_out ? format(new Date(attendance.check_out), 'HH:mm') : '–'}</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {!attendance?.check_in && (
-              <button onClick={handleCheckIn} disabled={actionLoading} className="btn-success flex-1 btn-sm">Check In</button>
-            )}
-            {attendance?.check_in && !attendance?.check_out && (
-              <button onClick={handleCheckOut} disabled={actionLoading} className="btn-danger flex-1 btn-sm">Check Out</button>
-            )}
-            {attendance?.check_out && <p className="text-xs text-gray-500 w-full text-center py-2">Workday complete</p>}
-          </div>
-        </div>
+    <section className="grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-gray-900">Today&apos;s Attendance Overview</h2><div className="mt-7 flex flex-col items-center gap-7 sm:flex-row sm:justify-around"><div className="grid h-44 w-44 place-items-center rounded-full" style={{ background: donut }}><div className="grid h-28 w-28 place-items-center rounded-full bg-white text-center"><div><p className="text-2xl font-bold">{total}</p><p className="text-xs text-gray-500">Total</p></div></div></div><div className="w-full max-w-xs space-y-3">{[['Present',stats.present,'bg-emerald-500'],['Absent',stats.absent,'bg-rose-500'],['On Leave',stats.leave,'bg-amber-500'],['Not Marked',Math.max(0,total-stats.present-stats.absent-stats.leave),'bg-gray-400']].map(([label,value,color]) => <div key={String(label)} className="flex items-center justify-between border-b border-gray-100 pb-2 text-sm"><span className="flex items-center gap-2"><i className={`h-3 w-3 rounded-full ${color}`}/>{label}</span><b>{value as number} ({percent(value as number)}%)</b></div>)}</div></div></div>
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b px-5 py-4"><h2 className="font-bold text-gray-900">Pending Leave Requests</h2><Link to={approvalPath} className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">View all</Link></div><div className="divide-y">{pending.length ? pending.map(l => <div key={l.id} className="flex items-center justify-between gap-3 px-5 py-4"><div className="min-w-0"><p className="truncate text-sm font-semibold">{l.user?.name}</p><p className="mt-1 text-xs text-gray-500">{l.leave_type?.name} · {format(new Date(l.start_date),'MMM d')} – {format(new Date(l.end_date),'MMM d')}</p></div><span className="badge-yellow shrink-0">Pending</span></div>) : <div className="grid min-h-56 place-items-center text-sm text-gray-400">No pending leave requests</div>}</div></div>
+    </section>
 
-        {/* Team snapshot */}
-        <div className="card lg:col-span-2">
-          <h2 className="font-semibold text-gray-900 mb-3">Team Today — {team.length} members</h2>
-          <div className="grid grid-cols-4 gap-3 text-center">
-            <div className="p-3 bg-emerald-50 rounded-xl">
-              <p className="text-2xl font-bold text-emerald-700">{stats.working}</p>
-              <p className="text-xs text-emerald-600">Working</p>
-            </div>
-            <div className="p-3 bg-amber-50 rounded-xl">
-              <p className="text-2xl font-bold text-amber-700">{stats.onBreak}</p>
-              <p className="text-xs text-amber-600">On Break</p>
-            </div>
-            <div className="p-3 bg-red-50 rounded-xl">
-              <p className="text-2xl font-bold text-red-700">{stats.absent}</p>
-              <p className="text-xs text-red-600">Absent</p>
-            </div>
-            <div className="p-3 bg-blue-50 rounded-xl">
-              <p className="text-2xl font-bold text-blue-700">{stats.onLeave}</p>
-              <p className="text-xs text-blue-600">On Leave</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <section className="rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b px-5 py-4"><h2 className="font-bold text-gray-900">Today&apos;s Workforce Status</h2><Link to={`${basePath}/attendance`} className="text-xs font-semibold text-indigo-600">View full attendance</Link></div><div className="overflow-x-auto"><table className="table min-w-[720px]"><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Hours</th></tr></thead><tbody>{team.map(member => <tr key={member.id}><td className="font-semibold text-gray-900">{member.name}</td><td>{member.department || 'N/A'}</td><td><StatusBadge status={member.current_status}/></td><td>{member.check_in ? format(new Date(member.check_in),'hh:mm a') : '-'}</td><td>{member.check_out ? format(new Date(member.check_out),'hh:mm a') : '-'}</td><td>{member.working_hours ? `${member.working_hours}h` : '-'}</td></tr>)}</tbody></table></div></section>
 
-      {/* Live team status */}
-      <div className="card p-0">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Live Team Status</h2>
-          <Link to={`${basePath}/attendance`} className="text-sm text-indigo-600 hover:underline">Full view →</Link>
-        </div>
-        <div className="divide-y divide-gray-50">
-          {team.map((member) => (
-            <div key={member.id} className="flex items-center justify-between px-5 py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-sm font-semibold">
-                  {member.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                  <p className="text-xs text-gray-500">{member.employee_id}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right hidden sm:block">
-                  <p className="text-xs text-gray-500">
-                    {member.check_in ? `In: ${format(new Date(member.check_in), 'HH:mm')}` : ''}
-                    {member.check_out ? ` · Out: ${format(new Date(member.check_out), 'HH:mm')}` : ''}
-                  </p>
-                  {member.working_hours > 0 && <p className="text-xs font-medium text-gray-700">{member.working_hours}h</p>}
-                  {member.is_late && <p className="text-xs text-amber-600">{member.late_minutes}m late</p>}
-                </div>
-                <StatusBadge status={member.current_status} pulse={member.current_status === 'working'} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Pending leave requests */}
-      {pending.length > 0 && (
-        <div className="card p-0">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Pending Leave Requests</h2>
-            <Link to={user?.role === 'tl' ? '/tl/leaves' : '/manager/leave-approvals'} className="text-sm text-indigo-600 hover:underline">View all →</Link>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {pending.map((leave) => (
-              <div key={leave.id} className="flex items-center justify-between px-5 py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{leave.user?.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {leave.leave_type?.name} · {format(new Date(leave.start_date), 'MMM d')} – {format(new Date(leave.end_date), 'MMM d')} ({leave.days_requested}d)
-                  </p>
-                </div>
-                <Link to={user?.role === 'tl' ? '/tl/leaves' : '/manager/leave-approvals'} className="btn-primary btn-sm">Review</Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-gray-900">Quick Actions</h2><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{!executive && <button onClick={toggleAttendance} disabled={actionLoading || Boolean(attendance?.check_out)} className="flex items-center gap-3 rounded-xl border p-4 text-left hover:border-emerald-300 hover:bg-emerald-50 disabled:opacity-50"><span className="rounded-lg bg-emerald-50 p-2">♧</span><span><b className="block text-sm">{attendance?.check_in ? 'Mark Check Out' : 'Mark Attendance'}</b><small className="text-gray-500">Check in / out</small></span></button>}{!executive && <Link to={`${basePath}/my-leaves`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-indigo-300 hover:bg-indigo-50"><span className="rounded-lg bg-indigo-50 p-2">♧</span><span><b className="block text-sm">Apply Leave</b><small className="text-gray-500">Request time off</small></span></Link>}<Link to={`${basePath}/reports`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-blue-300 hover:bg-blue-50"><span className="rounded-lg bg-blue-50 p-2">▧</span><span><b className="block text-sm">View Reports</b><small className="text-gray-500">Attendance reports</small></span></Link><Link to={executive ? '/ceo/employees' : `${basePath}/team`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-rose-300 hover:bg-rose-50"><span className="rounded-lg bg-rose-50 p-2">▦</span><span><b className="block text-sm">{executive ? 'Employees' : 'My Team'}</b><small className="text-gray-500">Manage team members</small></span></Link></div></section>
+  </div>;
 }

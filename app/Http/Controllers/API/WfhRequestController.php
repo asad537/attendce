@@ -31,7 +31,7 @@ class WfhRequestController extends Controller
             $query->where('status', $request->status);
         }
 
-        $wfh = $query->paginate((int) $request->get('per_page', 15));
+        $wfh = $query->paginate(max(1, min((int) $request->get('per_page', 15), 100)));
 
         return response()->json([
             'data' => WfhRequestResource::collection($wfh->items()),
