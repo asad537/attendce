@@ -21,6 +21,7 @@ export default function CeoReports() {
   const [activeFilter, setActiveFilter] = useState('This Month');
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<number>>(new Set());
+  const [recordSearch, setRecordSearch] = useState('');
 
   const setFilter = (filter: string) => {
     if (filter === 'Custom') {
@@ -54,9 +55,19 @@ export default function CeoReports() {
       return (res as any).company || (res as any).team || [];
     },
   });
+
+  const filteredRecords = useMemo(() => {
+    const query = recordSearch.trim().toLowerCase();
+    if (!query) return data || [];
+    return (data || []).filter((row: any) =>
+      row.user?.name?.toLowerCase().includes(query)
+      || row.user?.employee_id?.toLowerCase().includes(query)
+      || row.user?.email?.toLowerCase().includes(query)
+    );
+  }, [data, recordSearch]);
       
   const handleExportCSV = () => {
-    const toExport = data?.filter((r: any) => selectedEmployees.size === 0 || selectedEmployees.has(r.user.id)) || [];
+    const toExport = filteredRecords.filter((r: any) => selectedEmployees.size === 0 || selectedEmployees.has(r.user.id));
     if (toExport.length === 0) return;
     
     const headers = ['Employee Name', 'Total Days', 'Total Working Days', 'Holidays', 'Presents', 'WFM', 'Rejected WFM', 'Leaves', 'Paid Leaves', 'Rejected Leaves', 'Days Worked (Excl. Weekends)'];
@@ -94,7 +105,7 @@ export default function CeoReports() {
 
   
   const handleExportPDF = () => {
-    const toExport = data?.filter((r: any) => selectedEmployees.size === 0 || selectedEmployees.has(r.user.id)) || [];
+    const toExport = filteredRecords.filter((r: any) => selectedEmployees.size === 0 || selectedEmployees.has(r.user.id));
     if (toExport.length === 0) return;
     
     const doc = new jsPDF();
@@ -132,8 +143,12 @@ export default function CeoReports() {
   };
   
   const toggleAll = () => {
-    if (selectedEmployees.size === data?.length) setSelectedEmployees(new Set());
-    else setSelectedEmployees(new Set(data?.map((r: any) => r.user.id)));
+    const filteredIds = filteredRecords.map((r: any) => r.user.id);
+    if (filteredIds.length > 0 && filteredIds.every((id: number) => selectedEmployees.has(id))) {
+      const next = new Set(selectedEmployees); filteredIds.forEach((id: number) => next.delete(id)); setSelectedEmployees(next);
+    } else {
+      setSelectedEmployees(new Set([...selectedEmployees, ...filteredIds]));
+    }
   };
 
   
@@ -559,7 +574,15 @@ export default function CeoReports() {
                   <p className="text-xs text-gray-500 mt-1">Detailed breakdown per employee for the selected period.</p>
                 </div>
                 
-                <div className="relative group">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                  <label className="relative block min-w-0 sm:w-64">
+                    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35m1.35-5.65a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" /></svg>
+                    </span>
+                    <input value={recordSearch} onChange={event => setRecordSearch(event.target.value)} placeholder="Search employee..." className="input w-full pl-9 pr-9" />
+                    {recordSearch && <button onClick={() => setRecordSearch('')} className="absolute inset-y-0 right-3 text-gray-400 hover:text-gray-700" aria-label="Clear search">×</button>}
+                  </label>
+                  <div className="relative group">
                   <button className="btn-primary py-1.5 px-3 text-sm flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     Export
@@ -571,6 +594,7 @@ export default function CeoReports() {
                       <button onClick={handleExportPDF} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 border-t border-gray-100 transition-colors">Export as PDF</button>
                     </div>
                   </div>
+                  </div>
                 </div>
 
               </div>
@@ -578,7 +602,7 @@ export default function CeoReports() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3 w-12"><input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" onChange={toggleAll} checked={data?.length > 0 && selectedEmployees.size === data?.length} /></th>
+                      <th className="px-6 py-3 w-12"><input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" onChange={toggleAll} checked={filteredRecords.length > 0 && filteredRecords.every((r: any) => selectedEmployees.has(r.user.id))} /></th>
                       <th className="px-6 py-3">Employee Name</th>
                       <th className="px-6 py-3">Total Days</th>
                       <th className="px-6 py-3">Total Working Days</th>
@@ -590,14 +614,14 @@ export default function CeoReports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {data?.length === 0 ? (
+                    {filteredRecords.length === 0 ? (
                       <tr>
                         <td colSpan={12} className="px-6 py-8 text-center text-sm text-gray-400">
-                          No data available for this period.
+                          {recordSearch ? `No employee found for “${recordSearch}”.` : 'No data available for this period.'}
                         </td>
                       </tr>
                     ) : (
-                      data?.map((r: any) => (
+                      filteredRecords.map((r: any) => (
                         <tr key={r.user.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4"><input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={selectedEmployees.has(r.user.id)} onChange={() => toggleEmployee(r.user.id)} /></td>
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.user.name}</td>
