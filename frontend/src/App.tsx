@@ -21,6 +21,7 @@ import CeoDashboard from './pages/ceo/CeoDashboard';
 import CeoAttendance from './pages/ceo/CeoAttendance';
 import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
+import CeoProjects from './pages/ceo/CeoProjects';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -76,6 +77,7 @@ function App() {
           <Route path="attendance"      element={<CeoAttendance />} />
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees"       element={<CeoEmployees />} />
+          <Route path="projects"        element={<CeoProjects />} />
         </Route>
       </Route>
 

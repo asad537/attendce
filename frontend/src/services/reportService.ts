@@ -20,7 +20,7 @@ export const reportService = {
   getExportUrl(params: Record<string, string>): string {
     const token = localStorage.getItem('auth_token');
     const query = new URLSearchParams({ ...params, token: token || '' }).toString();
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/reports/export?${query}`;
+    return `${import.meta.env.VITE_API_URL || '/api'}/reports/export?${query}`;
   },
 };
 
