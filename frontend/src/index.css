@@ -15,6 +15,15 @@
     min-height: 100%;
   }
 
+  /* Keep high-resolution desktop layouts dense instead of looking browser-zoomed. */
+  @media (min-width: 1536px) {
+    html { font-size: 14px; }
+  }
+
+  @media (min-width: 2200px) {
+    html { font-size: 13px; }
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
