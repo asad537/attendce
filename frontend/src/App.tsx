@@ -15,6 +15,7 @@ import LeaveManagement from './pages/employee/LeaveManagement';
 
 // Manager pages
 import ManagerDashboard from './pages/manager/ManagerDashboard';
+import TeamMembers from './pages/shared/TeamMembers';
 
 // CEO pages
 import CeoDashboard from './pages/ceo/CeoDashboard';
@@ -64,19 +65,21 @@ function App() {
       <Route path="/manager" element={<ProtectedRoute allowedRoles={['manager']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"  element={<ManagerDashboard />} />
-          <Route path="attendance" element={<AttendanceHistory />} />
-          <Route path="leaves"     element={<LeaveManagement />} />
+          <Route path="dashboard"   element={<ManagerDashboard />} />
+          <Route path="attendance"  element={<AttendanceHistory />} />
+          <Route path="leaves"      element={<LeaveManagement />} />
+          <Route path="team"        element={<TeamMembers />} />
         </Route>
       </Route>
 
-      {/* ── Team Lead routes — same pages as manager, scoped by backend ── */}
+      {/* ── Team Lead routes ────────────────────────────────────────────── */}
       <Route path="/tl" element={<ProtectedRoute allowedRoles={['tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard"     element={<ManagerDashboard />} />
           <Route path="attendance"    element={<AttendanceHistory />} />
           <Route path="leaves"        element={<LeaveManagement />} />
+          <Route path="team"          element={<TeamMembers />} />
           <Route path="my-attendance" element={<AttendanceHistory />} />
           <Route path="my-leaves"     element={<LeaveManagement />} />
         </Route>

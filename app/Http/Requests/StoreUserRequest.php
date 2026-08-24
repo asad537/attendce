@@ -10,6 +10,20 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
+        $auth = $this->user();
+
+        // Role options depend on who is creating:
+        // CEO     → employee | tl | manager
+        // Manager → employee | tl
+        // TL      → employee only
+        if ($auth && $auth->isManager()) {
+            $allowedRoles = 'in:employee,tl';
+        } elseif ($auth && $auth->isTl()) {
+            $allowedRoles = 'in:employee';
+        } else {
+            $allowedRoles = 'in:employee,tl,manager';
+        }
+
         return [
             // ── Identity ──────────────────────────────────────────
             'first_name'      => 'required|string|min:2|max:100',
@@ -22,7 +36,7 @@ class StoreUserRequest extends FormRequest
             'phone'           => 'required|string|regex:/^\+?[0-9\s\-\(\)]{7,20}$/',
 
             // ── Role & Employment ─────────────────────────────────
-            'role'            => 'required|in:employee,tl,manager',
+            'role'            => "required|{$allowedRoles}",
             'employment_type' => 'required|in:full_time,part_time,contract,intern',
             'status'          => 'sometimes|in:active,inactive,suspended',
 
@@ -36,7 +50,7 @@ class StoreUserRequest extends FormRequest
             'join_date'       => 'nullable|date',
 
             // ── Optional extras ───────────────────────────────────
-            'address'         => 'nullable|string|max:500',
+            'address'           => 'nullable|string|max:500',
             'emergency_contact' => 'nullable|string|max:100',
         ];
     }
