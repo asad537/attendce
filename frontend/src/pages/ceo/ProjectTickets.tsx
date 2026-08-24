@@ -65,6 +65,7 @@ export default function ProjectTickets() {
         description: "",
         status: "todo",
         priority: "medium",
+        due_date: "",
         assignee_id: "",
     });
     const load = async () => {
@@ -76,6 +77,8 @@ export default function ProjectTickets() {
             ]);
             const fetchedTickets = t.data.tickets;
             setTickets(fetchedTickets);
+            const sharedTicketId = Number(new URLSearchParams(window.location.search).get('ticket'));
+            if (sharedTicketId) setDetail(fetchedTickets.find((ticket: Ticket) => ticket.id === sharedTicketId) || null);
 
             setUsers(
                 u.data.filter((user) =>
@@ -114,6 +117,7 @@ export default function ProjectTickets() {
                 description: "",
                 status: "todo",
                 priority: "medium",
+                due_date: "",
                 assignee_id: "",
             });
             load();
@@ -155,6 +159,14 @@ export default function ProjectTickets() {
         }
     };
 
+    const moveTicket = async (ticketId: number, status: Ticket['status']) => {
+        const ticket = tickets.find(item => item.id === ticketId);
+        if (!ticket || ticket.status === status) return;
+        setTickets(current => current.map(item => item.id === ticketId ? { ...item, status } : item));
+        try { await api.put(`/tickets/${ticketId}`, { status }); toast.success(`Moved to ${cols.find(col => col.key === status)?.name}`); }
+        catch (err) { toast.error(getErrorMessage(err)); load(); }
+    };
+
     const uploadAttachment = async (ticket: Ticket, file: File) => {
         try {
             const data = new FormData();
@@ -164,7 +176,7 @@ export default function ProjectTickets() {
             data.append("priority", ticket.priority || "medium");
             data.append("assignee_id", String(ticket.assignee?.id || ""));
             data.append("attachment", file);
-            await api.put(`/tickets/${ticket.id}`, data, {
+            await api.post(`/tickets/${ticket.id}/attachment`, data, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             toast.success("Attachment uploaded.");
@@ -173,6 +185,15 @@ export default function ProjectTickets() {
         } catch (err) {
             toast.error(getErrorMessage(err));
         }
+    };
+
+    const downloadAttachment = async (ticket: Ticket) => {
+        try {
+            const response = await api.get(`/tickets/${ticket.id}/attachment`, { responseType: 'blob' });
+            const url = URL.createObjectURL(response.data);
+            const link = document.createElement('a'); link.href = url; link.download = ticket.attachment_name || 'attachment'; link.click();
+            URL.revokeObjectURL(url);
+        } catch (err) { toast.error(getErrorMessage(err)); }
     };
 
     const loadSubtasks = async (ticketId: number) => {
@@ -263,6 +284,7 @@ export default function ProjectTickets() {
                             description: "",
                             status: "todo",
                             priority: "medium",
+                            due_date: "",
                             assignee_id: "",
                         });
                         setOpen(true);
@@ -275,6 +297,8 @@ export default function ProjectTickets() {
                 {cols.map((c) => (
                     <div
                         key={c.key}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => moveTicket(Number(event.dataTransfer.getData('ticketId')), c.key)}
                         className="min-h-72 rounded-xl bg-gray-100/50 p-3"
                     >
                         <div className="mb-3 flex justify-between font-semibold text-gray-700">
@@ -294,6 +318,8 @@ export default function ProjectTickets() {
                             .map((t) => (
                                 <div
                                     key={t.id}
+                                    draggable
+                                    onDragStart={(event) => event.dataTransfer.setData('ticketId', String(t.id))}
                                     onClick={() => setDetail(t)}
                                     className="mb-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
                                 >
@@ -314,6 +340,7 @@ export default function ProjectTickets() {
                                                         priority:
                                                             t.priority ||
                                                             "medium",
+                                                        due_date: t.due_date?.slice(0, 10) || "",
                                                         assignee_id:
                                                             t.assignee?.id?.toString() ||
                                                             "",
@@ -429,6 +456,7 @@ export default function ProjectTickets() {
                                     description: "",
                                     status: c.key,
                                     priority: "medium",
+                                    due_date: "",
                                     assignee_id: "",
                                 });
                                 setOpen(true);
@@ -476,6 +504,7 @@ export default function ProjectTickets() {
                             </option>
                         ))}
                     </select>
+                    <label className="label">Due date<input type="date" className="input mt-1" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
                     <div className="flex justify-end gap-2">
                         <button
                             type="button"
@@ -494,6 +523,7 @@ export default function ProjectTickets() {
                 open={!!detail}
                 onClose={() => setDetail(null)}
                 ticketId={detail?.id || 0}
+                onDelete={(id) => { setTickets(current => current.filter(ticket => ticket.id !== id)); setDetail(null); }}
             >
                 {detail && (
                     <div className="flex flex-col md:flex-row gap-8">
@@ -540,7 +570,7 @@ export default function ProjectTickets() {
                                             }}
                                         />
                                     </label>
-                                    {detail.attachment_name && <p className="mt-3 text-[13px] text-blue-400">Attached: {detail.attachment_name}</p>}
+                                    {detail.attachment_name && <button onClick={() => downloadAttachment(detail)} className="mt-3 text-[13px] font-medium text-blue-600 hover:underline">Download: {detail.attachment_name}</button>}
                                 </div>
                             </div>
 
@@ -697,7 +727,7 @@ export default function ProjectTickets() {
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
-                                        <span className="text-[13px] text-gray-800">{detail.due_date?.slice(0, 10) || "None"}</span>
+                                        <input type="date" className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; setDetail({...detail, due_date}); api.put(`/tickets/${detail.id}`, { due_date }); load(); }} />
                                     </div>
                                 </div>
                             </div>

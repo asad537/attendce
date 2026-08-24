@@ -20,15 +20,23 @@ export default function TicketModal({ open, onClose, ticketId, children, onDelet
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (open && ticketId) api.get(`/tickets/${ticketId}/watch`).then(response => setWatching(response.data.watching)).catch(() => setWatching(false));
+  }, [open, ticketId]);
+
   if (!open) return null;
 
-  const handleWatch = () => {
-    setWatching(!watching);
-    toast.success(watching ? 'Stopped watching ticket.' : 'You are now watching this ticket.');
+  const handleWatch = async () => {
+    try {
+      const response = await api.post(`/tickets/${ticketId}/watch`);
+      setWatching(response.data.watching);
+      toast.success(response.data.watching ? 'You are now watching this ticket.' : 'Stopped watching ticket.');
+    } catch { toast.error('Could not update watcher.'); }
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const url = new URL(window.location.href); url.searchParams.set('ticket', String(ticketId));
+    navigator.clipboard.writeText(url.toString());
     toast.success('Ticket link copied to clipboard.');
   };
 
@@ -56,9 +64,9 @@ export default function TicketModal({ open, onClose, ticketId, children, onDelet
           {/* Custom Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-4 text-[13px] text-gray-500 font-medium">
-              <span className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded cursor-pointer transition-colors">
+              <span className="flex items-center gap-1 px-2 py-1 rounded bg-gray-50 text-gray-500">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                Add epic
+                Issue
               </span>
               <span>/</span>
               <span className="flex items-center gap-2 hover:bg-gray-100 px-2 py-1 rounded cursor-pointer transition-colors text-indigo-600">

@@ -78,6 +78,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/projects/{project}/tickets', [ProjectTicketController::class, 'index']);
     Route::post('/projects/{project}/tickets', [ProjectTicketController::class, 'store']);
     Route::put('/tickets/{ticket}', [ProjectTicketController::class, 'update']);
+    Route::delete('/tickets/{ticket}', [ProjectTicketController::class, 'destroy']);
+    Route::post('/tickets/{ticket}/attachment', [ProjectTicketController::class, 'uploadAttachment']);
+    Route::get('/tickets/{ticket}/attachment', [ProjectTicketController::class, 'downloadAttachment']);
+    Route::get('/tickets/{ticket}/watch', [ProjectTicketController::class, 'watchStatus']);
+    Route::post('/tickets/{ticket}/watch', [ProjectTicketController::class, 'toggleWatch']);
     Route::get('/tickets/{ticket}/subtasks', [ProjectTicketController::class, 'subtasks']);
     Route::post('/tickets/{ticket}/subtasks', [ProjectTicketController::class, 'addSubtask']);
     Route::put('/ticket-subtasks/{subtask}', [ProjectTicketController::class, 'updateSubtask']);

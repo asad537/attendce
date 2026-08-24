@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\TicketSubtask;
 use App\Models\TicketActivity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ProjectTicketController extends Controller
 {
@@ -113,4 +115,45 @@ class ProjectTicketController extends Controller
     public function subtasks(Request $request, ProjectTicket $ticket) { $this->authorizeTicket($request,$ticket); return response()->json(['subtasks'=>TicketSubtask::where('ticket_id',$ticket->id)->get()]); }
     public function addSubtask(Request $request, ProjectTicket $ticket) { $this->authorizeTicket($request,$ticket); $data=$request->validate(['title'=>'required|string|max:200']); $data['ticket_id']=$ticket->id; return response()->json(['subtask'=>TicketSubtask::create($data)],201); }
     public function updateSubtask(Request $request, TicketSubtask $subtask) { $ticket=ProjectTicket::findOrFail($subtask->ticket_id); $this->authorizeTicket($request,$ticket); $subtask->update($request->validate(['title'=>'sometimes|string|max:200','is_completed'=>'sometimes|boolean'])); return ['subtask'=>$subtask]; }
+
+    public function uploadAttachment(Request $request, ProjectTicket $ticket)
+    {
+        abort_unless($this->canManageProject($request, $ticket->project), 403);
+        $data = $request->validate(['attachment' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240']);
+        if ($ticket->attachment_path) Storage::disk('local')->delete($ticket->attachment_path);
+        $file = $data['attachment'];
+        $ticket->update(['attachment_name' => $file->getClientOriginalName(), 'attachment_path' => $file->store('ticket-attachments')]);
+        TicketActivity::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'type' => 'attachment_added', 'new_value' => $ticket->attachment_name]);
+        return response()->json(['ticket' => $ticket->fresh('assignee')]);
+    }
+
+    public function downloadAttachment(Request $request, ProjectTicket $ticket)
+    {
+        $this->authorizeTicket($request, $ticket);
+        abort_unless($ticket->attachment_path && Storage::disk('local')->exists($ticket->attachment_path), 404);
+        return Storage::disk('local')->download($ticket->attachment_path, $ticket->attachment_name);
+    }
+
+    public function destroy(Request $request, ProjectTicket $ticket)
+    {
+        abort_unless($this->canManageProject($request, $ticket->project), 403);
+        if ($ticket->attachment_path) Storage::disk('local')->delete($ticket->attachment_path);
+        $ticket->delete();
+        return response()->json(['message' => 'Ticket deleted.']);
+    }
+
+    public function watchStatus(Request $request, ProjectTicket $ticket)
+    {
+        $this->authorizeTicket($request, $ticket);
+        return response()->json(['watching' => DB::table('ticket_watchers')->where(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id])->exists()]);
+    }
+
+    public function toggleWatch(Request $request, ProjectTicket $ticket)
+    {
+        $this->authorizeTicket($request, $ticket);
+        $query = DB::table('ticket_watchers')->where(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id]);
+        if ($query->exists()) { $query->delete(); $watching = false; }
+        else { DB::table('ticket_watchers')->insert(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'created_at' => now(), 'updated_at' => now()]); $watching = true; }
+        return response()->json(['watching' => $watching]);
+    }
 }
