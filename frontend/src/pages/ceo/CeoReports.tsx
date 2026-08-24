@@ -254,21 +254,21 @@ export default function CeoReports() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-full bg-gray-50 pb-6 sm:pb-8">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+        <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Company Reports</h1>
             <p className="text-sm text-gray-500">Company performance over the selected period.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             {/* View Tabs */}
-            <div className="flex items-center bg-gray-100 p-1 rounded-lg">
+            <div className="grid grid-cols-2 bg-gray-100 p-1 rounded-lg sm:flex">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTab === 'overview' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -276,7 +276,7 @@ export default function CeoReports() {
               </button>
               <button
                 onClick={() => setActiveTab('records')}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTab === 'records' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -285,12 +285,12 @@ export default function CeoReports() {
             </div>
 
             {/* Date Filters */}
-            <div className="flex items-center bg-gray-100 p-1 rounded-lg ml-0 xl:ml-4">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:flex min-w-0 bg-gray-100 p-1 rounded-lg sm:overflow-x-auto 2xl:ml-2">
               {['Today', '7 days', '30 days', 'This Month', 'Custom'].map(filter => (
                 <button
                   key={filter}
                   onClick={() => setFilter(filter)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  className={`whitespace-nowrap px-3 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
                     activeFilter === filter ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -301,16 +301,16 @@ export default function CeoReports() {
 
             <button 
               onClick={() => refetch()} 
-              className="px-4 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 sm:py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Refresh
             </button>
             
             {showCustomRange && (
-              <div className="flex items-center gap-2 ml-4">
-                <input type="date" className="input py-1 text-sm" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-2 w-full">
+                <input type="date" className="input py-2 sm:py-1 text-sm" value={startDate} onChange={e => setStartDate(e.target.value)} />
                 <span className="text-gray-400">to</span>
-                <input type="date" className="input py-1 text-sm" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
+                <input type="date" className="input py-2 sm:py-1 text-sm" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
               </div>
             )}
           </div>
@@ -320,14 +320,14 @@ export default function CeoReports() {
       {isLoading ? (
         <PageLoader />
       ) : (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="w-full p-4 sm:p-6 space-y-5 sm:space-y-6">
           
           {activeTab === 'overview' && (
             <>
               {/* ── Stat Cards ────────────────────────────────────────── */}
               <div>
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Overview</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                   {/* Total Days */}
                   <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                     <div className="flex justify-between items-start mb-2">
@@ -432,9 +432,9 @@ export default function CeoReports() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Bar Chart */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-2">
+                  <div className="min-w-0 bg-white p-4 sm:p-6 rounded-xl border border-gray-100 shadow-sm lg:col-span-2">
                     <h3 className="text-sm font-semibold text-gray-900 mb-6">Attendance Distribution (Top 10 Employees)</h3>
-                    <div className="h-72">
+                    <div className="h-64 sm:h-72 min-w-0">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
@@ -451,7 +451,7 @@ export default function CeoReports() {
                   </div>
 
                   {/* Pie Chart */}
-                  <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+                  <div className="min-w-0 bg-white p-4 sm:p-6 rounded-xl border border-gray-100 shadow-sm">
                     <h3 className="text-sm font-semibold text-gray-900 mb-6">Company Outcomes</h3>
                     <div className="h-56 relative flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
@@ -499,7 +499,7 @@ export default function CeoReports() {
 
           {activeTab === 'records' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">Employee Records</h3>
                   <p className="text-xs text-gray-500 mt-1">Detailed breakdown per employee for the selected period.</p>

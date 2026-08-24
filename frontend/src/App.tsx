@@ -121,7 +121,7 @@ function App() {
 
       <Route path="/projects" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
         <Route element={<DashboardLayout />}>
-          <Route index element={<CeoProjects />} />
+          <Route index element={<div className="p-4 sm:p-6"><CeoProjects /></div>} />
           <Route path=":projectId" element={<ProjectTickets />} />
         </Route>
       </Route>

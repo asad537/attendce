@@ -9,9 +9,9 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex min-h-screen h-dvh bg-gray-50 overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-64 flex-shrink-0">
+      <aside className="hidden lg:flex lg:flex-col w-60 xl:w-64 flex-shrink-0">
         <Sidebar />
       </aside>
 
@@ -19,7 +19,7 @@ export default function DashboardLayout() {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-gray-900/50" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative w-64 h-full">
+          <aside className="relative w-[min(18rem,86vw)] h-full">
             <Sidebar onClose={() => setSidebarOpen(false)} />
           </aside>
         </div>
@@ -28,7 +28,7 @@ export default function DashboardLayout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex items-center justify-between h-14 px-4 lg:px-6 bg-white border-b border-gray-100 flex-shrink-0">
+        <header className="flex items-center justify-between h-14 px-3 sm:px-4 lg:px-6 bg-white border-b border-gray-100 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
@@ -55,7 +55,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gray-50">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-gray-50">
           <Outlet />
         </main>
       </div>

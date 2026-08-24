@@ -242,7 +242,7 @@ export default function ProjectTickets() {
 
 
     return (
-        <div className="space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
             <div className="card flex items-center justify-between">
                 <div>
                     <p className="text-xs font-semibold text-indigo-600">

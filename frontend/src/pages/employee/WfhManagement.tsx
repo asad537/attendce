@@ -117,7 +117,7 @@ export default function WfhManagement() {
 
       <Modal open={showModal} onClose={() => setModal(false)} title="Request Work From Home" size="lg">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Start Date</label>
               <input type="date" className="input" value={form.start_date} min={format(new Date(), 'yyyy-MM-dd')}

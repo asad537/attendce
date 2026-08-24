@@ -50,7 +50,7 @@ export default function MyTickets() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="w-full py-4 px-4 sm:py-6 sm:px-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">My Tickets</h1>
                 <p className="text-sm text-gray-500 mt-1">All tickets assigned to you across all projects</p>
