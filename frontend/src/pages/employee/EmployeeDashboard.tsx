@@ -158,27 +158,37 @@ export default function EmployeeDashboard() {
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-lg font-bold text-gray-900">Workday Timeline</h2>
         <p className="mt-1 text-sm text-gray-500">Work hours: {format(workday.shiftStart, 'hh:mm a')} – {format(workday.shiftEnd, 'hh:mm a')}</p>
-        <div className="mt-7 w-full px-2 pt-8 sm:px-3">
-          <div className="relative h-28">
-              {workday.ticks.map((tick, index) => {
-                const position = ((tick.getTime() - workday.shiftStart.getTime()) / (workday.shiftEnd.getTime() - workday.shiftStart.getTime())) * 100;
-                const edgeClass = index === 0 ? '' : index === workday.ticks.length - 1 ? '-translate-x-full' : '-translate-x-1/2';
-                const middleTick = Math.floor((workday.ticks.length - 1) / 2);
-                const mobileVisibility = index > 0 && index < workday.ticks.length - 1 && index !== middleTick ? 'hidden sm:block' : '';
-                return <div key={tick.toISOString()} className="absolute top-1 h-7 border-l border-gray-200" style={{ left: `${position}%` }}><span className={`absolute -top-7 whitespace-nowrap text-[10px] font-semibold ${index === 0 ? 'text-green-600' : 'text-gray-600'} sm:text-xs ${edgeClass} ${mobileVisibility}`}>{format(tick, 'hh:mm a')}</span>{index === 0 && <span className="absolute top-8 whitespace-nowrap text-[10px] font-medium text-green-600">Start</span>}{index === workday.ticks.length - 1 && <span className="absolute top-8 -translate-x-full whitespace-nowrap text-[10px] font-medium text-gray-500">End</span>}</div>;
-              })}
-              <div className="absolute left-0 right-0 top-7 border-t-2 border-dashed border-gray-300" />
-              <div className="absolute left-0 top-7 h-0.5 bg-green-600 transition-[width] duration-500" style={{ width: `${workday.progress}%` }} />
-              <span className="absolute left-0 top-[23px] h-3 w-3 -translate-x-1/2 rounded-full bg-green-600" />
-              <span className="absolute right-0 top-[23px] h-3 w-3 translate-x-1/2 rounded-full bg-gray-400" />
-              {(checkedIn || checkedOut) && <>
-                <span className="absolute top-[19px] z-10 h-5 w-5 -translate-x-1/2 rounded-full border-[3px] border-white bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,.2)]" style={{ left: `${workday.progress}%` }} />
-                <div className={`absolute top-12 z-10 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-center shadow-md ${workday.progress > 88 ? '-translate-x-full' : workday.progress < 12 ? '' : '-translate-x-1/2'}`} style={{ left: `${workday.progress}%` }}><p className="text-xs font-bold text-green-700 sm:text-sm">{clock(attendance?.check_out || now.toISOString())}</p><p className="text-[10px] text-gray-500 sm:text-xs">{checkedIn ? 'Current Time' : 'Check Out'}</p></div>
-              </>}
+        <div className="mt-7 w-full px-3 sm:px-4">
+          <div className="relative" style={{ height: 128 }}>
+            {workday.ticks.map((tick, index) => {
+              const position = ((tick.getTime() - workday.shiftStart.getTime()) / (workday.shiftEnd.getTime() - workday.shiftStart.getTime())) * 100;
+              const edgeClass = index === 0 ? '' : index === workday.ticks.length - 1 ? '-translate-x-full' : '-translate-x-1/2';
+              const middleTick = Math.floor((workday.ticks.length - 1) / 2);
+              const mobileVisibility = index > 0 && index < workday.ticks.length - 1 && index !== middleTick ? 'hidden sm:block' : '';
+              return <div key={tick.toISOString()} className="absolute top-0" style={{ left: `${position}%` }}>
+                <span className={`absolute whitespace-nowrap text-[10px] font-semibold text-gray-600 sm:text-xs ${edgeClass} ${mobileVisibility}`}>{format(tick, 'hh:mm a')}</span>
+                <span className="absolute top-7 h-3 border-l border-gray-300" />
+              </div>;
+            })}
+
+            <div className="absolute left-0 right-0 top-10" style={{ height: 3 }}>
+              <div className="absolute inset-0" style={{ borderTop: '2px dashed #cbd5e1' }} />
+              <div className="absolute left-0 top-0 rounded-full" style={{ width: `${workday.progress}%`, height: 3, backgroundColor: '#16a34a' }} />
+            </div>
+            <span className="absolute left-0 h-4 w-4 -translate-x-1/2 rounded-full shadow-sm" style={{ top: 34, backgroundColor: '#16a34a', border: '2px solid white' }} />
+            <span className="absolute right-0 h-4 w-4 translate-x-1/2 rounded-full shadow-sm" style={{ top: 34, backgroundColor: '#9ca3af', border: '2px solid white' }} />
+
+            {(checkedIn || checkedOut) && <>
+              <span className="absolute z-10 h-5 w-5 -translate-x-1/2 rounded-full" style={{ left: `${workday.progress}%`, top: 31, backgroundColor: '#22c55e', border: '3px solid white', boxShadow: '0 0 0 4px rgba(34,197,94,.2)' }} />
+              <div className={`absolute z-10 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-center shadow-md ${workday.progress > 88 ? '-translate-x-full' : workday.progress < 12 ? '' : '-translate-x-1/2'}`} style={{ left: `${workday.progress}%`, top: 64 }}>
+                <p className="text-xs font-bold text-green-700 sm:text-sm">{clock(attendance?.check_out || now.toISOString())}</p>
+                <p className="text-[10px] text-gray-500 sm:text-xs">{checkedIn ? 'Current Time' : 'Check Out'}</p>
+              </div>
+            </>}
           </div>
           <div className="flex justify-center gap-6 text-xs text-gray-600 sm:gap-10 sm:text-sm">
-            <span className="flex items-center gap-2"><span className="h-0.5 w-8 bg-green-600" />Worked Time</span>
-            <span className="flex items-center gap-2"><span className="w-8 border-t-2 border-dashed border-gray-400" />Remaining Time</span>
+            <span className="flex items-center gap-2"><span className="w-8" style={{ height: 2, backgroundColor: '#16a34a' }} />Worked Time</span>
+            <span className="flex items-center gap-2"><span className="w-8" style={{ borderTop: '2px dashed #9ca3af' }} />Remaining Time</span>
           </div>
         </div>
       </section>
