@@ -52,9 +52,13 @@ class User extends Authenticatable
     ];
 
     // ─── Role Helpers ─────────────────────────────────────────────
-    public function isCeo(): bool    { return $this->role === 'ceo'; }
-    public function isManager(): bool { return $this->role === 'manager'; }
+    public function isCeo(): bool      { return $this->role === 'ceo'; }
+    public function isManager(): bool  { return $this->role === 'manager'; }
+    public function isTl(): bool       { return $this->role === 'tl'; }
     public function isEmployee(): bool { return $this->role === 'employee'; }
+
+    /** True for anyone who leads a team (manager or TL) */
+    public function isTeamLead(): bool { return in_array($this->role, ['manager', 'tl']); }
 
     // ─── Relationships ─────────────────────────────────────────────
     public function department()

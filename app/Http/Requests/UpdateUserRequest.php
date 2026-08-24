@@ -30,7 +30,7 @@ class UpdateUserRequest extends FormRequest
             'new_password'     => 'sometimes|nullable|string|min:8|confirmed',
 
             // ── Role & Employment ─────────────────────────────────
-            'role'            => 'sometimes|in:employee,manager',
+            'role'            => 'sometimes|in:employee,tl,manager',
             'employment_type' => 'sometimes|in:full_time,part_time,contract,intern',
             'status'          => 'sometimes|in:active,inactive,suspended',
 
@@ -60,7 +60,7 @@ class UpdateUserRequest extends FormRequest
             'email.email'            => 'Please provide a valid email address.',
             'email.unique'           => 'This email address is already taken.',
             'phone.regex'            => 'Phone number format is invalid.',
-            'role.in'                => 'Role must be employee or manager.',
+            'role.in'                => 'Role must be employee, team lead, or manager.',
             'new_password.min'       => 'Password must be at least 8 characters.',
             'new_password.confirmed' => 'Password confirmation does not match.',
             'current_password.required_with' => 'Current password is required to set a new password.',

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { userService, departmentService, shiftService, designationService } from '../../services/userService';
-import { CreateEmployeePayload, Department, Designation, EmploymentType, PaginatedResponse, Shift, User } from '../../types';
+import { userService, departmentService, designationService } from '../../services/userService';
+import { CreateEmployeePayload, Department, Designation, PaginatedResponse, User } from '../../types';
 import Modal from '../../components/common/Modal';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -20,7 +20,7 @@ const emptyForm = (): CreateEmployeePayload => ({
   employment_type: 'full_time',
   department_id: 0,
   designation_id: 0,
-  shift_id: null,
+  shift_id: null,   // kept in payload for backend compat, not shown in UI
   manager_id: null,
   join_date: '',
   address: '',
@@ -41,8 +41,7 @@ export default function CeoEmployees() {
   const [data, setData]           = useState<PaginatedResponse<User> | null>(null);
   const [departments, setDepts]   = useState<Department[]>([]);
   const [designations, setDesigs] = useState<Designation[]>([]);
-  const [shifts, setShifts]       = useState<Shift[]>([]);
-  const [managers, setManagers]   = useState<User[]>([]);
+  const [allLeads, setAllLeads]   = useState<User[]>([]); // all managers + TLs for reporting dropdown
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState('');
   const [filterDept, setFilterDept] = useState('');
@@ -68,19 +67,19 @@ export default function CeoEmployees() {
       if (filterDept) params.department_id = filterDept;
       if (filterRole) params.role = filterRole;
 
-      const [usersRes, deptsRes, shifsRes, desigRes] = await Promise.all([
+      // Also fetch full list (no filters) to populate reporting leads dropdown
+      const [usersRes, deptsRes, desigRes, allUsersRes] = await Promise.all([
         userService.getList(params),
         departmentService.getAll(),
-        shiftService.getAll(),
         designationService.getAll(),
+        userService.getList({ per_page: 200 }), // all users for leads dropdown
       ]);
 
       setData(usersRes);
       setDepts(deptsRes);
-      setShifts(shifsRes);
       setDesigs(desigRes);
-      // managers = all users with role manager
-      setManagers(usersRes.data.filter(u => u.role === 'manager'));
+      // All managers + TLs can be reporting leads
+      setAllLeads(allUsersRes.data.filter(u => u.role === 'manager' || u.role === 'tl'));
     } catch {
       toast.error('Failed to load employees');
     } finally {
@@ -200,11 +199,11 @@ export default function CeoEmployees() {
       birth_date:      u.birth_date || '',
       email:           u.email,
       phone:           u.phone || '',
-      role:            u.role === 'ceo' ? 'manager' : u.role as 'employee' | 'manager',
+      role:            (['employee', 'tl', 'manager'].includes(u.role) ? u.role : 'employee') as 'employee' | 'tl' | 'manager',
       employment_type: u.employment_type,
       department_id:   u.department?.id || 0,
       designation_id:  u.designation?.id || 0,
-      shift_id:        u.shift?.id || null,
+      shift_id:        null, // not managed from this form
       manager_id:      u.manager?.id || null,
       join_date:       u.join_date || '',
       address:         u.address || '',
@@ -226,8 +225,16 @@ export default function CeoEmployees() {
 
   const roleColors: Record<string, string> = {
     employee: 'bg-emerald-100 text-emerald-700',
+    tl:       'bg-cyan-100 text-cyan-700',
     manager:  'bg-blue-100 text-blue-700',
     ceo:      'bg-purple-100 text-purple-700',
+  };
+
+  const roleLabel: Record<string, string> = {
+    employee: 'Employee',
+    tl:       'Team Lead',
+    manager:  'Manager',
+    ceo:      'CEO',
   };
 
   return (
@@ -236,11 +243,29 @@ export default function CeoEmployees() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Employees</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your workforce</p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage your workforce — add managers, team leads and employees</p>
         </div>
-        <button onClick={() => { setForm(emptyForm()); setErrors({}); setAddOpen(true); }} className="btn-primary shrink-0">
-          + Add Employee
-        </button>
+        {/* Three quick-add buttons — one form, role pre-selected */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => { setForm({ ...emptyForm(), role: 'manager' }); setErrors({}); setAddOpen(true); }}
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          >
+            + Manager
+          </button>
+          <button
+            onClick={() => { setForm({ ...emptyForm(), role: 'tl' }); setErrors({}); setAddOpen(true); }}
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700 transition-colors"
+          >
+            + Team Lead
+          </button>
+          <button
+            onClick={() => { setForm({ ...emptyForm(), role: 'employee' }); setErrors({}); setAddOpen(true); }}
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+          >
+            + Employee
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -259,6 +284,7 @@ export default function CeoEmployees() {
         <select className="input w-36" value={filterRole} onChange={e => setFilterRole(e.target.value)}>
           <option value="">All Roles</option>
           <option value="employee">Employee</option>
+          <option value="tl">Team Lead (TL)</option>
           <option value="manager">Manager</option>
         </select>
       </div>
@@ -298,7 +324,7 @@ export default function CeoEmployees() {
                     </td>
                     <td>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${roleColors[u.role] || ''}`}>
-                        {u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+                        {roleLabel[u.role] || u.role}
                       </span>
                     </td>
                     <td className="text-gray-600 text-sm">{u.department?.name || '—'}</td>
@@ -357,14 +383,22 @@ export default function CeoEmployees() {
       )}
 
       {/* ── Add Employee Modal ───────────────────────────────────────────────── */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add New Employee" size="xl">
+      <Modal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        title={
+          form.role === 'manager' ? 'Add New Manager' :
+          form.role === 'tl'      ? 'Add New Team Lead' :
+                                    'Add New Employee'
+        }
+        size="xl"
+      >
         <EmployeeForm
           form={form}
           errors={errors}
           departments={departments}
           filteredDesigs={filteredDesigs}
-          shifts={shifts}
-          managers={managers}
+          allLeads={allLeads}
           submitting={submitting}
           onField={F}
           onDeptChange={e => {
@@ -384,8 +418,7 @@ export default function CeoEmployees() {
           errors={errors}
           departments={departments}
           filteredDesigs={filteredDesigs}
-          shifts={shifts}
-          managers={managers.filter(m => m.id !== editUser?.id)}
+          allLeads={allLeads.filter(m => m.id !== editUser?.id)}
           submitting={submitting}
           onField={F}
           onDeptChange={e => {
@@ -450,8 +483,7 @@ interface EmployeeFormProps {
   errors: Record<string, string>;
   departments: Department[];
   filteredDesigs: Designation[];
-  shifts: Shift[];
-  managers: User[];
+  allLeads: User[];       // all managers + TLs
   submitting: boolean;
   onField: (f: keyof CreateEmployeePayload) => (e: React.ChangeEvent<any>) => void;
   onDeptChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -460,12 +492,35 @@ interface EmployeeFormProps {
   mode: 'create' | 'edit';
 }
 
-function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, managers, submitting, onField, onDeptChange, onSubmit, onCancel, mode }: EmployeeFormProps) {
+function EmployeeForm({ form, errors, departments, filteredDesigs, allLeads, submitting, onField, onDeptChange, onSubmit, onCancel, mode }: EmployeeFormProps) {
   const Err = ({ field }: { field: string }) => errors[field]
     ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null;
 
+  /**
+   * Smart filtering for the reporting lead dropdown:
+   * - Manager   → no reporting lead needed (they report to CEO directly)
+   * - Team Lead → show only Managers
+   * - Employee  → show TLs first, then Managers as fallback
+   */
+  const reportingLeads = (() => {
+    if (form.role === 'manager') return [];
+    if (form.role === 'tl') return allLeads.filter(u => u.role === 'manager');
+    // employee / intern — show TLs first, then managers
+    const tls  = allLeads.filter(u => u.role === 'tl');
+    const mgrs = allLeads.filter(u => u.role === 'manager');
+    return [...tls, ...mgrs];
+  })();
+
+  const reportingLabel = form.role === 'tl' ? 'Reporting Manager' : 'Reporting Team Lead (TL)';
+  const reportingPlaceholder = form.role === 'manager'
+    ? 'Reports directly to CEO'
+    : form.role === 'tl'
+    ? 'Select manager…'
+    : 'Select team lead…';
+
   return (
     <form onSubmit={onSubmit} className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+
       {/* ── Personal Info ── */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Personal Information</p>
@@ -514,7 +569,9 @@ function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, manag
         </div>
         {mode === 'create' && (
           <p className="text-xs text-gray-400 mt-2 flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             A temporary login password will be auto-generated and shown after saving.
           </p>
         )}
@@ -528,6 +585,7 @@ function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, manag
             <label className="label">Role <span className="text-red-500">*</span></label>
             <select className={`input ${errors.role ? 'border-red-400' : ''}`} value={form.role} onChange={onField('role')}>
               <option value="employee">Employee</option>
+              <option value="tl">Team Lead (TL)</option>
               <option value="manager">Manager</option>
             </select>
             <Err field="role" />
@@ -559,10 +617,11 @@ function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, manag
         </div>
       </div>
 
-      {/* ── Org Placement ── */}
+      {/* ── Organisation ── */}
       <div>
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Organisation</p>
         <div className="grid grid-cols-2 gap-4">
+          {/* Department */}
           <div>
             <label className="label">Department <span className="text-red-500">*</span></label>
             <select className={`input ${errors.department_id ? 'border-red-400' : ''}`} value={form.department_id || ''} onChange={onDeptChange}>
@@ -571,27 +630,53 @@ function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, manag
             </select>
             <Err field="department_id" />
           </div>
+
+          {/* Designation — filtered by dept */}
           <div>
             <label className="label">Designation (Position) <span className="text-red-500">*</span></label>
-            <select className={`input ${errors.designation_id ? 'border-red-400' : ''}`} value={form.designation_id || ''} onChange={e => onField('designation_id')({ target: { value: e.target.value } } as any)}>
-              <option value="">Select designation…</option>
+            <select
+              className={`input ${errors.designation_id ? 'border-red-400' : ''}`}
+              value={form.designation_id || ''}
+              onChange={e => onField('designation_id')({ target: { value: e.target.value } } as any)}
+              disabled={!form.department_id}
+            >
+              <option value="">{form.department_id ? 'Select designation…' : 'Select department first…'}</option>
               {filteredDesigs.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
             </select>
             <Err field="designation_id" />
           </div>
-          <div>
-            <label className="label">Shift</label>
-            <select className="input" value={form.shift_id || ''} onChange={e => onField('shift_id')({ target: { value: e.target.value } } as any)}>
-              <option value="">No shift assigned</option>
-              {shifts.map(s => <option key={s.id} value={s.id}>{s.name} ({s.start_time}–{s.end_time})</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Reporting Manager</label>
-            <select className="input" value={form.manager_id || ''} onChange={e => onField('manager_id')({ target: { value: e.target.value } } as any)}>
-              <option value="">No manager assigned</option>
-              {managers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
+
+          {/* Reporting lead — smart based on role */}
+          <div className="col-span-2">
+            <label className="label">{reportingLabel}</label>
+            {form.role === 'manager' ? (
+              <div className="input bg-gray-50 text-gray-400 cursor-not-allowed flex items-center gap-2">
+                <svg className="w-4 h-4 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Reports directly to CEO
+              </div>
+            ) : (
+              <select
+                className="input"
+                value={form.manager_id || ''}
+                onChange={e => onField('manager_id')({ target: { value: e.target.value } } as any)}
+              >
+                <option value="">{reportingPlaceholder}</option>
+                {reportingLeads.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                    {' '}
+                    <span>({m.role === 'tl' ? 'Team Lead' : 'Manager'} · {m.department?.name || 'No dept'})</span>
+                  </option>
+                ))}
+              </select>
+            )}
+            {form.role !== 'manager' && reportingLeads.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                No {form.role === 'tl' ? 'managers' : 'team leads'} found yet. Add one first or assign later.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -614,7 +699,13 @@ function EmployeeForm({ form, errors, departments, filteredDesigs, shifts, manag
       <div className="flex gap-3 pt-2 border-t border-gray-100">
         <button type="button" onClick={onCancel} className="btn-secondary flex-1">Cancel</button>
         <button type="submit" className="btn-primary flex-1" disabled={submitting}>
-          {submitting ? (mode === 'create' ? 'Adding…' : 'Saving…') : (mode === 'create' ? 'Add Employee' : 'Save Changes')}
+          {submitting ? (mode === 'create' ? 'Adding…' : 'Saving…') : (
+            mode === 'create'
+              ? form.role === 'manager' ? 'Add Manager'
+              : form.role === 'tl'      ? 'Add Team Lead'
+              :                           'Add Employee'
+              : 'Save Changes'
+          )}
         </button>
       </div>
     </form>

@@ -28,7 +28,7 @@ class LeaveController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isManager()) {
+        } elseif ($user->isManager() || $user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -145,7 +145,7 @@ class LeaveController extends Controller
         $year    = (int) $request->get('year', date('Y'));
         $userId  = $request->get('user_id', $user->id);
 
-        // Employees can only see own balances
+        // Employees (and TLs/managers checking own) can only see own balances
         if ($user->isEmployee()) $userId = $user->id;
 
         $balances = LeaveBalance::with('leaveType')
@@ -172,7 +172,7 @@ class LeaveController extends Controller
 
         $query = Leave::where('status', 'pending');
 
-        if ($user->isManager()) {
+        if ($user->isManager() || $user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id');
             $query->whereIn('user_id', $teamIds);
         } else {

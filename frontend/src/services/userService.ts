@@ -85,4 +85,18 @@ export const designationService = {
     const res = await api.get('/designations');
     return res.data.designations || [];
   },
+
+  async create(data: Record<string, unknown>): Promise<Designation> {
+    const res = await api.post('/designations', data);
+    return res.data.designation;
+  },
+
+  async update(id: number, data: Record<string, unknown>): Promise<Designation> {
+    const res = await api.put(`/designations/${id}`, data);
+    return res.data.designation;
+  },
+
+  async delete(id: number): Promise<void> {
+    await api.delete(`/designations/${id}`);
+  },
 };

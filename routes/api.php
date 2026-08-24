@@ -5,6 +5,7 @@ use App\Http\Controllers\API\AuditLogController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BreakController;
 use App\Http\Controllers\API\DepartmentController;
+use App\Http\Controllers\API\DesignationController;
 use App\Http\Controllers\API\HolidayController;
 use App\Http\Controllers\API\LeaveController;
 use App\Http\Controllers\API\NotificationController;
@@ -65,6 +66,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/departments/{department}',   [DepartmentController::class, 'show']);
     Route::put('/departments/{department}',   [DepartmentController::class, 'update']);
     Route::delete('/departments/{department}',[DepartmentController::class, 'destroy']);
+
+    // Designations
+    Route::get('/designations',                   [DesignationController::class, 'index']);
+    Route::post('/designations',                  [DesignationController::class, 'store']);
+    Route::put('/designations/{designation}',     [DesignationController::class, 'update']);
+    Route::delete('/designations/{designation}',  [DesignationController::class, 'destroy']);
 
     // Shifts
     Route::get('/shifts',           [ShiftController::class, 'index']);

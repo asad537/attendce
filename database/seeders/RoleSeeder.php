@@ -32,12 +32,22 @@ class RoleSeeder extends Seeder
         }
 
         $employee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
+        $tl       = Role::firstOrCreate(['name' => 'tl',       'guard_name' => 'web']);
         $manager  = Role::firstOrCreate(['name' => 'manager',  'guard_name' => 'web']);
         $ceo      = Role::firstOrCreate(['name' => 'ceo',      'guard_name' => 'web']);
 
         $employee->syncPermissions([
             'view_own_attendance', 'request_leave', 'view_own_leaves',
             'view_own_profile', 'view_own_reports',
+        ]);
+
+        // TL: same as manager — leads their direct-report team
+        $tl->syncPermissions([
+            'view_own_attendance', 'view_team_attendance',
+            'request_leave', 'manager_review_leave',
+            'view_own_leaves', 'view_team_leaves',
+            'view_own_profile', 'view_team_members',
+            'view_own_reports', 'view_team_reports',
         ]);
 
         $manager->syncPermissions([
