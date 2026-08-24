@@ -339,15 +339,18 @@ export default function EmployeeDashboard() {
           </div>
 
           {/* Legend */}
-          <div className="mt-2 flex flex-wrap justify-center gap-x-8 gap-y-2 text-xs text-gray-600 sm:text-sm">
-            <span className="flex items-center gap-2">
+          <div
+            className="mt-2 text-xs text-gray-600 sm:text-sm"
+            style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', columnGap: 40, rowGap: 8 }}
+          >
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-block', width: 32, height: 3, background: '#16a34a', borderRadius: 9999 }} />
-              Worked Time
-            </span>
-            <span className="flex items-center gap-2">
+              <span>Worked Time</span>
+            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <span style={{ display: 'inline-block', width: 32, borderTop: '2px dashed #9ca3af' }} />
-              Remaining Time
-            </span>
+              <span>Remaining Time</span>
+            </div>
           </div>
         </div>
       </section>
