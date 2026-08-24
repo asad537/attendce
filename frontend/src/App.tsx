@@ -24,6 +24,7 @@ import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
 import CeoProjects from './pages/ceo/CeoProjects';
+import ProjectTickets from './pages/ceo/ProjectTickets';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -101,7 +102,7 @@ function App() {
       <Route path="/projects" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<CeoProjects />} />
-          <Route path=":projectId" element={<CeoProjects />} />
+          <Route path=":projectId" element={<ProjectTickets />} />
         </Route>
       </Route>
 

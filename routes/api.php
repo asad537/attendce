@@ -10,6 +10,7 @@ use App\Http\Controllers\API\HolidayController;
 use App\Http\Controllers\API\LeaveController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\ProjectController;
+use App\Http\Controllers\API\ProjectTicketController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\ShiftController;
 use App\Http\Controllers\API\UserController;
@@ -65,6 +66,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
+    Route::get('/projects/{project}/tickets', [ProjectTicketController::class, 'index']);
+    Route::post('/projects/{project}/tickets', [ProjectTicketController::class, 'store']);
+    Route::put('/tickets/{ticket}', [ProjectTicketController::class, 'update']);
+    Route::get('/tickets/{ticket}/subtasks', [ProjectTicketController::class, 'subtasks']);
+    Route::post('/tickets/{ticket}/subtasks', [ProjectTicketController::class, 'addSubtask']);
+    Route::put('/ticket-subtasks/{subtask}', [ProjectTicketController::class, 'updateSubtask']);
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);
