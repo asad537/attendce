@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext';
 import React, { useEffect, useState } from 'react';
 import { leaveService } from '../../services/leaveService';
 import api from '../../services/api';
@@ -31,7 +32,7 @@ export default function LeaveManagement() {
     setLoading(true);
     try {
       const [leaveRes, balRes, typesRes] = await Promise.all([
-        leaveService.getList({ per_page: 20 }),
+        leaveService.getList({ per_page: 20, user_id: user?.id }),
         leaveService.getBalances(),
         api.get('/leave-types').catch(() => ({ data: { leave_types: [] } })),
       ]);

@@ -1,3 +1,4 @@
+import { useAuth } from '../../contexts/AuthContext';
 import React, { useEffect, useState } from 'react';
 import { wfhService } from '../../services/wfhService';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -25,7 +26,7 @@ export default function WfhManagement() {
   const load = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await wfhService.getList({ page, per_page: 20 });
+      const res = await wfhService.getList({ page, per_page: 20, user_id: user?.id });
       setData(res);
     } catch {
       toast.error('Failed to load WFM requests');

@@ -51,7 +51,7 @@ export default function CeoReports() {
     queryKey: ['company-reports', startDate, endDate],
     queryFn: async () => {
       const res = await reportService.getAttendanceSummary({ start_date: startDate, end_date: endDate });
-      return (res as any).company || [];
+      return (res as any).company || (res as any).team || [];
     },
   });
       

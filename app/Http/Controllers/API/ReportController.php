@@ -36,7 +36,7 @@ class ReportController extends Controller
             return response()->json($this->service->userAttendanceSummary($auth, $start, $end));
         }
 
-        if ($auth->isTl()) {
+        if ($auth->isTeamLead()) {
             return response()->json(['team' => $this->service->teamAttendanceSummary($auth, $start, $end)]);
         }
 
