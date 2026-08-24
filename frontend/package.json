@@ -13,6 +13,8 @@
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.19.0",
     "date-fns": "^4.4.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "laravel-echo": "^2.4.0",
     "pusher-js": "^8.6.0",
     "react": "^19.2.8",

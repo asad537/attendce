@@ -29,7 +29,7 @@ export default function EmployeeDashboard() {
       ]);
       setAttendance(todayRes.attendance);
       setStatus(todayRes.current_status);
-      setBalances(balRes.balances);
+      setBalances(balRes.balances.filter(b => !['Annual Leave', 'Paternity Leave', 'Maternity Leave', 'Casual Leave'].includes(b.leave_type?.name || '')));
       setHolidays(holRes);
     } catch {
       toast.error('Failed to load dashboard data');
@@ -156,22 +156,22 @@ export default function EmployeeDashboard() {
         {/* Action buttons */}
         <div className="flex gap-3">
           {!isCheckedIn && !isCheckedOut && (
-            <button onClick={handleCheckIn} disabled={actionLoading} className="btn-success flex-1">
+            <button onClick={handleCheckIn} disabled={actionLoading} className="btn-success btn-sm flex-1">
               {actionLoading ? 'Checking in…' : '✓ Check In'}
             </button>
           )}
           {isCheckedIn && !isOnBreak && (
             <>
-              <button onClick={handleBreakStart} disabled={actionLoading} className="btn-warning flex-1">
+              <button onClick={handleBreakStart} disabled={actionLoading} className="btn-warning btn-sm flex-1">
                 ☕ Start Break
               </button>
-              <button onClick={handleCheckOut} disabled={actionLoading} className="btn-danger flex-1">
+              <button onClick={handleCheckOut} disabled={actionLoading} className="btn-danger btn-sm flex-1">
                 {actionLoading ? 'Checking out…' : '✗ Check Out'}
               </button>
             </>
           )}
           {isOnBreak && (
-            <button onClick={handleBreakEnd} disabled={actionLoading} className="btn-success flex-1">
+            <button onClick={handleBreakEnd} disabled={actionLoading} className="btn-success btn-sm flex-1">
               ▶ End Break
             </button>
           )}
@@ -200,10 +200,9 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Shift" value={user?.shift?.name || 'N/A'} icon="🕐" color="indigo" />
         <StatCard label="Department" value={user?.department?.name || 'N/A'} icon="🏢" color="blue" />
-        <StatCard label="Annual Leave" value={`${user?.annual_leave_balance ?? 0} days`} icon="📅" color="green" />
         <StatCard label="Employee ID" value={user?.employee_id || 'N/A'} icon="🪪" color="purple" />
       </div>
 
@@ -282,16 +281,17 @@ function LiveTimer({ checkIn, breakMins }: { checkIn: string; breakMins: number 
   useEffect(() => {
     const start = new Date(checkIn).getTime();
     const tick = () => {
-      const mins = Math.floor((Date.now() - start) / 60000) - breakMins;
-      setElapsed(Math.max(0, mins));
+      const secs = Math.floor((Date.now() - start) / 1000) - (breakMins * 60);
+      setElapsed(Math.max(0, secs));
     };
     tick();
-    const id = setInterval(tick, 60000);
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [checkIn, breakMins]);
-  const h = Math.floor(elapsed / 60);
-  const m = elapsed % 60;
-  return <span className="text-emerald-600">{h}h {m}m</span>;
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  return <span className="text-emerald-600">{h}h {m}m {s}s</span>;
 }
 
 function getGreeting() {

@@ -105,12 +105,13 @@ export default function CeoDashboard() {
                     <td className="text-gray-500">{emp.department || 'N/A'}</td>
                     <td>
                       <span className={`badge ${
-                        emp.current_status === 'working' ? 'badge-green' :
-                        emp.current_status === 'absent' ? 'badge-red' :
-                        emp.current_status === 'on_leave' ? 'badge-yellow' :
+                        emp.status === 'working' ? 'badge-green' :
+                        emp.status === 'absent' ? 'badge-red' :
+                        emp.status === 'on_leave' ? 'badge-yellow' :
+                        emp.status === 'work_from_home' ? 'badge-purple' :
                         'badge-gray'
                       }`}>
-                        {(emp.current_status || '').replace('_', ' ').toUpperCase()}
+                        {(emp.status || '').replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
                     <td className="text-gray-500">{emp.check_in ? format(new Date(emp.check_in), 'hh:mm a') : '-'}</td>

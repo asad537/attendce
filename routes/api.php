@@ -8,6 +8,7 @@ use App\Http\Controllers\API\DepartmentController;
 use App\Http\Controllers\API\DesignationController;
 use App\Http\Controllers\API\HolidayController;
 use App\Http\Controllers\API\LeaveController;
+use App\Http\Controllers\API\WfhRequestController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\ShiftController;
@@ -80,6 +81,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/shifts/{shift}',   [ShiftController::class, 'update']);
     Route::delete('/shifts/{shift}',[ShiftController::class, 'destroy']);
 
+    // WFH Requests
+    Route::get('/wfh',                       [WfhRequestController::class, 'index']);
+    Route::post('/wfh',                      [WfhRequestController::class, 'store']);
+    Route::get('/wfh/pending-count',         [WfhRequestController::class, 'pendingCount']);
+    Route::post('/wfh/{wfhRequest}/review',  [WfhRequestController::class, 'review']);
+    Route::post('/wfh/{wfhRequest}/cancel',  [WfhRequestController::class, 'cancel']);
     // Holidays
     Route::get('/holidays',              [HolidayController::class, 'index']);
     Route::get('/holidays/upcoming',     [HolidayController::class, 'upcoming']);

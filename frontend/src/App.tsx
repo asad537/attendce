@@ -12,9 +12,12 @@ import LoginPage from './pages/auth/LoginPage';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import AttendanceHistory from './pages/employee/AttendanceHistory';
 import LeaveManagement from './pages/employee/LeaveManagement';
+import WfhManagement from './pages/employee/WfhManagement';
 
 // Manager pages
 import ManagerDashboard from './pages/manager/ManagerDashboard';
+import ManagerLeaveApprovals from './pages/manager/ManagerLeaveApprovals';
+import WfhApprovals from './pages/manager/WfhApprovals';
 import TeamMembers from './pages/shared/TeamMembers';
 
 // CEO pages
@@ -23,6 +26,8 @@ import CeoAttendance from './pages/ceo/CeoAttendance';
 import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
+import CeoReports from './pages/ceo/CeoReports';
+import CeoHolidays from './pages/ceo/CeoHolidays';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -58,6 +63,7 @@ function App() {
           <Route path="dashboard"  element={<EmployeeDashboard />} />
           <Route path="attendance" element={<AttendanceHistory />} />
           <Route path="leaves"     element={<LeaveManagement />} />
+          <Route path="wfh"        element={<WfhManagement />} />
         </Route>
       </Route>
 
@@ -67,8 +73,13 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard"   element={<ManagerDashboard />} />
           <Route path="attendance"  element={<AttendanceHistory />} />
-          <Route path="leaves"      element={<LeaveManagement />} />
+          <Route path="leave-approvals" element={<ManagerLeaveApprovals />} />
+          <Route path="my-leaves" element={<LeaveManagement />} />
           <Route path="team"        element={<TeamMembers />} />
+          <Route path="wfh"         element={<WfhManagement />} />
+          <Route path="wfh-approvals" element={<WfhApprovals />} />
+          <Route path="reports"       element={<CeoReports />} />
+          <Route path="reports"       element={<CeoReports />} />
         </Route>
       </Route>
 
@@ -82,6 +93,8 @@ function App() {
           <Route path="team"          element={<TeamMembers />} />
           <Route path="my-attendance" element={<AttendanceHistory />} />
           <Route path="my-leaves"     element={<LeaveManagement />} />
+          <Route path="wfh"           element={<WfhManagement />} />
+          <Route path="wfh-approvals" element={<WfhApprovals />} />
         </Route>
       </Route>
 
@@ -94,6 +107,9 @@ function App() {
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees"       element={<CeoEmployees />} />
           <Route path="departments"     element={<CeoDepartments />} />
+          <Route path="reports"         element={<CeoReports />} />
+          <Route path="holidays"        element={<CeoHolidays />} />
+          <Route path="wfh-approvals"   element={<WfhApprovals />} />
         </Route>
       </Route>
 
