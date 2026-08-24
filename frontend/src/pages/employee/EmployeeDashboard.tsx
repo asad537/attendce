@@ -115,11 +115,14 @@ export default function EmployeeDashboard() {
   };
 
   const workday = useMemo(() => {
-    const shiftStart = timeOnDate(FALLBACK_START, now);
-    let shiftEnd = timeOnDate(FALLBACK_END, now);
-    if (shiftEnd <= shiftStart) shiftEnd = new Date(shiftEnd.getTime() + 86400000);
     const checkIn = attendance?.check_in ? new Date(attendance.check_in) : null;
     const checkOut = attendance?.check_out ? new Date(attendance.check_out) : null;
+    // Anchor the shift day to the attendance record so a stale/previous-day
+    // check-in still positions the marker correctly on today's timeline.
+    const baseDay = checkIn || checkOut || now;
+    const shiftStart = timeOnDate(FALLBACK_START, baseDay);
+    let shiftEnd = timeOnDate(FALLBACK_END, baseDay);
+    if (shiftEnd <= shiftStart) shiftEnd = new Date(shiftEnd.getTime() + 86400000);
     const stopAt = checkOut || now;
     const breakSeconds = (attendance?.break_minutes || 0) * 60
       + (activeBreak ? Math.max(0, (now.getTime() - new Date(activeBreak.break_start).getTime()) / 1000) : 0);
