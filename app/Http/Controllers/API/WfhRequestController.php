@@ -23,6 +23,10 @@ class WfhRequestController extends Controller
             $query->whereIn('user_id', $teamIds);
         }
         
+        if ($request->filled('user_id') && !$user->isEmployee()) {
+            $query->where('user_id', $request->user_id);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }

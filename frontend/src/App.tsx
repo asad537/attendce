@@ -81,6 +81,7 @@ function App() {
           <Route path="wfh" element={<WfhManagement />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
           <Route path="reports" element={<CeoReports />} />
+          <Route path="reports" element={<CeoReports />} />
         </Route>
       </Route>
 
