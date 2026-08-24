@@ -223,7 +223,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                 {projects.map((p) => (
                   <Link
                     key={p.id}
-                    to="/projects"
+                    to={`/projects/${p.id}`}
                     onClick={onClose}
                     className="block px-3 py-2 text-xs font-medium text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors truncate"
                   >

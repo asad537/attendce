@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import Modal from '../../components/common/Modal';
@@ -13,6 +14,7 @@ const statusStyle: Record<ProjectStatus, string> = { planning: 'bg-blue-50 text-
 const field = 'input border-gray-200 bg-white shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition';
 
 export default function CeoProjects() {
+  const { projectId } = useParams();
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [leads, setLeads] = useState<User[]>([]);
@@ -53,6 +55,10 @@ export default function CeoProjects() {
 
   if (loading) return <PageLoader />;
 
+  const displayedProjects = projectId 
+    ? projects.filter(p => p.id === Number(projectId))
+    : projects;
+
   return <div className="space-y-7 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <section className="card border-0 px-6 py-5 sm:px-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -62,7 +68,8 @@ export default function CeoProjects() {
     </section>
 
     {projects.length === 0 ? <div className="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" /></svg></div><h2 className="mt-5 text-lg font-semibold text-gray-900">Start with your first project</h2><p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">Create a project, add dates, and select the person accountable for delivery.</p><button onClick={() => setOpen(true)} className="mt-6 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">Create project</button></div> :
-      <div className={`grid grid-cols-1 gap-5 ${projects.length > 1 ? 'xl:grid-cols-2' : ''}`}>{projects.map((project) => <article key={project.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="truncate text-base font-semibold text-gray-900">{project.name}</h2><p className="mt-1.5 text-sm leading-6 text-gray-500">{project.description || 'No description added.'}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusStyle[project.status]}`}>{project.status.replace('_', ' ')}</span></div><div className="mt-5 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4"><div><p className="text-xs font-medium uppercase tracking-wide text-gray-400">Project lead</p><p className="mt-1 text-sm font-semibold text-gray-700">{project.project_lead?.name || 'Not assigned'}</p></div><div><p className="text-xs font-medium uppercase tracking-wide text-gray-400">Due date</p><p className="mt-1 text-sm font-semibold text-gray-700">{project.due_date ? project.due_date.slice(0, 10) : 'Not set'}</p></div></div><div className="mt-4 flex justify-end"><button className="btn-secondary btn-sm" onClick={() => { setEditing(project); setForm({ name: project.name, description: project.description || '', status: project.status, start_date: project.start_date?.slice(0, 10) || '', due_date: project.due_date?.slice(0, 10) || '', project_lead_id: project.project_lead?.id }); setOpen(true); }}>Edit project</button></div></article>)}</div>}
+      displayedProjects.length === 0 ? <div className="text-center py-12 text-gray-500">Project not found.</div> :
+      <div className={`grid grid-cols-1 gap-5 ${displayedProjects.length > 1 ? 'xl:grid-cols-2' : ''}`}>{displayedProjects.map((project) => <article key={project.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><h2 className="truncate text-base font-semibold text-gray-900">{project.name}</h2><p className="mt-1.5 text-sm leading-6 text-gray-500">{project.description || 'No description added.'}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusStyle[project.status]}`}>{project.status.replace('_', ' ')}</span></div><div className="mt-5 grid grid-cols-2 gap-4 border-t border-gray-100 pt-4"><div><p className="text-xs font-medium uppercase tracking-wide text-gray-400">Project lead</p><p className="mt-1 text-sm font-semibold text-gray-700">{project.project_lead?.name || 'Not assigned'}</p></div><div><p className="text-xs font-medium uppercase tracking-wide text-gray-400">Due date</p><p className="mt-1 text-sm font-semibold text-gray-700">{project.due_date ? project.due_date.slice(0, 10) : 'Not set'}</p></div></div><div className="mt-4 flex justify-end"><button className="btn-secondary btn-sm" onClick={() => { setEditing(project); setForm({ name: project.name, description: project.description || '', status: project.status, start_date: project.start_date?.slice(0, 10) || '', due_date: project.due_date?.slice(0, 10) || '', project_lead_id: project.project_lead?.id }); setOpen(true); }}>Edit project</button></div></article>)}</div>}
 
     <Modal open={open} onClose={() => !saving && setOpen(false)} title={editing ? 'Edit project' : 'Create a new project'} size="lg">
       <form onSubmit={createProject} className="space-y-5">
