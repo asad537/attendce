@@ -12,7 +12,21 @@ import {
 export const userService = {
   async getList(params?: Record<string, unknown>): Promise<PaginatedResponse<User>> {
     const res = await api.get('/users', { params });
-    return res.data;
+    const payload = res.data;
+
+    // Keep the UI safe while older API deployments may still return { users: [] }.
+    if (Array.isArray(payload?.data)) return payload;
+
+    const users: User[] = Array.isArray(payload?.users) ? payload.users : [];
+    return {
+      data: users,
+      meta: payload?.meta ?? {
+        total: users.length,
+        per_page: users.length,
+        current_page: 1,
+        last_page: 1,
+      },
+    };
   },
 
   async getById(id: number): Promise<User> {

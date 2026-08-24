@@ -28,7 +28,15 @@ class UserController extends Controller
 
         if ($auth->isEmployee()) {
             // Employees can only see themselves
-            return response()->json(['users' => [new UserResource($auth->load(['department', 'designation', 'shift']))]]);
+            return response()->json([
+                'data' => [new UserResource($auth->load(['department', 'designation', 'shift']))],
+                'meta' => [
+                    'total' => 1,
+                    'per_page' => 1,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ],
+            ]);
         }
 
         // Managers and TLs see their own direct reports + themselves

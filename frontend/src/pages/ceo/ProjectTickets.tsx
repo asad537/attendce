@@ -77,17 +77,17 @@ export default function ProjectTickets() {
                 userService.getList({ per_page: 200 }),
                 projectService.getAll(),
             ]);
-            const fetchedTickets = t.data.tickets;
+            const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
             setTickets(fetchedTickets);
             const sharedTicketId = Number(new URLSearchParams(window.location.search).get('ticket'));
             if (sharedTicketId) setDetail(fetchedTickets.find((ticket: Ticket) => ticket.id === sharedTicketId) || null);
 
             setUsers(
-                u.data.filter((user) =>
+                (Array.isArray(u.data) ? u.data : []).filter((user) =>
                     ["manager", "tl", "employee"].includes(user.role)
                 ),
             );
-            const currentProject = p.find((project) => project.id === Number(projectId));
+            const currentProject = (Array.isArray(p) ? p : []).find((project) => project.id === Number(projectId));
             setProjectName(currentProject?.name || "Project");
             setCanManage(Boolean(currentUser?.role === 'ceo' || currentProject?.creator?.id === currentUser?.id || currentProject?.project_lead?.id === currentUser?.id));
         } catch (e) {
