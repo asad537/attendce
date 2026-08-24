@@ -27,5 +27,8 @@ class AuthServiceProvider extends ServiceProvider
         Gate::before(function (User $user, $ability) {
             if ($user->isCeo()) return true;
         });
+
+        Gate::define('manage-organization', fn (User $user): bool => $user->isCeo());
+        Gate::define('view-audit-logs', fn (User $user): bool => $user->isCeo());
     }
 }

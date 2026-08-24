@@ -60,10 +60,15 @@ export default function CeoReports() {
     if (toExport.length === 0) return;
     
     const headers = ['Employee Name', 'Total Days', 'Total Working Days', 'Holidays', 'Presents', 'WFM', 'Rejected WFM', 'Leaves', 'Paid Leaves', 'Rejected Leaves', 'Days Worked (Excl. Weekends)'];
+    const csvCell = (value: unknown) => {
+      const text = String(value ?? '');
+      const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
     const csvContent = [
       headers.join(','),
       ...toExport.map((r: any) => [
-        `"${r.user.name}"`,
+        r.user.name,
         r.total_days,
         r.working_days_in_period,
         totalHolidays,
@@ -74,7 +79,7 @@ export default function CeoReports() {
         r.paid_leaves || 0,
         r.rejected_leaves || 0,
         r.days_worked_excl_weekends
-      ].join(','))
+      ].map(csvCell).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

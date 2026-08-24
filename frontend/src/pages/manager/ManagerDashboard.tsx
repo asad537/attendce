@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 
 export default function ManagerDashboard() {
   const { user, refreshUser } = useAuth();
+  const basePath = user?.role === 'tl' ? '/tl' : '/manager';
   const [attendance, setAttendance] = useState<Attendance | null>(null);
   const [myStatus, setMyStatus]     = useState<string>('absent');
   const [team, setTeam]             = useState<TeamMemberStatus[]>([]);
@@ -129,7 +130,7 @@ export default function ManagerDashboard() {
       <div className="card p-0">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">Live Team Status</h2>
-          <Link to="/manager/attendance" className="text-sm text-indigo-600 hover:underline">Full view →</Link>
+          <Link to={`${basePath}/attendance`} className="text-sm text-indigo-600 hover:underline">Full view →</Link>
         </div>
         <div className="divide-y divide-gray-50">
           {team.map((member) => (
@@ -164,7 +165,7 @@ export default function ManagerDashboard() {
         <div className="card p-0">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">Pending Leave Requests</h2>
-            <Link to="/manager/leave-approvals" className="text-sm text-indigo-600 hover:underline">View all →</Link>
+            <Link to={user?.role === 'tl' ? '/tl/leaves' : '/manager/leave-approvals'} className="text-sm text-indigo-600 hover:underline">View all →</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {pending.map((leave) => (
@@ -175,7 +176,7 @@ export default function ManagerDashboard() {
                     {leave.leave_type?.name} · {format(new Date(leave.start_date), 'MMM d')} – {format(new Date(leave.end_date), 'MMM d')} ({leave.days_requested}d)
                   </p>
                 </div>
-                <Link to="/manager/leave-approvals" className="btn-primary btn-sm">Review</Link>
+                <Link to={user?.role === 'tl' ? '/tl/leaves' : '/manager/leave-approvals'} className="btn-primary btn-sm">Review</Link>
               </div>
             ))}
           </div>

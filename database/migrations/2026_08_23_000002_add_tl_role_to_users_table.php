@@ -18,6 +18,7 @@ class AddTlRoleToUsersTable extends Migration
     public function down()
     {
         if (DB::getDriverName() === 'mysql') {
+            DB::table('users')->where('role', 'tl')->update(['role' => 'employee']);
             DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','ceo') NOT NULL DEFAULT 'employee'");
         }
     }

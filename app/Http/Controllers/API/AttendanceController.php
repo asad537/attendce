@@ -25,7 +25,7 @@ class AttendanceController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isManager()) {
+        } elseif ($user->isTeamLead()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -120,7 +120,7 @@ class AttendanceController extends Controller
 
         $query = User::with(['todayAttendance.breaks', 'department'])->active();
 
-        if ($user->isManager()) {
+        if ($user->isTeamLead()) {
             $query->where(function ($q) use ($user) {
                 $q->where('manager_id', $user->id)->orWhere('id', $user->id);
             });

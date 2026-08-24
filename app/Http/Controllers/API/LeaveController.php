@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\LeaveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class LeaveController extends Controller
 {
@@ -28,7 +29,7 @@ class LeaveController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isManager()) {
+        } elseif ($user->isTeamLead()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -82,6 +83,20 @@ class LeaveController extends Controller
         return response()->json([
             'leave' => new LeaveResource($leave->load(['user.department', 'leaveType', 'reviewedByManager', 'reviewedByCeo'])),
         ]);
+    }
+
+    public function downloadAttachment(Request $request, Leave $leave)
+    {
+        $this->authorize('view', $leave);
+        abort_unless($leave->attachment, 404);
+
+        if (Storage::disk('local')->exists($leave->attachment)) {
+            return Storage::disk('local')->download($leave->attachment);
+        }
+
+        // Backward-compatible access for attachments created before private storage.
+        abort_unless(Storage::disk('public')->exists($leave->attachment), 404);
+        return Storage::disk('public')->download($leave->attachment);
     }
 
     /** POST /api/leaves/{id}/manager-review */
@@ -146,7 +161,12 @@ class LeaveController extends Controller
         $userId  = $request->get('user_id', $user->id);
 
         // Employees (and TLs/managers checking own) can only see own balances
-        if ($user->isEmployee()) $userId = $user->id;
+        if ($user->isEmployee()) {
+            $userId = $user->id;
+        } elseif ($user->isTeamLead()) {
+            $allowedIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
+            abort_unless($allowedIds->contains((int) $userId), 403);
+        }
 
         $balances = LeaveBalance::with('leaveType')
             ->where('user_id', $userId)
@@ -172,7 +192,7 @@ class LeaveController extends Controller
 
         $query = Leave::where('status', 'pending');
 
-        if ($user->isManager()) {
+        if ($user->isTeamLead()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id');
             $query->whereIn('user_id', $teamIds);
         } else {

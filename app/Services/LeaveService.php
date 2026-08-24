@@ -52,7 +52,7 @@ class LeaveService
 
         $attachment = null;
         if ($file) {
-            $attachment = $file->store('leave-attachments', 'public');
+            $attachment = $file->store('leave-attachments');
         }
 
         $leave = Leave::create([

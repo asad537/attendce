@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 
 export default function LeaveManagement() {
+  const { user } = useAuth();
   const [data, setData]         = useState<PaginatedResponse<Leave> | null>(null);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);

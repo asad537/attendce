@@ -53,7 +53,7 @@ export default function ManagerLeaveApprovals() {
     if (!review) return;
     setSubmitting(true);
     try {
-      await leaveService.ceoReview(review.leave.id, review.action, remarks || undefined);
+      await leaveService.managerReview(review.leave.id, review.action, remarks || undefined);
       toast.success(`Leave ${review.action}d successfully.`);
       setReview(null);
       load(page);

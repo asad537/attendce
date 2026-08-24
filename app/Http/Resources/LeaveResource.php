@@ -18,7 +18,7 @@ class LeaveResource extends JsonResource
             'is_half_day'      => $this->is_half_day,
             'half_day_period'  => $this->half_day_period,
             'reason'           => $this->reason,
-            'attachment_url'   => $this->attachment ? asset('storage/' . $this->attachment) : null,
+            'attachment_url'   => $this->attachment ? url("/api/leaves/{$this->id}/attachment") : null,
             'status'           => $this->status,
             'status_label'     => $this->status_label,
             'can_be_cancelled' => $this->can_be_cancelled,

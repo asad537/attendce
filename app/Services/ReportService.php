@@ -36,7 +36,8 @@ class ReportService
                 if ($wStart->greaterThan($wEnd)) return 0;
                 
                 // Count weekdays in range
-                return $wStart->diffInWeekdays($wEnd->copy()->addDay());
+                $days = $wStart->diffInWeekdays($wEnd->copy()->addDay());
+                return $wfh->is_half_day ? min($days, 0.5) : $days;
             });
 
         // Fetch Leaves
@@ -66,9 +67,15 @@ class ReportService
             'working_days_in_period' => $workingDaysInPeriod,
             'present'         => $totalPresents,
             'absent'          => $records->where('status', 'absent')->count(),
+            'late'            => $records->where('status', 'late')->count(),
             'on_leave'        => $leaveDays,
             'work_from_home'  => $wfmDays,
             'days_worked_excl_weekends' => $presentsExcludingWeekends + $wfmDays,
+            'total_working_hours'  => round($records->sum('working_minutes') / 60, 2),
+            'total_overtime_hours' => round($records->sum('overtime_minutes') / 60, 2),
+            'avg_working_hours'    => $records->count() > 0
+                ? round($records->avg('working_minutes') / 60, 2)
+                : 0,
         ];
     }
 
@@ -151,6 +158,31 @@ class ReportService
                 'by_type' => $leaves->groupBy('leave_type_id')->map(fn ($l) => [
                     'type' => $l->first()->leaveType->name,
                     'days' => $l->sum('days_requested'),
+                ])->values(),
+            ];
+        })->values()->toArray();
+    }
+
+    public function leaveSummaryForUsers(int $year, array $userIds): array
+    {
+        $query = Leave::with(['user', 'leaveType'])
+            ->whereYear('start_date', $year)
+            ->where('status', 'approved')
+            ->whereIn('user_id', $userIds);
+
+        return $this->formatLeaveSummary($query->get());
+    }
+
+    private function formatLeaveSummary($leaves): array
+    {
+        return $leaves->groupBy('user_id')->map(function ($userLeaves) {
+            $user = $userLeaves->first()->user;
+            return [
+                'user' => $user->only(['id', 'name', 'employee_id']),
+                'total_days_taken' => $userLeaves->sum('days_requested'),
+                'by_type' => $userLeaves->groupBy('leave_type_id')->map(fn ($items) => [
+                    'type' => $items->first()->leaveType->name,
+                    'days' => $items->sum('days_requested'),
                 ])->values(),
             ];
         })->values()->toArray();

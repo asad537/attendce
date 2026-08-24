@@ -10,6 +10,7 @@ import { getErrorMessage } from '../../services/api';
 import { PaginatedResponse } from '../../types';
 
 export default function WfhManagement() {
+  const { user } = useAuth();
   const [data, setData] = useState<PaginatedResponse<any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setModal] = useState(false);

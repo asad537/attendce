@@ -27,6 +27,8 @@ import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
 import CeoReports from './pages/ceo/CeoReports';
+import CeoHolidays from './pages/ceo/CeoHolidays';
+import CeoAuditLogs from './pages/ceo/CeoAuditLogs';
 
 import CeoProjects from './pages/ceo/CeoProjects';
 import ProjectTickets from './pages/ceo/ProjectTickets';
@@ -66,6 +68,7 @@ function App() {
           <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route path="attendance" element={<AttendanceHistory />} />
           <Route path="leaves" element={<LeaveManagement />} />
+          <Route path="wfh" element={<WfhManagement />} />
         </Route>
       </Route>
 
@@ -81,7 +84,6 @@ function App() {
           <Route path="wfh" element={<WfhManagement />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
           <Route path="reports" element={<CeoReports />} />
-          <Route path="reports" element={<CeoReports />} />
         </Route>
       </Route>
 
@@ -95,6 +97,9 @@ function App() {
           <Route path="team" element={<TeamMembers />} />
           <Route path="my-attendance" element={<AttendanceHistory />} />
           <Route path="my-leaves" element={<LeaveManagement />} />
+          <Route path="reports" element={<CeoReports />} />
+          <Route path="wfh" element={<WfhManagement />} />
+          <Route path="wfh-approvals" element={<WfhApprovals />} />
         </Route>
       </Route>
 
@@ -107,6 +112,10 @@ function App() {
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees" element={<CeoEmployees />} />
           <Route path="departments" element={<CeoDepartments />} />
+          <Route path="wfh-approvals" element={<WfhApprovals />} />
+          <Route path="reports" element={<CeoReports />} />
+          <Route path="holidays" element={<CeoHolidays />} />
+          <Route path="audit-logs" element={<CeoAuditLogs />} />
         </Route>
       </Route>
 

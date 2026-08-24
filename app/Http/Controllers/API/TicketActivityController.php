@@ -17,7 +17,7 @@ class TicketActivityController extends Controller
         $user = $request->user();
         if ($user->isCeo()) return;
         if ($project->created_by == $user->id || $project->project_lead_id == $user->id) return;
-        if (ProjectTicket::where('project_id', $project->id)->where('assignee_id', $user->id)->exists()) return;
+        if ((int) $ticket->assignee_id === (int) $user->id) return;
         abort(403);
     }
 

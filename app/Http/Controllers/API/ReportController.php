@@ -19,7 +19,7 @@ class ReportController extends Controller
     public function dailySnapshot(Request $request): JsonResponse
     {
         $user = $request->user();
-        if ($user->isEmployee()) {
+        if (!$user->isCeo()) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
         return response()->json($this->service->dailySnapshot());
@@ -59,6 +59,13 @@ class ReportController extends Controller
 
         if ($auth->isEmployee()) {
             $userId = $auth->id;
+        } elseif ($auth->isTeamLead()) {
+            $allowedIds = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id);
+            if ($userId) {
+                abort_unless($allowedIds->contains((int) $userId), 403);
+            } else {
+                return response()->json($this->service->leaveSummaryForUsers($year, $allowedIds->all()));
+            }
         }
 
         return response()->json($this->service->leaveSummary($year, $userId ? (int) $userId : null));
@@ -75,7 +82,7 @@ class ReportController extends Controller
 
         if ($auth->isEmployee()) {
             $query->where('user_id', $auth->id);
-        } elseif ($auth->isManager()) {
+        } elseif ($auth->isTeamLead()) {
             $teamIds = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -93,8 +100,8 @@ class ReportController extends Controller
             foreach ($records as $r) {
                 fputcsv($handle, [
                     $r->date ? $r->date->toDateString() : null,
-                    $r->user ? $r->user->employee_id : null,
-                    $r->user ? $r->user->name : null,
+                    $this->safeCsv($r->user ? $r->user->employee_id : null),
+                    $this->safeCsv($r->user ? $r->user->name : null),
                     $r->check_in ? $r->check_in->format('H:i:s') : null,
                     $r->check_out ? $r->check_out->format('H:i:s') : null,
                     $r->status,
@@ -109,5 +116,12 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function safeCsv($value): ?string
+    {
+        if ($value === null) return null;
+        $value = (string) $value;
+        return preg_match('/^[=+\-@]/', $value) ? "'" . $value : $value;
     }
 }

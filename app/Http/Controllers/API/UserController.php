@@ -72,6 +72,32 @@ class UserController extends Controller
 
         $data = $request->validated();
 
+        $actor = $request->user();
+        $privilegedFields = [
+            'role', 'employment_type', 'status', 'department_id',
+            'designation_id', 'shift_id', 'manager_id', 'join_date',
+        ];
+
+        // A profile update must never double as an organization/role update.
+        if (!$actor->isCeo() && $actor->id === $user->id) {
+            foreach ($privilegedFields as $field) {
+                if ($request->exists($field)) {
+                    return response()->json(['message' => 'You cannot change your own role or organization assignment.'], 403);
+                }
+            }
+        }
+
+        // Managers and TLs can administer only the role levels beneath them.
+        if (!$actor->isCeo() && $actor->id !== $user->id) {
+            $allowedRoles = $actor->isManager() ? ['employee', 'tl'] : ['employee'];
+            if (isset($data['role']) && !in_array($data['role'], $allowedRoles, true)) {
+                return response()->json(['message' => 'You cannot assign that role.'], 403);
+            }
+            if (array_key_exists('manager_id', $data) && (int) $data['manager_id'] !== $actor->id) {
+                return response()->json(['message' => 'You cannot move this user outside your team.'], 403);
+            }
+        }
+
         // Derive the `name` column from first + last for backward compatibility
         $data['name'] = trim($data['first_name'] . ' ' . $data['last_name']);
 
@@ -89,7 +115,14 @@ class UserController extends Controller
         // If a manager or TL is creating the user, automatically set manager_id
         // to themselves unless one was explicitly provided
         $creator = $request->user();
-        if (($creator->isManager() || $creator->isTl()) && empty($data['manager_id'])) {
+        if ($creator->isTeamLead()) {
+            $allowedRoles = $creator->isManager() ? ['employee', 'tl'] : ['employee'];
+            if (!in_array($data['role'], $allowedRoles, true)) {
+                return response()->json(['message' => 'You cannot create a user with that role.'], 403);
+            }
+            if (!empty($data['manager_id']) && (int) $data['manager_id'] !== (int) $creator->id) {
+                return response()->json(['message' => 'You cannot create a user outside your team.'], 403);
+            }
             $data['manager_id'] = $creator->id;
         }
 
@@ -156,6 +189,7 @@ class UserController extends Controller
                 return response()->json(['message' => 'Current password is incorrect.'], 422);
             }
             $data['password'] = Hash::make($data['new_password']);
+            $passwordChanged = true;
         }
         unset($data['current_password'], $data['new_password'], $data['new_password_confirmation']);
 
@@ -164,6 +198,10 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        if (!empty($passwordChanged)) {
+            $user->tokens()->delete();
+        }
 
         if (isset($data['role']) && $data['role'] !== $oldRole) {
             $user->syncRoles([$data['role']]);

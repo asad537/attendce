@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ── Public ──────────────────────────────────────────────────────────────
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // ── Authenticated ────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/leaves',                [LeaveController::class, 'index']);
     Route::post('/leaves',               [LeaveController::class, 'store']);
     Route::get('/leaves/{leave}',        [LeaveController::class, 'show']);
+    Route::get('/leaves/{leave}/attachment', [LeaveController::class, 'downloadAttachment']);
     Route::post('/leaves/{leave}/manager-review', [LeaveController::class, 'managerReview']);
     Route::post('/leaves/{leave}/ceo-review',     [LeaveController::class, 'ceoReview']);
     Route::post('/leaves/{leave}/cancel',         [LeaveController::class, 'cancel']);
@@ -83,23 +84,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);
-    Route::post('/departments',               [DepartmentController::class, 'store']);
+    Route::post('/departments',               [DepartmentController::class, 'store'])->middleware('can:manage-organization');
     Route::get('/departments/{department}',   [DepartmentController::class, 'show']);
-    Route::put('/departments/{department}',   [DepartmentController::class, 'update']);
-    Route::delete('/departments/{department}',[DepartmentController::class, 'destroy']);
+    Route::put('/departments/{department}',   [DepartmentController::class, 'update'])->middleware('can:manage-organization');
+    Route::delete('/departments/{department}',[DepartmentController::class, 'destroy'])->middleware('can:manage-organization');
 
     // Designations
     Route::get('/designations',                   [DesignationController::class, 'index']);
-    Route::post('/designations',                  [DesignationController::class, 'store']);
-    Route::put('/designations/{designation}',     [DesignationController::class, 'update']);
-    Route::delete('/designations/{designation}',  [DesignationController::class, 'destroy']);
+    Route::post('/designations',                  [DesignationController::class, 'store'])->middleware('can:manage-organization');
+    Route::put('/designations/{designation}',     [DesignationController::class, 'update'])->middleware('can:manage-organization');
+    Route::delete('/designations/{designation}',  [DesignationController::class, 'destroy'])->middleware('can:manage-organization');
 
     // Shifts
     Route::get('/shifts',           [ShiftController::class, 'index']);
-    Route::post('/shifts',          [ShiftController::class, 'store']);
+    Route::post('/shifts',          [ShiftController::class, 'store'])->middleware('can:manage-organization');
     Route::get('/shifts/{shift}',   [ShiftController::class, 'show']);
-    Route::put('/shifts/{shift}',   [ShiftController::class, 'update']);
-    Route::delete('/shifts/{shift}',[ShiftController::class, 'destroy']);
+    Route::put('/shifts/{shift}',   [ShiftController::class, 'update'])->middleware('can:manage-organization');
+    Route::delete('/shifts/{shift}',[ShiftController::class, 'destroy'])->middleware('can:manage-organization');
 
     // WFH Requests
     Route::get('/wfh',                       [WfhRequestController::class, 'index']);
@@ -110,9 +111,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Holidays
     Route::get('/holidays',              [HolidayController::class, 'index']);
     Route::get('/holidays/upcoming',     [HolidayController::class, 'upcoming']);
-    Route::post('/holidays',             [HolidayController::class, 'store']);
-    Route::put('/holidays/{holiday}',    [HolidayController::class, 'update']);
-    Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy']);
+    Route::post('/holidays',             [HolidayController::class, 'store'])->middleware('can:manage-organization');
+    Route::put('/holidays/{holiday}',    [HolidayController::class, 'update'])->middleware('can:manage-organization');
+    Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy'])->middleware('can:manage-organization');
 
     // Reports
     Route::get('/reports/daily-snapshot',    [ReportController::class, 'dailySnapshot']);
@@ -127,5 +128,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}',      [NotificationController::class, 'destroy']);
 
     // Audit Logs (CEO only)
-    Route::get('/audit-logs', [AuditLogController::class, 'index']);
+    Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:view-audit-logs');
 });
