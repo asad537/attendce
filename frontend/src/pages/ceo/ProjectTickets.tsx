@@ -312,7 +312,7 @@ export default function ProjectTickets() {
               <div className="flex flex-wrap items-center gap-2"><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">⌁ &nbsp; Filters</span><span className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">▥ Board</span></div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 min-[1700px]:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {cols.map((c) => (
                     <div
                         key={c.key}
