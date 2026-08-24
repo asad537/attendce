@@ -61,6 +61,10 @@ export default function ProjectTickets() {
     const [commentText, setCommentText] = useState("");
     const [showTimeTracking, setShowTimeTracking] = useState(false);
     const [search, setSearch] = useState("");
+    const [showFilters, setShowFilters] = useState(false);
+    const [priorityFilter, setPriorityFilter] = useState("all");
+    const [assigneeFilter, setAssigneeFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [canManage, setCanManage] = useState(false);
     const [form, setForm] = useState({
         title: "",
@@ -170,8 +174,23 @@ export default function ProjectTickets() {
 
     const visibleTickets = tickets.filter(ticket => {
         const query = search.trim().toLowerCase();
-        return !query || ticket.title.toLowerCase().includes(query) || ticket.assignee?.name?.toLowerCase().includes(query) || `kan-${ticket.id}`.includes(query);
+        const matchesSearch = !query
+            || (ticket.title || '').toLowerCase().includes(query)
+            || ticket.assignee?.name?.toLowerCase().includes(query)
+            || `kan-${ticket.id}`.includes(query);
+        const matchesPriority = priorityFilter === 'all' || (ticket.priority || 'medium') === priorityFilter;
+        const matchesAssignee = assigneeFilter === 'all'
+            || (assigneeFilter === 'unassigned' ? !ticket.assignee : ticket.assignee?.id === Number(assigneeFilter));
+        const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+
+        return matchesSearch && matchesPriority && matchesAssignee && matchesStatus;
     });
+    const activeFilterCount = [priorityFilter, assigneeFilter, statusFilter].filter(value => value !== 'all').length;
+    const clearFilters = () => {
+        setPriorityFilter('all');
+        setAssigneeFilter('all');
+        setStatusFilter('all');
+    };
     const columnTheme = {
         todo: { icon: '☷', accent: 'text-indigo-600', soft: 'bg-indigo-50', border: 'border-indigo-300' },
         in_progress: { icon: '▣', accent: 'text-orange-500', soft: 'bg-orange-50', border: 'border-orange-300' },
@@ -307,9 +326,21 @@ export default function ProjectTickets() {
               ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 p-4 last:border-r-0 md:border-b-0"><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${color}`}>{icon}</span><div><p className="text-xs font-medium text-gray-500">{label}</p><p className="text-xl font-bold text-gray-950">{value}</p></div></div>)}</div>
             </section>
 
-            <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-              <label className="relative block w-full lg:max-w-sm"><span className="absolute inset-y-0 left-3 flex items-center text-gray-400">⌕</span><input className="input h-11 pl-9 pr-9" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} />{search && <button onClick={() => setSearch('')} className="absolute inset-y-0 right-3 text-gray-400">×</button>}</label>
-              <div className="flex flex-wrap items-center gap-2"><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span><span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">⌁ &nbsp; Filters</span><span className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">▥ Board</span></div>
+            <div className="relative flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+              <label className="relative block w-full lg:max-w-sm"><span className="absolute inset-y-0 left-3 flex items-center text-gray-400">⌕</span><input className="input h-11 pl-9 pr-9" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} />{search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')} className="absolute inset-y-0 right-3 text-gray-400">×</button>}</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span>
+                <button type="button" onClick={() => setShowFilters(value => !value)} className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${showFilters || activeFilterCount ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-600'}`}>⌁ &nbsp; Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</button>
+                <span className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white">▥ Board</span>
+              </div>
+              {showFilters && <div className="absolute right-3 top-full z-30 mt-2 w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
+                <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-gray-900">Filter tickets</h3>{activeFilterCount > 0 && <button type="button" onClick={clearFilters} className="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Clear all</button>}</div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <label className="text-xs font-semibold text-gray-600">Priority<select className="input mt-1 h-10" value={priorityFilter} onChange={event => setPriorityFilter(event.target.value)}><option value="all">All priorities</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+                  <label className="text-xs font-semibold text-gray-600">Assignee<select className="input mt-1 h-10" value={assigneeFilter} onChange={event => setAssigneeFilter(event.target.value)}><option value="all">All assignees</option><option value="unassigned">Unassigned</option>{users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
+                  <label className="text-xs font-semibold text-gray-600">Status<select className="input mt-1 h-10" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="all">All statuses</option>{cols.map(column => <option key={column.key} value={column.key}>{column.name}</option>)}</select></label>
+                </div>
+              </div>}
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
