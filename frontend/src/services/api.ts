@@ -44,5 +44,6 @@ export function getErrorMessage(error: unknown): string {
     }
     return data?.message || error.message;
   }
-  return 'An unexpected error occurred.';
+  if (error instanceof Error) return error.message;
+  return 'The requested action could not be completed.';
 }

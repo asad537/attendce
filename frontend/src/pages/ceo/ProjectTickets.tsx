@@ -61,6 +61,7 @@ export default function ProjectTickets() {
     const [commentText, setCommentText] = useState("");
     const [showTimeTracking, setShowTimeTracking] = useState(false);
     const [search, setSearch] = useState("");
+    const [canManage, setCanManage] = useState(false);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -86,10 +87,9 @@ export default function ProjectTickets() {
                     ["manager", "tl", "employee"].includes(user.role)
                 ),
             );
-            setProjectName(
-                p.find((project) => project.id === Number(projectId))?.name ||
-                    "Project",
-            );
+            const currentProject = p.find((project) => project.id === Number(projectId));
+            setProjectName(currentProject?.name || "Project");
+            setCanManage(Boolean(currentUser?.role === 'ceo' || currentProject?.creator?.id === currentUser?.id || currentProject?.project_lead?.id === currentUser?.id));
         } catch (e) {
             toast.error(getErrorMessage(e));
         }
@@ -280,7 +280,7 @@ export default function ProjectTickets() {
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                 <div><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Project</p><h1 className="mt-1 text-2xl font-bold text-gray-950">{projectName}</h1><p className="mt-1 text-sm text-gray-500">Tickets Board · Create tickets and assign them to your team.</p></div>
-                <button
+                {canManage && <button
                     className="btn-primary w-full px-5 py-2.5 shadow-lg shadow-indigo-200 sm:w-auto"
                     onClick={() => {
                         setEditing(null);
@@ -296,7 +296,7 @@ export default function ProjectTickets() {
                     }}
                 >
                     + Create ticket
-                </button>
+                </button>}
               </div>
               <div className="grid grid-cols-2 border-t border-gray-100 md:grid-cols-5">{[
                 ['Total Tickets', tickets.length, '◎', 'text-indigo-600 bg-indigo-50'],
@@ -333,7 +333,7 @@ export default function ProjectTickets() {
                             </span>
                             <span className="text-gray-400">•••</span>
                         </div>
-                        <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors hover:bg-gray-50 ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>
+                        {canManage && <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors hover:bg-gray-50 ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
                         {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
@@ -349,7 +349,7 @@ export default function ProjectTickets() {
                                             {t.title}
                                         </p>
                                         <div className="flex gap-1 text-gray-500 shrink-0">
-                                            <button
+                                            {canManage && <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setEditing(t);
@@ -383,7 +383,7 @@ export default function ProjectTickets() {
                                                         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                     />
                                                 </svg>
-                                            </button>
+                                            </button>}
                                             <button
                                                 className="hover:bg-gray-100 p-1 rounded transition-colors"
                                                 onClick={(e) =>
@@ -424,11 +424,11 @@ export default function ProjectTickets() {
                                                 className="relative inline-flex items-center justify-center rounded-md bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
                                                 title={`Priority: ${t.priority || "medium"}`}
                                             >
-                                                <PriorityDropdown 
+                                                {canManage ? <PriorityDropdown
                                                     value={t.priority || "medium"}
                                                     onChange={(val) => updatePriority(t, val)}
                                                     iconOnly={true}
-                                                />
+                                                /> : getPriorityIconSVG(t.priority)}
                                             </div>
                                             <div
                                                 className="relative inline-flex h-7 max-w-36 items-center justify-center truncate whitespace-nowrap rounded-md bg-indigo-50 px-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-all cursor-pointer"
@@ -440,7 +440,7 @@ export default function ProjectTickets() {
                                                     e.stopPropagation()
                                                 }
                                             >
-                                                <select
+                                                {canManage && <select
                                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                     value={t.assignee?.id || ""}
                                                     onChange={(e) =>
@@ -461,7 +461,7 @@ export default function ProjectTickets() {
                                                             {u.name}
                                                         </option>
                                                     ))}
-                                                </select>
+                                                </select>}
                                                 {t.assignee?.name || "Assign"}
                                             </div>
                                         </div>
@@ -528,6 +528,7 @@ export default function ProjectTickets() {
                 open={!!detail}
                 onClose={() => setDetail(null)}
                 ticketId={detail?.id || 0}
+                allowDelete={canManage}
                 onDelete={(id) => { setTickets(current => current.filter(ticket => ticket.id !== id)); setDetail(null); }}
             >
                 {detail && (
@@ -541,8 +542,7 @@ export default function ProjectTickets() {
                                         setDetail({...detail, title: e.target.value});
                                     }}
                                     onBlur={() => {
-                                        api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title });
-                                        load();
+                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title }); load(); }
                                     }}
                                 />
                             </div>
@@ -555,8 +555,7 @@ export default function ProjectTickets() {
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
                                     onBlur={() => {
-                                        api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description });
-                                        load();
+                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description }); load(); }
                                     }}
                                 />
                             </div>
@@ -564,7 +563,7 @@ export default function ProjectTickets() {
                             <div className="space-y-3">
                                 <h3 className="text-[15px] font-semibold text-gray-800">Attachments</h3>
                                 <div className="rounded border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
-                                    <label className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded shadow-sm transition-colors">
+                                    {canManage && <label className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded shadow-sm transition-colors">
                                         Add attachment
                                         <input
                                             className="hidden"
@@ -574,7 +573,7 @@ export default function ProjectTickets() {
                                                 if (file) uploadAttachment(detail, file);
                                             }}
                                         />
-                                    </label>
+                                    </label>}
                                     {detail.attachment_name && <button onClick={() => downloadAttachment(detail)} className="mt-3 text-[13px] font-medium text-blue-600 hover:underline">Download: {detail.attachment_name}</button>}
                                 </div>
                             </div>

@@ -8,9 +8,10 @@ interface TicketModalProps {
   ticketId: number;
   children: React.ReactNode;
   onDelete?: (id: number) => void;
+  allowDelete?: boolean;
 }
 
-export default function TicketModal({ open, onClose, ticketId, children, onDelete }: TicketModalProps) {
+export default function TicketModal({ open, onClose, ticketId, children, onDelete, allowDelete = false }: TicketModalProps) {
   const [watching, setWatching] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -87,7 +88,7 @@ export default function TicketModal({ open, onClose, ticketId, children, onDelet
                 </button>
                 {showMenu && (
                     <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50">
-                        <button onClick={handleDelete} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Delete ticket</button>
+                        {allowDelete && <button onClick={handleDelete} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Delete ticket</button>}
                     </div>
                 )}
               </div>
