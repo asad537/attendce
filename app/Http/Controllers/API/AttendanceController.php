@@ -131,6 +131,7 @@ class AttendanceController extends Controller
                 'id'             => $u->id,
                 'name'           => $u->name,
                 'employee_id'    => $u->employee_id,
+                'role'           => $u->role,
                 'department'     => $u->department ? $u->department->name : null,
                 'current_status' => $u->current_status,
                 'check_in'       => ($u->todayAttendance && $u->todayAttendance->check_in) ? $u->todayAttendance->check_in->toISOString() : null,

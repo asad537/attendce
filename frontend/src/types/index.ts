@@ -268,6 +268,7 @@ export interface TeamMemberStatus {
   id: number;
   name: string;
   employee_id?: string;
+  role: Role;
   department?: string;
   current_status: CurrentStatus;
   check_in?: string;
