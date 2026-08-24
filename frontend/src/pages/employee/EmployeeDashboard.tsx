@@ -158,7 +158,7 @@ export default function EmployeeDashboard() {
       <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
         <h2 className="text-lg font-bold text-gray-900">Workday Timeline</h2>
         <p className="mt-1 text-sm text-gray-500">Work hours: {format(workday.shiftStart, 'hh:mm a')} – {format(workday.shiftEnd, 'hh:mm a')}</p>
-        <div className="mt-7 overflow-x-auto pb-4">
+        <div className="mt-7 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <div className="min-w-[760px] px-2 pt-10">
             <div className="relative h-28">
               {workday.ticks.map((tick, index) => {
