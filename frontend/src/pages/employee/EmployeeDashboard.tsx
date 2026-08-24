@@ -121,12 +121,12 @@ export default function EmployeeDashboard() {
   const onTrack = workday.remaining > 0 && checkedIn;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-5 p-4 sm:p-5 lg:p-7">
+    <div className="mx-auto w-full max-w-[1280px] space-y-4 p-3 sm:p-4 lg:p-5">
       <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-gray-100 px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
+        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Live Workday Progress</h1>
+              <h1 className="text-lg font-bold text-gray-900 sm:text-xl">Live Workday Progress</h1>
               {checkedIn && <span className="rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">Live</span>}
             </div>
             <p className="mt-1 text-sm text-gray-500">{format(now, 'EEEE, MMMM d, yyyy')}</p>
@@ -136,49 +136,50 @@ export default function EmployeeDashboard() {
           </span>
         </div>
 
-        <div className="grid gap-4 px-5 py-6 sm:grid-cols-3 sm:px-7">
+        <div className="grid gap-3 px-4 py-4 sm:grid-cols-3 sm:px-5">
           <WorkdayValue icon="in" tone="green" label="Check In" value={clock(attendance?.check_in)} note={attendance?.check_in ? 'Today' : 'Not checked in'} />
           <WorkdayValue icon="out" tone="red" label="Check Out" value={clock(attendance?.check_out)} note={attendance?.check_out ? 'Today' : 'Not checked out'} />
           <WorkdayValue icon="clock" tone="green" label="Total Working Time" value={duration(workday.worked)} note={attendance?.check_in ? `Since ${clock(attendance.check_in)}` : 'Starts after check in'} highlight />
         </div>
 
-        <div className="flex justify-center px-5 pb-6 sm:px-7">
+        <div className="flex justify-center px-4 pb-4 sm:px-5">
           {!attendance?.check_in ? (
-            <button onClick={handleCheckIn} disabled={actionLoading} className="flex w-full max-w-md items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-60">
+            <button onClick={handleCheckIn} disabled={actionLoading} className="flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-60">
               <Icon type="in" className="h-5 w-5" />{actionLoading ? 'Checking in…' : 'Check In'}
             </button>
           ) : checkedIn ? (
-            <button onClick={handleCheckOut} disabled={actionLoading} className="flex w-full max-w-md items-center justify-center gap-2 rounded-xl border border-red-400 bg-white px-6 py-3 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">
+            <button onClick={handleCheckOut} disabled={actionLoading} className="flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-red-400 bg-white px-5 py-2.5 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">
               <Icon type="out" className="h-5 w-5" />{actionLoading ? 'Checking out…' : 'Check Out'}
             </button>
-          ) : <div className="w-full max-w-md rounded-xl bg-blue-50 px-6 py-3 text-center font-semibold text-blue-700">Workday completed</div>}
+          ) : <div className="w-full max-w-sm rounded-xl bg-blue-50 px-5 py-2.5 text-center font-semibold text-blue-700">Workday completed</div>}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+      <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-lg font-bold text-gray-900">Workday Timeline</h2>
         <p className="mt-1 text-sm text-gray-500">Work hours: {format(workday.shiftStart, 'hh:mm a')} – {format(workday.shiftEnd, 'hh:mm a')}</p>
-        <div className="mt-7 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="min-w-[760px] px-2 pt-10">
-            <div className="relative h-28">
+        <div className="mt-5 w-full px-2 pt-8 sm:px-3">
+          <div className="relative h-24">
               {workday.ticks.map((tick, index) => {
                 const position = ((tick.getTime() - workday.shiftStart.getTime()) / (workday.shiftEnd.getTime() - workday.shiftStart.getTime())) * 100;
                 const edgeClass = index === 0 ? '' : index === workday.ticks.length - 1 ? '-translate-x-full' : '-translate-x-1/2';
-                return <div key={tick.toISOString()} className="absolute top-0 h-14 border-l border-gray-200" style={{ left: `${position}%` }}><span className={`absolute -top-8 whitespace-nowrap text-xs font-medium text-gray-600 ${edgeClass}`}>{format(tick, 'hh:mm a')}</span></div>;
+                const middleTick = Math.floor((workday.ticks.length - 1) / 2);
+                const mobileVisibility = index > 0 && index < workday.ticks.length - 1 && index !== middleTick ? 'hidden sm:block' : '';
+                return <div key={tick.toISOString()} className="absolute top-1 h-7 border-l border-gray-300" style={{ left: `${position}%` }}><span className={`absolute -top-7 whitespace-nowrap text-[10px] font-medium text-gray-500 sm:text-xs ${edgeClass} ${mobileVisibility}`}>{format(tick, 'hh:mm a')}</span></div>;
               })}
-              <div className="absolute left-0 right-0 top-10 border-t-2 border-dashed border-gray-300" />
-              <div className="absolute left-0 top-10 h-0.5 bg-green-600" style={{ width: `${workday.progress}%` }} />
-              <span className="absolute left-0 top-[35px] h-3 w-3 -translate-x-1/2 rounded-full bg-green-600" />
-              <span className="absolute right-0 top-[35px] h-3 w-3 translate-x-1/2 rounded-full bg-gray-400" />
-              {(checkedIn || checkedOut) && <div className="absolute top-[31px] z-10 -translate-x-1/2" style={{ left: `${workday.progress}%` }}>
-                <span className="block h-5 w-5 rounded-full border-4 border-white bg-green-500 shadow-[0_0_0_4px_rgba(34,197,94,.18)]" />
-                <div className="mt-5 -translate-x-[42%] whitespace-nowrap rounded-lg border border-gray-200 bg-white px-4 py-2 text-center shadow-md"><p className="text-sm font-bold text-green-700">{clock(attendance?.check_out || now.toISOString())}</p><p className="text-xs text-gray-500">{checkedIn ? 'Current Time' : 'Check Out'}</p></div>
-              </div>}
-            </div>
-            <div className="flex justify-center gap-8 text-xs text-gray-600 sm:text-sm">
-              <span className="flex items-center gap-2"><span className="h-0.5 w-8 bg-green-600" />Elapsed Time</span>
-              <span className="flex items-center gap-2"><span className="w-8 border-t-2 border-dashed border-gray-400" />Remaining Time</span>
-            </div>
+              <div className="absolute left-0 right-0 top-7 h-2 overflow-hidden rounded-full bg-gray-200">
+                <div className="h-full rounded-full bg-green-500 transition-[width] duration-500" style={{ width: `${workday.progress}%` }} />
+              </div>
+              <span className="absolute left-0 top-[23px] h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-green-600 shadow" />
+              <span className="absolute right-0 top-[23px] h-4 w-4 translate-x-1/2 rounded-full border-2 border-white bg-gray-400 shadow" />
+              {(checkedIn || checkedOut) && <>
+                <span className="absolute top-[20px] z-10 h-5 w-5 -translate-x-1/2 rounded-full border-[3px] border-white bg-green-600 shadow-[0_0_0_3px_rgba(34,197,94,.18)]" style={{ left: `${workday.progress}%` }} />
+                <div className={`absolute top-12 z-10 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-center shadow-md ${workday.progress > 88 ? '-translate-x-full' : workday.progress < 12 ? '' : '-translate-x-1/2'}`} style={{ left: `${workday.progress}%` }}><p className="text-xs font-bold text-green-700 sm:text-sm">{clock(attendance?.check_out || now.toISOString())}</p><p className="text-[10px] text-gray-500 sm:text-xs">{checkedIn ? 'Current Time' : 'Check Out'}</p></div>
+              </>}
+          </div>
+          <div className="flex justify-center gap-6 border-t border-gray-100 pt-3 text-xs text-gray-600 sm:gap-10 sm:text-sm">
+            <span className="flex items-center gap-2"><span className="h-1.5 w-7 rounded-full bg-green-500" />Elapsed</span>
+            <span className="flex items-center gap-2"><span className="h-1.5 w-7 rounded-full bg-gray-200" />Remaining</span>
           </div>
         </div>
       </section>
@@ -199,9 +200,9 @@ export default function EmployeeDashboard() {
 const tones = { green: 'bg-green-50 text-green-600', red: 'bg-red-50 text-red-500', blue: 'bg-blue-50 text-blue-600', orange: 'bg-orange-50 text-orange-500' };
 
 function WorkdayValue({ icon, tone, label, value, note, highlight = false }: { icon: 'in' | 'out' | 'clock'; tone: keyof typeof tones; label: string; value: string; note: string; highlight?: boolean }) {
-  return <div className="flex min-w-0 items-start gap-4 rounded-xl bg-gray-50/70 p-4"><span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}><Icon type={icon} className="h-6 w-6" /></span><div className="min-w-0"><p className="text-sm font-medium text-gray-600">{label}</p><p className={`mt-1 truncate text-xl font-bold sm:text-2xl ${highlight ? 'text-green-600' : 'text-gray-900'}`}>{value}</p><p className="mt-1 text-xs text-gray-500">{note}</p></div></div>;
+  return <div className="flex min-w-0 items-start gap-3 rounded-xl bg-gray-50/70 p-3"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}><Icon type={icon} className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-medium text-gray-600 sm:text-sm">{label}</p><p className={`mt-0.5 truncate text-lg font-bold sm:text-xl ${highlight ? 'text-green-600' : 'text-gray-900'}`}>{value}</p><p className="mt-0.5 text-xs text-gray-500">{note}</p></div></div>;
 }
 
 function SummaryCard({ icon, tone, label, value, note }: { icon: 'clock' | 'calendar' | 'timer'; tone: keyof typeof tones; label: string; value: string; note: string }) {
-  return <div className="flex min-w-0 items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}><Icon type={icon} className="h-6 w-6" /></span><div className="min-w-0"><p className="text-sm text-gray-600">{label}</p><p className={`mt-1 truncate text-xl font-bold ${tone === 'green' ? 'text-green-600' : 'text-gray-900'}`}>{value}</p><p className="mt-1 truncate text-xs text-gray-500">{note}</p></div></div>;
+  return <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tones[tone]}`}><Icon type={icon} className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs text-gray-600 sm:text-sm">{label}</p><p className={`mt-0.5 truncate text-lg font-bold ${tone === 'green' ? 'text-green-600' : 'text-gray-900'}`}>{value}</p><p className="mt-0.5 truncate text-xs text-gray-500">{note}</p></div></div>;
 }
