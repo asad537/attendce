@@ -10,10 +10,10 @@ class DesignationSeeder extends Seeder
 {
     public function run()
     {
-        $eng  = Department::where('code', 'ENG')->first();
-        $hr   = Department::where('code', 'HR')->first();
-        $fin  = Department::where('code', 'FIN')->first();
-        $exec = Department::where('code', 'EXEC')->first();
+        $eng  = Department::where('code', 'DEV')->first();
+        $hr   = Department::where('code', 'CW')->first();
+        $fin  = Department::where('code', 'SEO')->first();
+        $exec = Department::where('code', 'DSGN')->first();
 
         $designations = [
             ['title' => 'Software Engineer',        'department_id' => $eng ? $eng->id : null],

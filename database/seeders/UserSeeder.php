@@ -15,9 +15,9 @@ class UserSeeder extends Seeder
     {
         $generalShift = Shift::where('name', 'General Shift')->first();
         $morningShift = Shift::where('name', 'Morning Shift')->first();
-        $engDept      = Department::where('code', 'ENG')->first();
-        $hrDept       = Department::where('code', 'HR')->first();
-        $execDept     = Department::where('code', 'EXEC')->first();
+        $engDept      = Department::where('code', 'DEV')->first();
+        $hrDept       = Department::where('code', 'CW')->first();
+        $execDept     = Department::where('code', 'DSGN')->first();
         $ceoDesig     = Designation::where('title', 'Chief Executive Officer')->first();
         $engMgrDesig  = Designation::where('title', 'Engineering Manager')->first();
         $hrMgrDesig   = Designation::where('title', 'HR Manager')->first();
