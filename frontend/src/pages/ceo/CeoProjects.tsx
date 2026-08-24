@@ -27,7 +27,7 @@ export default function CeoProjects() {
       const [items, users] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200 })]);
       setProjects(items);
       setLeads(users.data.filter((u) => {
-        if (user?.role === 'ceo') return u.role === 'manager';
+        if (user?.role === 'ceo') return ['manager', 'tl', 'employee'].includes(u.role);
         if (user?.role === 'manager') return u.role === 'tl';
         return false;
       }));
