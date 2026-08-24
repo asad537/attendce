@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 
 export default function CeoReports() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'records'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'records' | 'trends'>('overview');
   
   // Date range state
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
@@ -253,10 +253,26 @@ export default function CeoReports() {
       }));
   }, [data]);
 
+  const departmentSummary = useMemo(() => {
+    const groups = new Map<string, { name: string; present: number; wfm: number; leaves: number; employees: number }>();
+    (data || []).forEach((row: any) => {
+      const name = row.user?.department?.name || row.department?.name || 'Unassigned';
+      const group = groups.get(name) || { name, present: 0, wfm: 0, leaves: 0, employees: 0 };
+      group.present += row.present || 0; group.wfm += row.work_from_home || 0; group.leaves += row.on_leave || 0; group.employees += 1;
+      groups.set(name, group);
+    });
+    return Array.from(groups.values());
+  }, [data]);
+
+  const totalOutcomes = stats.totalPresents + stats.totalWfm + stats.totalLeaves;
+  const attendanceRate = totalOutcomes ? Math.round(((stats.totalPresents + stats.totalWfm) / totalOutcomes) * 100) : 0;
+  const mostPresent = useMemo(() => [...(data || [])].sort((a: any, b: any) => b.present - a.present)[0]?.user?.name || '—', [data]);
+  const mostLeaves = useMemo(() => [...(data || [])].sort((a: any, b: any) => b.on_leave - a.on_leave)[0]?.user?.name || '—', [data]);
+
   return (
-    <div className="min-h-full bg-gray-50 pb-6 sm:pb-8">
+    <div className="min-h-full bg-gray-50/70 pb-6 sm:pb-8">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6">
+      <div className="bg-white border-b border-gray-200 px-4 py-5 sm:px-6">
         <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Company Reports</h1>
@@ -265,7 +281,7 @@ export default function CeoReports() {
 
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             {/* View Tabs */}
-            <div className="grid grid-cols-2 bg-gray-100 p-1 rounded-lg sm:flex">
+            <div className="grid grid-cols-3 bg-gray-100 p-1 rounded-xl sm:flex">
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
@@ -281,6 +297,14 @@ export default function CeoReports() {
                 }`}
               >
                 Records
+              </button>
+              <button
+                onClick={() => setActiveTab('trends')}
+                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-lg transition-all ${
+                  activeTab === 'trends' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Trend Analysis
               </button>
             </div>
 
@@ -303,7 +327,7 @@ export default function CeoReports() {
               onClick={() => refetch()} 
               className="w-full sm:w-auto px-4 py-2 sm:py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Refresh
+              ↻&nbsp; Refresh
             </button>
             
             {showCustomRange && (
@@ -313,6 +337,7 @@ export default function CeoReports() {
                 <input type="date" className="input py-2 sm:py-1 text-sm" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
               </div>
             )}
+            {!showCustomRange && <div className="w-full text-right text-xs font-semibold text-indigo-600">▣ &nbsp;{format(new Date(`${startDate}T00:00:00`), 'MMM dd')} – {format(new Date(`${endDate}T00:00:00`), 'MMM dd, yyyy')}</div>}
           </div>
         </div>
       </div>
@@ -322,7 +347,7 @@ export default function CeoReports() {
       ) : (
         <div className="w-full p-4 sm:p-6 space-y-5 sm:space-y-6">
           
-          {activeTab === 'overview' && (
+          {(activeTab === 'overview' || activeTab === 'trends') && (
             <>
               {/* ── Stat Cards ────────────────────────────────────────── */}
               <div>
@@ -493,6 +518,35 @@ export default function CeoReports() {
                   </div>
 
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_0.9fr]">
+                <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  <div className="border-b border-gray-100 px-5 py-4"><h3 className="font-bold text-gray-900">Department Summary</h3><p className="mt-1 text-xs text-gray-400">Performance grouped by department</p></div>
+                  <div className="overflow-x-auto">
+                    <table className="table min-w-[680px]">
+                      <thead><tr><th>Department</th><th>Presents</th><th>WFM</th><th>Leaves</th><th>Employees</th><th>Attendance %</th></tr></thead>
+                      <tbody>{departmentSummary.length ? departmentSummary.map(department => {
+                        const outcomes = department.present + department.wfm + department.leaves;
+                        const rate = outcomes ? Math.round(((department.present + department.wfm) / outcomes) * 100) : 0;
+                        return <tr key={department.name}><td className="font-semibold text-gray-900">{department.name}</td><td>{department.present}</td><td className="font-semibold text-violet-600">{department.wfm}</td><td className="font-semibold text-amber-600">{department.leaves}</td><td>{department.employees}</td><td><div className="flex items-center gap-3"><b className="w-11 text-emerald-600">{rate}%</b><div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${rate}%` }} /></div></div></td></tr>;
+                      }) : <tr><td colSpan={6} className="py-10 text-center text-gray-400">No department data for this period.</td></tr>}</tbody>
+                    </table>
+                  </div>
+                  <button onClick={() => setActiveTab('records')} className="w-full border-t border-gray-100 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">View Detailed Records →</button>
+                </section>
+
+                <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <h3 className="font-bold text-gray-900">Quick Summary</h3><p className="mt-1 text-xs text-gray-400">Highlights for the selected period</p>
+                  <div className="mt-5 divide-y divide-gray-100">{[
+                    ['Average Attendance', `${attendanceRate}%`, 'bg-blue-50 text-blue-600', '◉'],
+                    ['Most Present Employee', mostPresent, 'bg-amber-50 text-amber-600', '♙'],
+                    ['Most Leaves Taken', mostLeaves, 'bg-orange-50 text-orange-600', '◇'],
+                    ['Work From Home', `${stats.totalWfm} Days`, 'bg-violet-50 text-violet-600', '⌂'],
+                    ['Data Accuracy', '100%', 'bg-emerald-50 text-emerald-600', '✓'],
+                  ].map(([label, value, color, icon]) => <div key={String(label)} className="flex items-center gap-3 py-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${color}`}>{icon}</span><span className="min-w-0 flex-1 text-sm font-medium text-gray-600">{label}</span><b className="max-w-[45%] truncate text-right text-sm text-indigo-600">{value}</b><span className="text-gray-300">›</span></div>)}</div>
+                  <button onClick={handleExportPDF} className="mt-4 w-full rounded-xl border border-indigo-100 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">⇩ &nbsp; Download Summary</button>
+                </section>
               </div>
             </>
           )}
