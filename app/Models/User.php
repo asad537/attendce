@@ -1,0 +1,167 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles;
+
+    protected $fillable = [
+        'employee_id',
+        'first_name',
+        'last_name',
+        'name',
+        'email',
+        'password',
+        'phone',
+        'gender',
+        'avatar',
+        'role',
+        'employment_type',
+        'status',
+        'department_id',
+        'designation_id',
+        'shift_id',
+        'manager_id',
+        'join_date',
+        'birth_date',
+        'address',
+        'emergency_contact',
+        'annual_leave_balance',
+        'sick_leave_balance',
+        'casual_leave_balance',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'join_date'         => 'date',
+        'birth_date'        => 'date',
+    ];
+
+    // ─── Role Helpers ─────────────────────────────────────────────
+    public function isCeo(): bool    { return $this->role === 'ceo'; }
+    public function isManager(): bool { return $this->role === 'manager'; }
+    public function isEmployee(): bool { return $this->role === 'employee'; }
+
+    // ─── Relationships ─────────────────────────────────────────────
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function designation()
+    {
+        return $this->belongsTo(Designation::class);
+    }
+
+    public function shift()
+    {
+        return $this->belongsTo(Shift::class);
+    }
+
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function subordinates()
+    {
+        return $this->hasMany(User::class, 'manager_id');
+    }
+
+    public function attendance()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function todayAttendance()
+    {
+        return $this->hasOne(Attendance::class)->whereDate('date', today());
+    }
+
+    public function breaks()
+    {
+        return $this->hasMany(\App\Models\BreakRecord::class);
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    public function leaveBalances()
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    // ─── Scopes ────────────────────────────────────────────────────
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeByRole($query, string $role)
+    {
+        return $query->where('role', $role);
+    }
+
+    // ─── Accessors ─────────────────────────────────────────────────
+
+    /**
+     * Full name derived from first_name + last_name.
+     * Falls back to the legacy `name` column when the new columns are empty.
+     */
+    public function getFullNameAttribute(): string
+    {
+        $first = trim($this->first_name ?? '');
+        $last  = trim($this->last_name ?? '');
+
+        if ($first || $last) {
+            return trim("{$first} {$last}");
+        }
+
+        return $this->name ?? '';
+    }
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        return $this->avatar ? asset('storage/' . $this->avatar) : null;
+    }
+
+    public function getCurrentStatusAttribute(): string
+    {
+        $attendance = $this->todayAttendance()->first();
+        if (!$attendance || !$attendance->check_in) return 'absent';
+        if ($attendance->status === 'on_leave') return 'on_leave';
+        if (!$attendance->check_out) {
+            $activeBreak = \App\Models\BreakRecord::where('user_id', $this->id)
+                ->whereNull('break_end')
+                ->first();
+            return $activeBreak ? 'on_break' : 'working';
+        }
+        return 'checked_out';
+    }
+}
