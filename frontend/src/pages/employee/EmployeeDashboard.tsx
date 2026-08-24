@@ -115,8 +115,8 @@ export default function EmployeeDashboard() {
   };
 
   const workday = useMemo(() => {
-    const shiftStart = timeOnDate(user?.shift?.start_time || FALLBACK_START, now);
-    let shiftEnd = timeOnDate(user?.shift?.end_time || FALLBACK_END, now);
+    const shiftStart = timeOnDate(FALLBACK_START, now);
+    let shiftEnd = timeOnDate(FALLBACK_END, now);
     if (shiftEnd <= shiftStart) shiftEnd = new Date(shiftEnd.getTime() + 86400000);
     const checkIn = attendance?.check_in ? new Date(attendance.check_in) : null;
     const checkOut = attendance?.check_out ? new Date(attendance.check_out) : null;
@@ -138,7 +138,7 @@ export default function EmployeeDashboard() {
     }
     ticks.push(shiftEnd);
     return { shiftStart, shiftEnd, worked, expected, remaining, progress, ticks, breakSeconds };
-  }, [attendance, activeBreak, checkedIn, now, user?.shift?.end_time, user?.shift?.start_time]);
+  }, [attendance, activeBreak, checkedIn, now]);
 
   if (loading) return <PageLoader />;
 
@@ -231,7 +231,7 @@ export default function EmployeeDashboard() {
               return (
                 <div
                   key={tick.toISOString()}
-                  style={{ position: 'absolute', top: 0, bottom: 0, width: 1, background: '#e5e7eb', left: `${position}%` }}
+                  style={{ position: 'absolute', top: 0, height: '50%', width: 1, background: '#e5e7eb', left: `${position}%` }}
                 />
               );
             })}
