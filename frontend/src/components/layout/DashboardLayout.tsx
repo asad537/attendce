@@ -26,7 +26,7 @@ export default function DashboardLayout() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex min-w-0 w-0 flex-1 flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex items-center justify-between h-14 px-3 sm:px-4 lg:px-6 bg-white border-b border-gray-100 flex-shrink-0">
           <button
@@ -55,7 +55,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-gray-50">
+        <main className="min-w-0 w-full flex-1 overflow-y-auto overflow-x-hidden bg-gray-50">
           <Outlet />
         </main>
       </div>
