@@ -189,8 +189,8 @@ export default function EmployeeDashboard() {
               </button>
             </div>
           ) : (
-            <div className="flex justify-center">
-              <div className="w-full max-w-sm rounded-lg bg-blue-50 px-5 py-2.5 text-center font-semibold text-blue-700">Workday completed</div>
+            <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700">
+              <Icon type="clock" className="h-4 w-4" />Workday completed
             </div>
           )}
         </div>
@@ -358,9 +358,8 @@ export default function EmployeeDashboard() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-3">
         <SummaryCard icon="clock" tone="green" label="Worked Time" value={duration(workday.worked)} note={checkedIn ? 'Live' : checkedOut ? 'Completed' : 'Today'} />
-        <SummaryCard icon="coffee" tone="purple" label="Break Time" value={duration(workday.breakSeconds, false)} note={onBreak ? 'On break' : 'Today'} />
         <SummaryCard icon="calendar" tone="blue" label="Expected Work Time" value={duration(workday.expected, false)} note={`${format(workday.shiftStart, 'hh:mm a')} – ${format(workday.shiftEnd, 'hh:mm a')}`} />
         <SummaryCard icon="timer" tone="orange" label="Remaining Time" value={duration(workday.remaining)} note={`Until ${format(workday.shiftEnd, 'hh:mm a')}`} />
       </section>
