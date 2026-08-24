@@ -40,7 +40,7 @@ class LeavePolicy
      */
     public function managerReview(User $auth, Leave $leave): bool
     {
-        return ($auth->isManager() || $auth->isTl())
+        return $auth->isManager()
             && $leave->user->manager_id === $auth->id
             && $leave->status === 'pending';
     }

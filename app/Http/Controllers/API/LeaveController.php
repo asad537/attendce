@@ -28,7 +28,7 @@ class LeaveController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isManager() || $user->isTl()) {
+        } elseif ($user->isManager()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -172,7 +172,7 @@ class LeaveController extends Controller
 
         $query = Leave::where('status', 'pending');
 
-        if ($user->isManager() || $user->isTl()) {
+        if ($user->isManager()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id');
             $query->whereIn('user_id', $teamIds);
         } else {

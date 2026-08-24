@@ -108,6 +108,7 @@ export default function CeoDashboard() {
                         emp.current_status === 'working' ? 'badge-green' :
                         emp.current_status === 'absent' ? 'badge-red' :
                         emp.current_status === 'on_leave' ? 'badge-yellow' :
+                        emp.current_status === 'work_from_home' ? 'badge-purple' :
                         'badge-gray'
                       }`}>
                         {(emp.current_status || '').replace('_', ' ').toUpperCase()}

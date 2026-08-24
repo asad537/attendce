@@ -12,9 +12,12 @@ import LoginPage from './pages/auth/LoginPage';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import AttendanceHistory from './pages/employee/AttendanceHistory';
 import LeaveManagement from './pages/employee/LeaveManagement';
+import WfhManagement from './pages/employee/WfhManagement';
 
 // Manager pages
 import ManagerDashboard from './pages/manager/ManagerDashboard';
+import ManagerLeaveApprovals from './pages/manager/ManagerLeaveApprovals';
+import WfhApprovals from './pages/manager/WfhApprovals';
 import TeamMembers from './pages/shared/TeamMembers';
 
 // CEO pages
@@ -23,6 +26,8 @@ import CeoAttendance from './pages/ceo/CeoAttendance';
 import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
 import CeoEmployees from './pages/ceo/CeoEmployees';
 import CeoDepartments from './pages/ceo/CeoDepartments';
+import CeoReports from './pages/ceo/CeoReports';
+
 import CeoProjects from './pages/ceo/CeoProjects';
 import ProjectTickets from './pages/ceo/ProjectTickets';
 import MyTickets from './pages/shared/MyTickets';
@@ -68,10 +73,14 @@ function App() {
       <Route path="/manager" element={<ProtectedRoute allowedRoles={['manager']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"   element={<ManagerDashboard />} />
-          <Route path="attendance"  element={<AttendanceHistory />} />
-          <Route path="leaves"      element={<LeaveManagement />} />
-          <Route path="team"        element={<TeamMembers />} />
+          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="attendance" element={<AttendanceHistory />} />
+          <Route path="leave-approvals" element={<ManagerLeaveApprovals />} />
+          <Route path="my-leaves" element={<LeaveManagement />} />
+          <Route path="team" element={<TeamMembers />} />
+          <Route path="wfh" element={<WfhManagement />} />
+          <Route path="wfh-approvals" element={<WfhApprovals />} />
+          <Route path="reports" element={<CeoReports />} />
         </Route>
       </Route>
 
@@ -79,10 +88,10 @@ function App() {
       <Route path="/tl" element={<ProtectedRoute allowedRoles={['tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"     element={<ManagerDashboard />} />
-          <Route path="attendance"    element={<AttendanceHistory />} />
-          <Route path="leaves"        element={<LeaveManagement />} />
-          <Route path="team"          element={<TeamMembers />} />
+          <Route path="dashboard" element={<ManagerDashboard />} />
+          <Route path="attendance" element={<AttendanceHistory />} />
+          <Route path="leaves" element={<LeaveManagement />} />
+          <Route path="team" element={<TeamMembers />} />
           <Route path="my-attendance" element={<AttendanceHistory />} />
           <Route path="my-leaves" element={<LeaveManagement />} />
         </Route>

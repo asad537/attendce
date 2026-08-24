@@ -36,7 +36,7 @@ export default function LeaveManagement() {
         api.get('/leave-types').catch(() => ({ data: { leave_types: [] } })),
       ]);
       setData(leaveRes);
-      setBalances(balRes.balances);
+      setBalances(balRes.balances.filter(b => !['Annual Leave', 'Paternity Leave', 'Maternity Leave', 'Casual Leave'].includes(b.leave_type?.name || '')));
       setLeaveTypes((typesRes as any).data?.leave_types || []);
     } catch { toast.error('Failed to load leaves'); }
     finally { setLoading(false); }
@@ -55,7 +55,9 @@ export default function LeaveManagement() {
     try {
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
-        if (v !== '' && v !== undefined) fd.append(k, String(v));
+        if (v !== '' && v !== undefined) {
+          fd.append(k, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
+        }
       });
       await leaveService.request(fd);
       toast.success('Leave request submitted!');
@@ -168,16 +170,28 @@ export default function LeaveManagement() {
                 onChange={(e) => setForm(f => ({ ...f, end_date: e.target.value }))} required />
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <input type="checkbox" id="half_day" checked={form.is_half_day}
-              onChange={(e) => setForm(f => ({ ...f, is_half_day: e.target.checked }))} className="rounded" />
-            <label htmlFor="half_day" className="text-sm text-gray-700">Half day</label>
+          <div>
+            <label className="label text-sm font-medium text-gray-700">Leave Duration</label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="duration" checked={!form.is_half_day}
+                  onChange={() => setForm(f => ({ ...f, is_half_day: false }))} className="text-indigo-600 focus:ring-indigo-500" />
+                Full Day
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                <input type="radio" name="duration" checked={form.is_half_day}
+                  onChange={() => setForm(f => ({ ...f, is_half_day: true }))} className="text-indigo-600 focus:ring-indigo-500" />
+                Half Day
+              </label>
+            </div>
             {form.is_half_day && (
-              <select className="input text-sm ml-2" value={form.half_day_period}
-                onChange={(e) => setForm(f => ({ ...f, half_day_period: e.target.value }))}>
-                <option value="morning">Morning</option>
-                <option value="afternoon">Afternoon</option>
-              </select>
+              <div className="mt-3">
+                <select className="input text-sm" value={form.half_day_period}
+                  onChange={(e) => setForm(f => ({ ...f, half_day_period: e.target.value }))}>
+                  <option value="morning">Morning (First Half)</option>
+                  <option value="afternoon">Afternoon (Second Half)</option>
+                </select>
+              </div>
             )}
           </div>
           <div>
