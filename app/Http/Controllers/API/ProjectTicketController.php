@@ -5,6 +5,7 @@ use App\Models\Project;
 use App\Models\ProjectTicket;
 use App\Models\User;
 use App\Models\TicketSubtask;
+use App\Models\TicketActivity;
 use Illuminate\Http\Request;
 
 class ProjectTicketController extends Controller
@@ -33,7 +34,14 @@ class ProjectTicketController extends Controller
             }
         }
         $data['project_id'] = $project->id; $data['created_by'] = $request->user()->id;
-        return response()->json(['ticket' => ProjectTicket::create($data)->load('assignee')], 201);
+        $ticket = ProjectTicket::create($data);
+        TicketActivity::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'type' => 'created',
+            'new_value' => 'Ticket created'
+        ]);
+        return response()->json(['ticket' => $ticket->load('assignee')], 201);
     }
 
     public function update(Request $request, ProjectTicket $ticket)
@@ -42,7 +50,27 @@ class ProjectTicketController extends Controller
         $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','attachment'=>'nullable|file|max:10240','assignee_id'=>'nullable|exists:users,id']);
         if ($request->hasFile('attachment')) { $data['attachment_name'] = $request->file('attachment')->getClientOriginalName(); $data['attachment_path'] = $request->file('attachment')->store('ticket-attachments', 'public'); }
         unset($data['attachment']);
-        $ticket->update($data); return response()->json(['ticket' => $ticket->fresh('assignee')]);
+
+        $original = $ticket->getOriginal();
+        $ticket->update($data);
+
+        $changes = $ticket->getChanges();
+        unset($changes['updated_at']);
+
+        foreach ($changes as $field => $newValue) {
+            $oldValue = $original[$field] ?? null;
+            if ($field === 'assignee_id') {
+                $oldUser = $oldValue ? User::find($oldValue) : null;
+                $newUser = $newValue ? User::find($newValue) : null;
+                $oldValStr = $oldUser ? $oldUser->name : 'Unassigned';
+                $newValStr = $newUser ? $newUser->name : 'Unassigned';
+                TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>'assignee_changed', 'old_value'=>$oldValStr, 'new_value'=>$newValStr]);
+            } elseif (in_array($field, ['status', 'priority', 'title', 'description'])) {
+                TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>$field.'_changed', 'old_value'=>$oldValue, 'new_value'=>$newValue]);
+            }
+        }
+
+        return response()->json(['ticket' => $ticket->fresh('assignee')]);
     }
     public function subtasks(Request $request, ProjectTicket $ticket) { $this->authorizeProject($request,$ticket->project); return response()->json(['subtasks'=>TicketSubtask::where('ticket_id',$ticket->id)->get()]); }
     public function addSubtask(Request $request, ProjectTicket $ticket) { $this->authorizeProject($request,$ticket->project); $data=$request->validate(['title'=>'required|string|max:200']); $data['ticket_id']=$ticket->id; return response()->json(['subtask'=>TicketSubtask::create($data)],201); }

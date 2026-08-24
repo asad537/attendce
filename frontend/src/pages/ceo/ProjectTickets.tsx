@@ -38,6 +38,9 @@ export default function ProjectTickets() {
     const [editing, setEditing] = useState<Ticket | null>(null);
     const [subtasks, setSubtasks] = useState<{id:number, title:string, is_completed:boolean}[]>([]);
     const [newSubtask, setNewSubtask] = useState("");
+    const [feed, setFeed] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState("all");
+    const [commentText, setCommentText] = useState("");
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -162,12 +165,24 @@ export default function ProjectTickets() {
         }
     };
 
+    const loadActivity = async (ticketId: number) => {
+        try {
+            const res = await api.get(`/tickets/${ticketId}/activity`);
+            setFeed(res.data.feed || []);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         if (detail?.id) {
             loadSubtasks(detail.id);
+            loadActivity(detail.id);
         } else {
             setSubtasks([]);
             setNewSubtask("");
+            setFeed([]);
+            setCommentText("");
         }
     }, [detail?.id]);
 
@@ -189,6 +204,19 @@ export default function ProjectTickets() {
             if (detail) loadSubtasks(detail.id);
         } catch (err) {
             toast.error("Failed to update subtask");
+        }
+    };
+
+    const handleAddComment = async (e?: React.KeyboardEvent, textOverride?: string) => {
+        if (e && e.key !== 'Enter') return;
+        const text = textOverride !== undefined ? textOverride : commentText;
+        if (!text.trim() || !detail) return;
+        try {
+            await api.post(`/tickets/${detail.id}/comments`, { body: text.trim() });
+            setCommentText("");
+            loadActivity(detail.id);
+        } catch (err) {
+            toast.error("Failed to add comment");
         }
     };
 
@@ -576,29 +604,66 @@ export default function ProjectTickets() {
                                     <h3 className="text-[15px] font-semibold text-gray-800">Activity</h3>
                                 </div>
                                 <div className="flex items-center gap-4 text-[13px]">
-                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">All</span>
-                                    <span className="font-medium bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded cursor-pointer">Comments</span>
-                                    <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">History</span>
+                                    <span onClick={()=>setActiveTab("all")} className={`font-medium cursor-pointer ${activeTab==='all' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>All</span>
+                                    <span onClick={()=>setActiveTab("comments")} className={`font-medium cursor-pointer ${activeTab==='comments' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>Comments</span>
+                                    <span onClick={()=>setActiveTab("history")} className={`font-medium cursor-pointer ${activeTab==='history' ? 'bg-gray-100 border border-gray-200 text-gray-900 px-3 py-1 rounded' : 'text-gray-500 hover:text-gray-900'}`}>History</span>
                                     <span className="font-medium text-gray-500 hover:text-gray-900 cursor-pointer">Work log</span>
                                 </div>
                                 <div className="flex gap-3 mt-4">
                                     <div className="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-[12px] font-bold text-white mt-1">
                                         {currentUser?.name ? currentUser.name.substring(0,2).toUpperCase() : 'ME'}
                                     </div>
-                                    <div className="flex-1 border border-gray-300 rounded-lg p-3 hover:border-gray-400 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all bg-white shadow-sm">
-                                        <input 
-                                            className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-500 p-0"
-                                            placeholder="Add a comment..."
-                                        />
+                                    <div className="flex-1 border border-indigo-300 rounded p-4 hover:border-indigo-400 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 transition-all bg-white shadow-sm">
+                                        <div className="border border-gray-900 rounded p-1">
+                                            <input 
+                                                className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-500 px-2 py-1"
+                                                placeholder="Add a comment..."
+                                                value={commentText}
+                                                onChange={e => setCommentText(e.target.value)}
+                                                onKeyDown={handleAddComment}
+                                            />
+                                        </div>
                                         <div className="flex items-center gap-2 mt-3">
-                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Can I get more info...?</button>
-                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
-                                            <button className="text-[12px] font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
+                                            <button onClick={()=>handleAddComment(undefined, "Can I get more info...?")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Can I get more info...?</button>
+                                            <button onClick={()=>handleAddComment(undefined, "Status update...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
+                                            <button onClick={()=>handleAddComment(undefined, "Thanks...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
                                         </div>
                                         <div className="text-[11px] text-gray-400 mt-4">
                                             Pro tip: press <span className="font-bold bg-gray-100 border border-gray-200 px-1 rounded text-gray-500">M</span> to comment
                                         </div>
                                     </div>
+                                </div>
+                                <div className="mt-6 space-y-4">
+                                    {feed.filter(f => activeTab === 'all' || (activeTab === 'comments' && f.type === 'comment') || (activeTab === 'history' && f.type === 'activity')).map((item) => (
+                                        <div key={item.id} className="flex gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-indigo-600 flex-shrink-0 flex items-center justify-center text-[12px] font-bold text-white">
+                                                {item.user?.name ? item.user.name.substring(0,2).toUpperCase() : '?'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium text-[13px] text-gray-900">{item.user?.name || 'Unknown'}</span>
+                                                    <span className="text-[12px] text-gray-500">{new Date(item.created_at).toLocaleString()}</span>
+                                                </div>
+                                                {item.type === 'comment' ? (
+                                                    <div className="mt-1 text-[14px] text-gray-800">{item.body}</div>
+                                                ) : (
+                                                    <div className="mt-1 text-[13px] text-gray-600">
+                                                        {item.activity_type === 'created' ? (
+                                                            <span>created this issue</span>
+                                                        ) : item.activity_type === 'assignee_changed' ? (
+                                                            <span>changed assignee from <strong className="text-gray-900">{item.old_value}</strong> to <strong className="text-gray-900">{item.new_value}</strong></span>
+                                                        ) : item.activity_type === 'priority_changed' ? (
+                                                            <span>changed priority from <strong className="text-gray-900 capitalize">{item.old_value || 'medium'}</strong> to <strong className="text-gray-900 capitalize">{item.new_value}</strong></span>
+                                                        ) : item.activity_type === 'status_changed' ? (
+                                                            <span>moved this ticket from <strong className="text-gray-900 capitalize">{item.old_value?.replace('_', ' ')}</strong> to <strong className="text-gray-900 capitalize">{item.new_value?.replace('_', ' ')}</strong></span>
+                                                        ) : (
+                                                            <span>updated the ticket</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
