@@ -9,6 +9,8 @@ use App\Models\LeaveType;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class LeaveService
 {
@@ -24,13 +26,16 @@ class LeaveService
             ? 0.5
             : $this->countBusinessDays($data['start_date'], $data['end_date']);
 
-        // Check leave balance
-        $balance = LeaveBalance::where('user_id', $user->id)
-            ->where('leave_type_id', $leaveType->id)
-            ->where('year', date('Y'))
-            ->first();
+        $leaveYear = Carbon::parse($data['start_date'])->year;
 
-        if ($balance && ($balance->remaining < $days)) {
+        // A balance must exist for the year being requested. Future-year
+        // requests must never bypass allocation checks because a row is absent.
+        $balance = LeaveBalance::firstOrCreate(
+            ['user_id' => $user->id, 'leave_type_id' => $leaveType->id, 'year' => $leaveYear],
+            ['allocated' => $leaveType->days_allowed_per_year, 'used' => 0, 'carried_forward' => 0]
+        );
+
+        if ($balance->remaining < $days) {
             throw new \Exception("Insufficient leave balance. You have {$balance->remaining} days remaining.");
         }
 
@@ -139,18 +144,41 @@ class LeaveService
     {
         $status = $action === 'approve' ? 'approved' : 'rejected';
 
-        $leave->update([
-            'status'          => $status,
-            'reviewed_by_ceo' => $ceo->id,
-            'ceo_reviewed_at' => now(),
-            'ceo_remarks'     => $remarks,
-        ]);
+        $leave = DB::transaction(function () use ($ceo, $leave, $status, $remarks) {
+            $lockedLeave = Leave::whereKey($leave->id)->lockForUpdate()->firstOrFail();
 
-        // Deduct balance if approved
-        if ($status === 'approved') {
-            $this->deductLeaveBalance($leave);
-            $this->markAttendanceOnLeave($leave);
-        }
+            if (!in_array($lockedLeave->status, ['pending', 'manager_approved', 'manager_rejected'], true)) {
+                throw ValidationException::withMessages(['action' => 'This leave request has already been reviewed.']);
+            }
+
+            // Deduct before changing status. The conditional database update is
+            // the final balance check and prevents concurrent approvals overspending.
+            if ($status === 'approved') {
+                $hasWorkedInRange = Attendance::where('user_id', $lockedLeave->user_id)
+                    ->whereBetween('date', [$lockedLeave->start_date, $lockedLeave->end_date])
+                    ->whereNotNull('check_in')
+                    ->exists();
+                if ($hasWorkedInRange) {
+                    throw ValidationException::withMessages([
+                        'action' => 'Leave cannot be approved because attendance is already recorded in this period.',
+                    ]);
+                }
+                $this->deductLeaveBalance($lockedLeave);
+            }
+
+            $lockedLeave->update([
+                'status'          => $status,
+                'reviewed_by_ceo' => $ceo->id,
+                'ceo_reviewed_at' => now(),
+                'ceo_remarks'     => $remarks,
+            ]);
+
+            if ($status === 'approved') {
+                $this->markAttendanceOnLeave($lockedLeave);
+            }
+
+            return $lockedLeave;
+        });
 
         AuditService::log("ceo_{$action}d_leave", 'leave', "CEO {$ceo->name} {$action}d leave", $ceo->id, Leave::class, $leave->id);
 
@@ -201,10 +229,21 @@ class LeaveService
 
     private function deductLeaveBalance(Leave $leave): void
     {
-        LeaveBalance::where('user_id', $leave->user_id)
+        $leaveType = LeaveType::findOrFail($leave->leave_type_id);
+        LeaveBalance::firstOrCreate(
+            ['user_id' => $leave->user_id, 'leave_type_id' => $leave->leave_type_id, 'year' => $leave->start_date->year],
+            ['allocated' => $leaveType->days_allowed_per_year, 'used' => 0, 'carried_forward' => 0]
+        );
+
+        $updated = LeaveBalance::where('user_id', $leave->user_id)
             ->where('leave_type_id', $leave->leave_type_id)
             ->where('year', $leave->start_date->year)
+            ->whereRaw('(allocated + carried_forward - used) >= ?', [(float) $leave->days_requested])
             ->increment('used', $leave->days_requested);
+
+        if ($updated !== 1) {
+            throw ValidationException::withMessages(['action' => 'Insufficient leave balance for this approval.']);
+        }
     }
 
     private function restoreLeaveBalance(Leave $leave): void
@@ -220,10 +259,14 @@ class LeaveService
         $period = CarbonPeriod::create($leave->start_date, $leave->end_date);
         foreach ($period as $date) {
             if ($date->isWeekday()) {
-                Attendance::updateOrCreate(
-                    ['user_id' => $leave->user_id, 'date' => $date->toDateString()],
-                    ['status' => 'on_leave']
-                );
+                $attendance = Attendance::firstOrNew([
+                    'user_id' => $leave->user_id,
+                    'date' => $date->toDateString(),
+                ]);
+                if (!$attendance->check_in) {
+                    $attendance->status = 'on_leave';
+                    $attendance->save();
+                }
             }
         }
     }

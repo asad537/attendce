@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class LeaveRequest extends FormRequest
 {
@@ -19,5 +21,27 @@ class LeaveRequest extends FormRequest
             'reason'         => 'required|string|min:10|max:1000',
             'attachment'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($validator->errors()->hasAny(['start_date', 'end_date'])) return;
+
+            $start = Carbon::parse($this->input('start_date'))->startOfDay();
+            $end = Carbon::parse($this->input('end_date'))->startOfDay();
+
+            if ($start->year !== $end->year) {
+                $validator->errors()->add('end_date', 'A leave request must stay within one calendar year.');
+            }
+
+            if ($start->diffInDays($end) > 366) {
+                $validator->errors()->add('end_date', 'The requested leave period is too long.');
+            }
+
+            if ($this->boolean('is_half_day') && !$start->equalTo($end)) {
+                $validator->errors()->add('end_date', 'A half-day leave must start and end on the same date.');
+            }
+        });
     }
 }

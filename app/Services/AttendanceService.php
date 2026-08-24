@@ -6,6 +6,7 @@ use App\Events\AttendanceUpdated;
 use App\Models\Attendance;
 use App\Models\BreakRecord;
 use App\Models\Holiday;
+use App\Models\Leave;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,15 @@ class AttendanceService
         $existing = Attendance::where('user_id', $user->id)->whereDate('date', $today)->first();
         if ($existing && $existing->check_in) {
             throw new \Exception('You have already checked in today.');
+        }
+
+        $approvedLeave = Leave::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->exists();
+        if ($approvedLeave) {
+            throw new \Exception('You cannot check in while you are on approved leave.');
         }
 
         $now       = Carbon::now();

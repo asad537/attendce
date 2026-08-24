@@ -17,10 +17,16 @@ export const reportService = {
     return res.data;
   },
 
-  getExportUrl(params: Record<string, string>): string {
-    const token = localStorage.getItem('auth_token');
-    const query = new URLSearchParams({ ...params, token: token || '' }).toString();
-    return `${import.meta.env.VITE_API_URL || '/api'}/reports/export?${query}`;
+  async downloadExport(params: Record<string, string>): Promise<void> {
+    const response = await api.get('/reports/export', { params, responseType: 'blob' });
+    const disposition = String(response.headers['content-disposition'] || '');
+    const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] || 'attendance.csv';
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   },
 };
 

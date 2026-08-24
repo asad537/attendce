@@ -44,7 +44,7 @@ class AttendanceController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $per_page = min((int) $request->get('per_page', 20), 100);
+        $per_page = max(1, min((int) $request->get('per_page', 20), 100));
         $records  = $query->paginate($per_page);
 
         return response()->json([

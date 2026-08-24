@@ -62,35 +62,49 @@ class ProjectTicketController extends Controller
     {
         abort_unless($this->canManageProject($request, $project), 403);
         $data = $request->validate(['title'=>'required|string|max:200','description'=>'nullable|string','status'=>'nullable|in:todo,in_progress,in_review,done','priority'=>'nullable|in:low,medium,high,urgent','due_date'=>'nullable|date','attachment'=>'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240','assignee_id'=>'nullable|exists:users,id']);
-        if ($request->hasFile('attachment')) { $data['attachment_name'] = $request->file('attachment')->getClientOriginalName(); $data['attachment_path'] = $request->file('attachment')->store('ticket-attachments'); }
-        unset($data['attachment']);
         if (!empty($data['assignee_id'])) {
             abort_unless($this->canAssignUser($request, (int) $data['assignee_id']), 403, 'You cannot assign this ticket to that user.');
         }
-        $data['project_id'] = $project->id; $data['created_by'] = $request->user()->id;
-        $ticket = ProjectTicket::create($data);
-        TicketActivity::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
-            'type' => 'created',
-            'new_value' => 'Ticket created'
-        ]);
+
+        $storedPath = null;
+        try {
+            if ($request->hasFile('attachment')) {
+                $data['attachment_name'] = $request->file('attachment')->getClientOriginalName();
+                $storedPath = $request->file('attachment')->store('ticket-attachments');
+                $data['attachment_path'] = $storedPath;
+            }
+            unset($data['attachment']);
+            $data['project_id'] = $project->id;
+            $data['created_by'] = $request->user()->id;
+
+            $ticket = DB::transaction(function () use ($data, $request) {
+                $ticket = ProjectTicket::create($data);
+                TicketActivity::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $request->user()->id,
+                    'type' => 'created',
+                    'new_value' => 'Ticket created'
+                ]);
+                return $ticket;
+            });
+        } catch (\Throwable $error) {
+            if ($storedPath) Storage::disk('local')->delete($storedPath);
+            throw $error;
+        }
+
         return response()->json(['ticket' => $ticket->load('assignee')], 201);
     }
 
     public function update(Request $request, ProjectTicket $ticket)
     {
         $this->authorizeTicket($request, $ticket);
-        $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','attachment'=>'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240','assignee_id'=>'nullable|exists:users,id']);
+        $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','assignee_id'=>'nullable|exists:users,id']);
         if (!$this->canManageProject($request, $ticket->project)) {
             $data = array_intersect_key($data, array_flip(['status']));
         }
         if (!empty($data['assignee_id'])) {
             abort_unless($this->canAssignUser($request, (int) $data['assignee_id']), 403, 'You cannot assign this ticket to that user.');
         }
-        if ($request->hasFile('attachment') && $this->canManageProject($request, $ticket->project)) { $data['attachment_name'] = $request->file('attachment')->getClientOriginalName(); $data['attachment_path'] = $request->file('attachment')->store('ticket-attachments'); }
-        unset($data['attachment']);
-
         $original = $ticket->getOriginal();
         $ticket->update($data);
 
@@ -120,10 +134,21 @@ class ProjectTicketController extends Controller
     {
         abort_unless($this->canManageProject($request, $ticket->project), 403);
         $data = $request->validate(['attachment' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240']);
-        if ($ticket->attachment_path) Storage::disk('local')->delete($ticket->attachment_path);
         $file = $data['attachment'];
-        $ticket->update(['attachment_name' => $file->getClientOriginalName(), 'attachment_path' => $file->store('ticket-attachments')]);
-        TicketActivity::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'type' => 'attachment_added', 'new_value' => $ticket->attachment_name]);
+        $oldPath = $ticket->attachment_path;
+        $newPath = $file->store('ticket-attachments');
+
+        try {
+            DB::transaction(function () use ($ticket, $file, $newPath, $request) {
+                $ticket->update(['attachment_name' => $file->getClientOriginalName(), 'attachment_path' => $newPath]);
+                TicketActivity::create(['ticket_id' => $ticket->id, 'user_id' => $request->user()->id, 'type' => 'attachment_added', 'new_value' => $ticket->attachment_name]);
+            });
+        } catch (\Throwable $error) {
+            Storage::disk('local')->delete($newPath);
+            throw $error;
+        }
+
+        if ($oldPath && $oldPath !== $newPath) Storage::disk('local')->delete($oldPath);
         return response()->json(['ticket' => $ticket->fresh('assignee')]);
     }
 

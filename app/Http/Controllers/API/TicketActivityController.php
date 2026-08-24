@@ -24,9 +24,12 @@ class TicketActivityController extends Controller
     public function activity(Request $request, ProjectTicket $ticket)
     {
         $this->authorizeTicket($request, $ticket);
+        $limit = max(1, min((int) $request->get('limit', 100), 100));
 
         $comments = TicketComment::with('user:id,first_name,last_name,name,email,role')
             ->where('ticket_id', $ticket->id)
+            ->latest('created_at')
+            ->limit($limit)
             ->get()
             ->map(function ($c) {
                 return [
@@ -40,6 +43,8 @@ class TicketActivityController extends Controller
 
         $activities = TicketActivity::with('user:id,first_name,last_name,name,email,role')
             ->where('ticket_id', $ticket->id)
+            ->latest('created_at')
+            ->limit($limit)
             ->get()
             ->map(function ($a) {
                 return [
@@ -55,6 +60,8 @@ class TicketActivityController extends Controller
 
         $worklogs = TicketWorklog::with('user:id,first_name,last_name,name,email,role')
             ->where('ticket_id', $ticket->id)
+            ->latest('created_at')
+            ->limit($limit)
             ->get()
             ->map(function ($w) {
                 return [
@@ -67,7 +74,7 @@ class TicketActivityController extends Controller
                 ];
             });
 
-        $feed = collect($comments)->merge($activities)->merge($worklogs)->sortByDesc('created_at')->values();
+        $feed = collect($comments)->merge($activities)->merge($worklogs)->sortByDesc('created_at')->take($limit)->values();
 
         return response()->json(['feed' => $feed]);
     }
@@ -89,7 +96,7 @@ class TicketActivityController extends Controller
     }
 
     private function parseJiraTime($timeStr) {
-        if (!$timeStr) return 0;
+        if (!$timeStr || !preg_match('/^(?:\d+\s*[wdhm]\s*)+$/i', trim($timeStr))) return 0;
         $minutes = 0;
         preg_match_all('/(\d+)\s*(w|d|h|m)/i', $timeStr, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
@@ -108,8 +115,8 @@ class TicketActivityController extends Controller
         $this->authorizeTicket($request, $ticket);
         
         $data = $request->validate([
-            'time_spent' => 'required|string',
-            'time_remaining' => 'nullable|string'
+            'time_spent' => 'required|string|max:50',
+            'time_remaining' => 'nullable|string|max:50'
         ]);
 
         $timeSpentMins = $this->parseJiraTime($data['time_spent']);

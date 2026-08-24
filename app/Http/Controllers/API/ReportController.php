@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Services\ReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class ReportController extends Controller
 {
@@ -29,8 +32,7 @@ class ReportController extends Controller
     public function attendanceSummary(Request $request): JsonResponse
     {
         $auth  = $request->user();
-        $start = $request->get('start_date', now()->startOfMonth()->toDateString());
-        $end   = $request->get('end_date', now()->toDateString());
+        [$start, $end] = $this->validatedDateRange($request);
 
         if ($auth->isEmployee()) {
             return response()->json($this->service->userAttendanceSummary($auth, $start, $end));
@@ -74,11 +76,10 @@ class ReportController extends Controller
     /** GET /api/reports/export - CSV/Excel download */
     public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $start = $request->get('start_date', now()->startOfMonth()->toDateString());
-        $end   = $request->get('end_date', now()->toDateString());
+        [$start, $end] = $this->validatedDateRange($request);
         $auth  = $request->user();
 
-        $query = Attendance::with('user')->forDateRange($start, $end)->orderBy('date');
+        $query = Attendance::with('user')->forDateRange($start, $end)->orderBy('date')->orderBy('id');
 
         if ($auth->isEmployee()) {
             $query->where('user_id', $auth->id);
@@ -87,17 +88,15 @@ class ReportController extends Controller
             $query->whereIn('user_id', $teamIds);
         }
 
-        $records = $query->get();
-
         $headers = [
             'Content-Type'        => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"attendance_{$start}_to_{$end}.csv\"",
         ];
 
-        $callback = function () use ($records) {
+        $callback = function () use ($query) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Date', 'Employee ID', 'Name', 'Check In', 'Check Out', 'Status', 'Working Hours', 'Overtime Hours', 'Is Late', 'Late Minutes', 'Work Mode']);
-            foreach ($records as $r) {
+            foreach ($query->lazy(500) as $r) {
                 fputcsv($handle, [
                     $r->date ? $r->date->toDateString() : null,
                     $this->safeCsv($r->user ? $r->user->employee_id : null),
@@ -116,6 +115,24 @@ class ReportController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function validatedDateRange(Request $request): array
+    {
+        $dates = [
+            'start_date' => $request->get('start_date', now()->startOfMonth()->toDateString()),
+            'end_date' => $request->get('end_date', now()->toDateString()),
+        ];
+        Validator::make($dates, [
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ])->validate();
+
+        if (Carbon::parse($dates['start_date'])->diffInDays(Carbon::parse($dates['end_date'])) > 366) {
+            throw ValidationException::withMessages(['end_date' => 'Report ranges cannot exceed 366 days.']);
+        }
+
+        return [$dates['start_date'], $dates['end_date']];
     }
 
     private function safeCsv($value): ?string
