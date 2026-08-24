@@ -19,4 +19,8 @@ export const projectService = {
     const res = await api.post('/projects', payload);
     return res.data.project;
   },
+  async update(id: number, payload: CreateProjectPayload): Promise<Project> {
+    const res = await api.put(`/projects/${id}`, payload);
+    return res.data.project;
+  },
 };

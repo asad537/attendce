@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Projects — employees cannot create or access projects.
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
+    Route::put('/projects/{project}', [ProjectController::class, 'update']);
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);
