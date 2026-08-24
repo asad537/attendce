@@ -53,11 +53,16 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('education') && is_string($request->education)) {
+            $request->merge(['education' => json_decode($request->education, true)]);
+        }
+
         $validated = $request->validate([
             'name'             => 'sometimes|string|max:100',
             'phone'            => 'nullable|string|max:20',
             'address'          => 'nullable|string|max:500',
             'emergency_contact'=> 'nullable|string|max:100',
+            'education'        => 'nullable|array',
             'avatar'           => 'nullable|image|max:1024',
             'current_password' => 'required_with:new_password',
             'new_password'     => 'nullable|string|min:8|confirmed',
@@ -75,7 +80,7 @@ class AuthController extends Controller
             $user->avatar = $request->file('avatar')->store('avatars');
         }
 
-        $user->fill(\Arr::only($validated, ['name', 'phone', 'address', 'emergency_contact']));
+        $user->fill(\Arr::only($validated, ['name', 'phone', 'address', 'emergency_contact', 'education']));
         $user->save();
 
         if (!empty($passwordChanged)) {

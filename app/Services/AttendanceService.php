@@ -19,11 +19,29 @@ class AttendanceService
     public function checkIn(User $user, array $data): Attendance
     {
         $today = today()->toDateString();
+        $now = now();
+        
+        // Prevent check in after working hours
+        if ($user->shift) {
+            $shiftEnd = \Carbon\Carbon::parse($today . ' ' . $user->shift->end_time);
+            if ($now->greaterThanOrEqualTo($shiftEnd)) {
+                throw new \Exception('You cannot check in after your working hours have ended.');
+            }
+        }
 
         // Already checked in today?
         $existing = Attendance::where('user_id', $user->id)->whereDate('date', $today)->first();
         if ($existing && $existing->check_in) {
-            throw new \Exception('You have already checked in today.');
+            if ($existing->check_out) {
+                // Allow "resuming" shift if they accidentally checked out
+                $existing->check_out = null;
+                $existing->working_minutes = 0; // Will be recalculated upon the next checkout
+                $existing->status = 'present';
+                $existing->save();
+                return $existing;
+            } else {
+                throw new \Exception('You have already checked in today.');
+            }
         }
 
         $approvedLeave = Leave::where('user_id', $user->id)

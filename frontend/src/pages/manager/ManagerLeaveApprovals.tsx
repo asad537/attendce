@@ -149,9 +149,13 @@ export default function ManagerLeaveApprovals() {
                   <tr key={l.id}>
                     <td>
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shrink-0">
-                          {l.user?.name.charAt(0).toUpperCase()}
-                        </div>
+                        {l.user?.avatar_url ? (
+                          <img src={l.user?.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shrink-0">
+                            {l.user?.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-gray-900 text-sm leading-tight">{l.user?.name}</p>
                           <p className="text-xs text-gray-400">{l.user?.employee_id}</p>

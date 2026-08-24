@@ -280,9 +280,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
       <div className="p-3 border-t border-gray-100 space-y-1">
         {/* compact user row */}
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50">
-          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs flex-shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase()}
-          </div>
+          {user?.avatar_url ? (
+            <img src={user?.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs flex-shrink-0">
+              {user?.name?.charAt(0)?.toUpperCase()}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-gray-900 truncate leading-tight">{user?.name}</p>
             <p className={`text-xs ${roleColors[user?.role || 'employee']} leading-tight`}>

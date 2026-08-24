@@ -318,9 +318,7 @@ export default function TeamMembers() {
                   <tr key={u.id}>
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shrink-0">
-                          {u.name.charAt(0).toUpperCase()}
-                        </div>
+                        {u.avatar_url ? <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" /> : <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shrink-0">{u.name.charAt(0).toUpperCase()}</div>}
                         <div>
                           <p className="font-medium text-gray-900 text-sm">{u.name}</p>
                           <p className="text-xs text-gray-400">{u.employee_id} · {u.email}</p>

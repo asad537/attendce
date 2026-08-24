@@ -36,6 +36,7 @@ class UserResource extends JsonResource
             'join_date'       => $this->join_date ? $this->join_date->toDateString() : null,
             'address'         => $this->address,
             'emergency_contact'     => $this->emergency_contact,
+            'education'           => $this->education,
             'annual_leave_balance'  => $this->annual_leave_balance,
             'sick_leave_balance'    => $this->sick_leave_balance,
             'casual_leave_balance'  => $this->casual_leave_balance,

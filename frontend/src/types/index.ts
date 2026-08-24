@@ -68,6 +68,7 @@ export interface User {
   birth_date?: string;
   address?: string;
   emergency_contact?: string;
+  education?: Array<{ degree: string; institution: string; year: string; field: string }>;
   annual_leave_balance: number;
   sick_leave_balance: number;
   casual_leave_balance: number;

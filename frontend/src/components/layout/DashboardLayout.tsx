@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
+import ProfileSettingsModal from '../common/ProfileSettingsModal';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen h-dvh bg-gray-50 overflow-hidden">
@@ -42,14 +45,34 @@ export default function DashboardLayout() {
 
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
-                {user?.name?.charAt(0)?.toUpperCase()}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-gray-900 leading-none">{user?.name}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{user?.employee_id}</p>
-              </div>
+            <div className="relative">
+              <button 
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2.5 focus:outline-none"
+              >
+                {user?.avatar_url ? (
+                  <img src={user?.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                    {user?.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                )}
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-gray-900 leading-none">{user?.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{user?.employee_id}</p>
+                </div>
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  <button
+                    onClick={() => { setDropdownOpen(false); setSettingsOpen(true); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    My Settings
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -59,6 +82,9 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Settings Modal */}
+      <ProfileSettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
