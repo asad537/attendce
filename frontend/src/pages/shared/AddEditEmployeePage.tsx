@@ -122,22 +122,34 @@ export default function AddEditEmployeePage() {
 
   const validate = (f: CreateEmployeePayload): Record<string, string> => {
     const e: Record<string, string> = {};
+    // Names: letters only (spaces, hyphens, apostrophes allowed), min 2 chars.
+    const nameRe = /^[A-Za-z][A-Za-z\s'.-]*$/;
     if (!f.first_name.trim())       e.first_name = 'First name is required.';
     else if (f.first_name.trim().length < 2) e.first_name = 'At least 2 characters.';
+    else if (!nameRe.test(f.first_name.trim())) e.first_name = 'Letters only — no numbers or symbols.';
     if (!f.last_name.trim())        e.last_name = 'Last name is required.';
     else if (f.last_name.trim().length < 2)  e.last_name = 'At least 2 characters.';
+    else if (!nameRe.test(f.last_name.trim())) e.last_name = 'Letters only — no numbers or symbols.';
     if (!f.gender)                  e.gender = 'Gender is required.';
     if (!f.birth_date)              e.birth_date = 'Date of birth is required.';
     else if (new Date(f.birth_date) >= new Date()) e.birth_date = 'Must be in the past.';
     if (!f.email.trim())            e.email = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) e.email = 'Invalid email address.';
+    // Phone: allow +, spaces, dashes, parens — but require 7–15 actual digits.
+    const phoneDigits = f.phone.replace(/\D/g, '');
     if (!f.phone.trim())            e.phone = 'Phone number is required.';
-    else if (!/^\+?[\d\s\-()\+]{7,20}$/.test(f.phone)) e.phone = 'Invalid phone number.';
+    else if (!/^\+?[\d\s\-()]+$/.test(f.phone.trim())) e.phone = 'Invalid phone number.';
+    else if (phoneDigits.length < 7 || phoneDigits.length > 15) e.phone = 'Enter 7 to 15 digits.';
     if (!f.role)                    e.role = 'Role is required.';
     if (!f.employment_type)         e.employment_type = 'Employment type is required.';
     if (!f.department_id)           e.department_id = 'Department is required.';
     if (!f.designation_id)          e.designation_id = 'Designation is required.';
-    if (f.new_password && f.new_password.length < 8) e.new_password = 'Password must be at least 8 characters.';
+    // New password (edit only): min 8 chars, at least one letter and one capital.
+    if (f.new_password) {
+      if (f.new_password.length < 8) e.new_password = 'At least 8 characters.';
+      else if (!/[a-zA-Z]/.test(f.new_password)) e.new_password = 'Must include letters.';
+      else if (!/[A-Z]/.test(f.new_password)) e.new_password = 'Include at least one capital letter.';
+    }
     return e;
   };
 
