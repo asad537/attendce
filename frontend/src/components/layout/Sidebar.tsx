@@ -146,7 +146,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Projects', path: '/projects',
-    roles: ['ceo', 'manager', 'tl'],
+    roles: ['ceo', 'manager', 'tl', 'employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" /></svg>,
   },
   {
@@ -194,7 +194,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
-    if (user && ['ceo', 'manager', 'tl'].includes(user.role)) {
+    // Fetch for every role — backend already scopes the list per role
+    // (CEO=all, Manager/TL=owned+led, Employee=projects with an assigned ticket).
+    if (user) {
       projectService.getAll().then(setProjects).catch(() => {});
     }
   }, [user]);
@@ -259,17 +261,30 @@ export default function Sidebar({ onClose }: SidebarProps) {
             </Link>
             
             {item.label === 'Projects' && projects.length > 0 && (
-              <div className="ml-9 mt-1 space-y-1 mb-2 border-l-2 border-gray-100 pl-2">
-                {projects.map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/projects/${p.id}`}
-                    onClick={onClose}
-                    className="block px-3 py-2 text-xs font-medium text-gray-500 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors truncate"
-                  >
-                    {p.name}
-                  </Link>
-                ))}
+              <div className="ml-[1.35rem] mt-1 mb-2 space-y-0.5 border-l border-gray-200 pl-3">
+                {projects.map((p) => {
+                  const active = location.pathname === `/projects/${p.id}`;
+                  return (
+                    <Link
+                      key={p.id}
+                      to={`/projects/${p.id}`}
+                      onClick={onClose}
+                      title={p.name}
+                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                        active
+                          ? 'bg-indigo-50 text-indigo-700'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                          active ? 'bg-indigo-500' : 'bg-gray-300 group-hover:bg-gray-400'
+                        }`}
+                      />
+                      <span className="truncate">{p.name}</span>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </React.Fragment>
