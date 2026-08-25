@@ -208,6 +208,11 @@ export default function Sidebar({ onClose }: SidebarProps) {
     if (['/employee', '/manager', '/ceo', '/tl'].includes(path)) {
       return location.pathname === path || location.pathname === path + '/dashboard';
     }
+    // Projects parent should NOT stay lit when a specific project (a child
+    // link like /projects/12) is open — otherwise both rows highlight.
+    if (path === '/projects') {
+      return location.pathname === '/projects';
+    }
     return location.pathname.startsWith(path);
   };
 
