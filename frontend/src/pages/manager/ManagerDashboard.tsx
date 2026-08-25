@@ -153,8 +153,8 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="font-bold text-gray-900">Today&apos;s Attendance Overview</h2>
         <div className="mt-7 flex flex-col items-center gap-7 sm:flex-row sm:justify-around">
-          <div className="grid h-44 w-44 place-items-center rounded-full" style={{ background: donut }}>
-            <div className="grid h-28 w-28 place-items-center rounded-full bg-white text-center"><div><p className="text-2xl font-bold">{total}</p><p className="text-xs text-gray-500">Total</p></div></div>
+          <div className="grid h-44 w-44 shrink-0 place-items-center rounded-full" style={{ background: donut }}>
+            <div className="grid h-28 w-28 shrink-0 place-items-center rounded-full bg-white text-center"><div><p className="text-2xl font-bold">{total}</p><p className="text-xs text-gray-500">Total</p></div></div>
           </div>
           <div className="w-full max-w-xs space-y-3">
             {[['Present', stats.present, 'bg-emerald-500'], ['Absent', stats.absent, 'bg-rose-400'], ['On Leave', stats.leave, 'bg-amber-500'], ['Not Marked', notMarked, 'bg-gray-300']].map(([label, value, color]) =>
