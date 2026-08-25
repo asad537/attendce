@@ -90,7 +90,9 @@ export default function AddEditEmployeePage() {
           birth_date:      userRes.birth_date || '',
           email:           userRes.email,
           phone:           userRes.phone || '',
-          role:            userRes.role,
+          // This form only manages employee / tl / manager — a CEO record
+          // (not editable here) falls back to a valid value.
+          role:            (['employee', 'tl', 'manager'].includes(userRes.role) ? userRes.role : 'employee') as 'employee' | 'tl' | 'manager',
           employment_type: userRes.employment_type,
           department_id:   userRes.department?.id || 0,
           designation_id:  userRes.designation?.id || 0,
