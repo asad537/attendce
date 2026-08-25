@@ -116,9 +116,20 @@ export default function AddEditEmployeePage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const filteredDesigs = form.department_id
-    ? designations.filter(d => !d.department || d.department.id === form.department_id)
-    : designations;
+  // Hide senior titles from lower roles so an employee can't be given a
+  // Chief/Manager/Director designation, a TL can't get a manager title, etc.
+  const seniorityBans: Record<string, RegExp> = {
+    employee: /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager|lead|team\s*lead|tl)\b/i,
+    tl:       /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager)\b/i,
+    manager:  /\b(chief|ceo|officer|director|vp|vice\s*president|president)\b/i,
+  };
+  const filteredDesigs = (() => {
+    const byDept = form.department_id
+      ? designations.filter(d => !d.department || d.department.id === form.department_id)
+      : designations;
+    const ban = seniorityBans[form.role];
+    return ban ? byDept.filter(d => !ban.test(d.title)) : byDept;
+  })();
 
   const validate = (f: CreateEmployeePayload): Record<string, string> => {
     const e: Record<string, string> = {};
@@ -158,7 +169,13 @@ export default function AddEditEmployeePage() {
     if (field === 'department_id' || field === 'designation_id' || field === 'shift_id' || field === 'manager_id') {
       val = val === '' ? null : Number(val);
     }
-    setForm(prev => ({ ...prev, [field]: val }));
+    setForm(prev => {
+      const next = { ...prev, [field]: val } as CreateEmployeePayload;
+      // Role changed → a previously-picked senior designation may now be
+      // off-limits, so clear it and make the user re-select.
+      if (field === 'role') next.designation_id = 0;
+      return next;
+    });
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
 
