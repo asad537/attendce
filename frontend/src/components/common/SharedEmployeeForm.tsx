@@ -85,7 +85,7 @@ export function SharedEmployeeForm({
   const localPhoneNumber = form.phone ? form.phone.replace(/^(\+\d{1,4})\s*/, '') : '';
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6 max-h-[85vh] overflow-y-auto px-2 pb-4">
+    <form onSubmit={onSubmit} className="space-y-6">
       
       {/* ── Personal Info ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
