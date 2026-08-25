@@ -203,7 +203,9 @@ export function SharedEmployeeForm({
               <svg className="w-4 h-4 shrink-0 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              A temporary login link will be sent to this email for the employee to set their password.
+              {/* TODO: re-enable email invite text once SMTP is configured.
+              A temporary login link will be sent to this email for the employee to set their password. */}
+              A temporary password will be shown on screen after saving — share it with the employee.
             </div>
           )}
         </div>
@@ -420,9 +422,12 @@ export function SharedEmployeeForm({
           {mode === 'create' ? (
             <>
               <div>
-                <h3 className="text-sm font-bold text-gray-900">Account & Invitation</h3>
-                <p className="text-xs text-gray-500">Manage account access and invitation settings.</p>
+                <h3 className="text-sm font-bold text-gray-900">Account Access</h3>
+                <p className="text-xs text-gray-500">A temporary password is generated automatically on save.</p>
               </div>
+              {/* TODO: SMTP not configured yet — email invitation disabled.
+                  Re-enable the "Send account invitation email" option below
+                  once mail is set up.
               <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-start sm:items-center gap-3">
                 <input type="checkbox" id="send_invite" defaultChecked className="w-4 h-4 mt-0.5 sm:mt-0 text-indigo-600 rounded border-indigo-300 focus:ring-indigo-600" />
                 <div className="flex-1">
@@ -436,6 +441,16 @@ export function SharedEmployeeForm({
                      <path d="M19 1l3 3-3 3" />
                      <path d="M12 9l10-8" />
                    </svg>
+                </div>
+              </div>
+              */}
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                <svg className="w-5 h-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-900">Share credentials manually</p>
+                  <p className="text-xs text-amber-700/80">Email invites are turned off for now. After saving, a one-time temporary password appears on screen — copy it and give it to the employee.</p>
                 </div>
               </div>
             </>

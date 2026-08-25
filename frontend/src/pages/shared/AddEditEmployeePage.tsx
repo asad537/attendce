@@ -222,7 +222,7 @@ export default function AddEditEmployeePage() {
   }
 
   const pageTitle = isEdit ? `Edit Employee - ${editUser?.name}` : 'Add New Employee';
-  const pageSubtitle = isEdit ? 'Update employee profile details.' : 'Create a new employee profile and send invitation.';
+  const pageSubtitle = isEdit ? 'Update employee profile details.' : 'Create a new employee profile.';
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-6">
