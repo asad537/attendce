@@ -37,6 +37,7 @@ class StoreUserRequest extends FormRequest
 
             // ── Role & Employment ─────────────────────────────────
             'role'            => "required|{$allowedRoles}",
+            'allowed_ip'      => 'nullable|string|ip',
             'employment_type' => 'required|in:full_time,part_time,contract,intern',
             'status'          => 'sometimes|in:active,inactive,suspended',
 

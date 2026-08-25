@@ -250,6 +250,22 @@ export function SharedEmployeeForm({
               <Err field="employment_type" />
             </div>
             <div>
+              <label className="label">Allowed IP Address (Optional)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Icons.ShieldCheck />
+                </div>
+                <input 
+                  type="text" 
+                  className={`input pl-10 ${errors.allowed_ip ? 'border-red-400' : ''}`} 
+                  placeholder="e.g. 39.45.1.229" 
+                  value={form.allowed_ip || ''} 
+                  onChange={onField('allowed_ip')} 
+                />
+              </div>
+              <Err field="allowed_ip" />
+            </div>
+            <div>
               <label className="label">Join Date <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">

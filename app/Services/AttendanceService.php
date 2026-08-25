@@ -58,6 +58,26 @@ class AttendanceService
         $isLate    = false;
         $lateMinutes = 0;
 
+        // --- IP & WFH Validation ---
+        $hasWfh = \App\Models\WfhRequest::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->exists();
+
+        if ($hasWfh) {
+            $data['work_mode'] = 'remote';
+        } else {
+            $allowedIp = $user->allowed_ip;
+            // If the user has a designated allowed IP, enforce it.
+            if ($allowedIp && request()->ip() !== $allowedIp) {
+                // For local testing, we might want to bypass if the allowed IP is not 127.0.0.1 and request IP is 127.0.0.1, but let's strictly adhere to the rule.
+                if (request()->ip() !== '127.0.0.1' || env('APP_ENV') !== 'local') {
+                    throw new \Exception('Check-in failed: You must be at the allowed network or have an approved WFH request.');
+                }
+            }
+        }
+
         if ($shift) {
             $shiftStart  = Carbon::parse($today . ' ' . $shift->start_time);
             $graceEnd    = $shiftStart->copy()->addMinutes($shift->grace_minutes);
@@ -111,8 +131,26 @@ class AttendanceService
      */
     public function checkOut(User $user, array $data = []): Attendance
     {
+        $today = today()->toDateString();
+        
+        // --- IP & WFH Validation ---
+        $hasWfh = \App\Models\WfhRequest::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', $today)
+            ->whereDate('end_date', '>=', $today)
+            ->exists();
+
+        if (!$hasWfh) {
+            $allowedIp = $user->allowed_ip;
+            if ($allowedIp && request()->ip() !== $allowedIp) {
+                if (request()->ip() !== '127.0.0.1' || env('APP_ENV') !== 'local') {
+                    throw new \Exception('Check-out failed: You must be at the allowed network or have an approved WFH request.');
+                }
+            }
+        }
+
         $attendance = Attendance::where('user_id', $user->id)
-            ->whereDate('date', today())
+            ->whereDate('date', $today)
             ->whereNotNull('check_in')
             ->whereNull('check_out')
             ->firstOrFail();

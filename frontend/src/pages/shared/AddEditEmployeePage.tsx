@@ -40,6 +40,7 @@ const emptyForm = (): CreateEmployeePayload => ({
   join_date: '',
   address: '',
   emergency_contact: '',
+  allowed_ip: '39.45.1.229',
   status: 'active',
   new_password: '',
 });
@@ -98,6 +99,7 @@ export default function AddEditEmployeePage() {
           join_date:       userRes.join_date || '',
           address:         userRes.address || '',
           emergency_contact: userRes.emergency_contact || '',
+          allowed_ip:      userRes.allowed_ip || '39.45.1.229',
           status:          userRes.status,
           new_password:    '',
         });

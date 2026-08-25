@@ -56,6 +56,7 @@ export interface User {
   phone?: string;
   gender?: 'male' | 'female' | 'other';
   avatar_url?: string;
+  allowed_ip?: string;
   role: Role;
   employment_type: EmploymentType;
   status: UserStatus;
@@ -106,6 +107,7 @@ export interface CreateEmployeePayload {
   join_date?: string;
   address?: string;
   emergency_contact?: string;
+  allowed_ip?: string;
   status?: UserStatus;
   new_password?: string;
 }

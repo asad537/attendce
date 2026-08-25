@@ -26,6 +26,7 @@ class User extends Authenticatable
         'gender',
         'avatar',
         'role',
+        'allowed_ip',
         'employment_type',
         'status',
         'department_id',

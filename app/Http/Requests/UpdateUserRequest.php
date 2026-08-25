@@ -30,7 +30,9 @@ class UpdateUserRequest extends FormRequest
             'new_password'     => 'sometimes|nullable|string|min:8',
 
             // ── Role & Employment ─────────────────────────────────
-            'role'            => 'sometimes|in:employee,tl,manager',            'employment_type' => 'sometimes|in:full_time,part_time,contract,intern',
+            'role'            => 'sometimes|in:employee,tl,manager',
+            'allowed_ip'      => 'sometimes|nullable|string|ip',
+            'employment_type' => 'sometimes|in:full_time,part_time,contract,intern',
             'status'          => 'sometimes|in:active,inactive,suspended',
 
             // ── Org Placement ─────────────────────────────────────
