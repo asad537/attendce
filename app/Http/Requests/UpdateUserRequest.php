@@ -26,8 +26,8 @@ class UpdateUserRequest extends FormRequest
             'phone'           => 'sometimes|nullable|string|regex:/^\+?[0-9\s\-\(\)]{7,20}$/',
 
             // ── Password (user changes own password from settings) ─
-            'current_password' => 'required_with:new_password|string',
-            'new_password'     => 'sometimes|nullable|string|min:8|confirmed',
+            'current_password' => 'sometimes|nullable|string',
+            'new_password'     => 'sometimes|nullable|string|min:8',
 
             // ── Role & Employment ─────────────────────────────────
             'role'            => 'sometimes|in:employee,tl,manager',            'employment_type' => 'sometimes|in:full_time,part_time,contract,intern',

@@ -107,6 +107,7 @@ export interface CreateEmployeePayload {
   address?: string;
   emergency_contact?: string;
   status?: UserStatus;
+  new_password?: string;
 }
 
 /** Response from POST /api/users */

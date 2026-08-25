@@ -191,10 +191,12 @@ class UserController extends Controller
 
         $oldRole = $user->role;
 
-        // Handle password change (employee changing own password from settings)
+        // Handle password change
         if (isset($data['new_password'])) {
-            if (!Hash::check($data['current_password'], $user->password)) {
-                return response()->json(['message' => 'Current password is incorrect.'], 422);
+            if ($actor->id === $user->id) {
+                if (!isset($data['current_password']) || !Hash::check($data['current_password'], $user->password)) {
+                    return response()->json(['message' => 'Current password is incorrect.'], 422);
+                }
             }
             $data['password'] = Hash::make($data['new_password']);
             $passwordChanged = true;
@@ -213,6 +215,16 @@ class UserController extends Controller
 
         if (!empty($passwordChanged) || $securityStateChanged) {
             $user->tokens()->delete();
+        }
+
+        if (!empty($passwordChanged)) {
+            $title = "Password Changed";
+            $message = "User {$user->name} has changed their password.";
+
+            if ($user->manager) {
+                \App\Services\NotificationService::send($user->manager, $title, $message, 'warning', null, $user);
+            }
+            \App\Services\NotificationService::notifyCeo($title, $message, 'warning', $user);
         }
 
         if (isset($data['role']) && $data['role'] !== $oldRole) {

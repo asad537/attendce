@@ -85,6 +85,14 @@ class AuthController extends Controller
 
         if (!empty($passwordChanged)) {
             $user->tokens()->delete();
+
+            $title = "Password Changed";
+            $message = "User {$user->name} has changed their password.";
+
+            if ($user->manager) {
+                \App\Services\NotificationService::send($user->manager, $title, $message, 'warning', null, $user);
+            }
+            \App\Services\NotificationService::notifyCeo($title, $message, 'warning', $user);
         }
 
         return response()->json([
