@@ -25,7 +25,7 @@ const Icons = {
   absent: svg('h-5 w-5', <path key="a" d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />, <circle key="b" cx="9" cy="7" r="3" />, <path key="c" d="M17 8h5" />),
   leave: svg('h-5 w-5', <rect key="a" x="3" y="4" width="18" height="18" rx="2" />, <path key="b" d="M16 2v4M8 2v4M3 10h18" />),
   workforceBadge: svg('h-4 w-4', <path key="a" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />, <circle key="b" cx="9" cy="7" r="3" />, <path key="c" d="M19 8v6M22 11h-6" />),
-  person: svg('h-3.5 w-3.5', <path key="a" d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />, <circle key="b" cx="12" cy="7" r="3.5" />),
+  person: svg('h-3.5 w-3.5', <circle key="a" cx="12" cy="8" r="3.2" />, <path key="b" d="M5.5 20a6.5 6.5 0 0 1 13 0" />),
   trend: svg('h-4 w-4', <path key="a" d="M3 17l6-6 4 4 7-7" />, <path key="b" d="M17 8h4v4" />),
   code: svg('h-4 w-4', <path key="a" d="m16 18 6-6-6-6" />, <path key="b" d="m8 6-6 6 6 6" />),
   pencil: svg('h-4 w-4', <path key="a" d="M12 20h9" />, <path key="b" d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />),
