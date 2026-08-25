@@ -156,7 +156,7 @@ export default function EmployeeDashboard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold text-gray-900 sm:text-xl">Live Workday Progress</h1>
+              <h1 className="text-lg font-bold text-gray-900 sm:text-xl">Today's Attendance</h1>
               {checkedIn && <span className="rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">Live</span>}
             </div>
             <p className="mt-1 text-sm text-gray-500">{format(now, 'EEEE, MMMM d, yyyy')}</p>
@@ -174,23 +174,28 @@ export default function EmployeeDashboard() {
 
         <div className="mt-5">
           {!attendance?.check_in ? (
-            <div className="flex justify-center">
-              <button onClick={handleCheckIn} disabled={actionLoading} className="flex w-full max-w-sm items-center justify-center gap-2 rounded-lg border border-green-500 bg-white px-5 py-2.5 font-semibold text-green-600 transition hover:bg-green-50 disabled:opacity-60">
-                <Icon type="in" className="h-5 w-5" />{actionLoading ? 'Checking in…' : 'Check In'}
+            <div className="flex justify-start">
+              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-white px-4 py-2 font-semibold text-green-600 transition hover:bg-green-50 disabled:opacity-60">
+                <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Checking in…' : 'Check In'}
               </button>
             </div>
           ) : checkedIn ? (
-            <div className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-2">
-              <button onClick={handleBreak} disabled={breakLoading} className={`flex items-center justify-center gap-2 rounded-lg border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${onBreak ? 'border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}>
+            <div className="flex justify-start">
+              {/* <button onClick={handleBreak} disabled={breakLoading} className={`flex items-center justify-center gap-2 rounded-lg border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${onBreak ? 'border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}>
                 <Icon type="coffee" className="h-5 w-5" />{breakLoading ? '…' : onBreak ? 'End Break' : 'Start Break'}
-              </button>
-              <button onClick={handleCheckOut} disabled={actionLoading || onBreak} className="flex items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-5 py-2.5 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">
-                <Icon type="out" className="h-5 w-5" />{actionLoading ? 'Checking out…' : 'Check Out'}
+              </button> */}
+              <button onClick={handleCheckOut} disabled={actionLoading || onBreak} className="flex items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-2 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">
+                <Icon type="out" className="h-4 w-4" />{actionLoading ? 'Checking out…' : 'Check Out'}
               </button>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700">
-              <Icon type="clock" className="h-4 w-4" />Workday completed
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700">
+                <Icon type="clock" className="h-4 w-4" />Workday completed
+              </div>
+              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-white px-4 py-2 font-semibold text-green-600 transition hover:bg-green-50 disabled:opacity-60">
+                <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Resuming…' : 'Resume Work'}
+              </button>
             </div>
           )}
         </div>
@@ -362,6 +367,41 @@ export default function EmployeeDashboard() {
         <SummaryCard icon="clock" tone="green" label="Worked Time" value={duration(workday.worked)} note={checkedIn ? 'Live' : checkedOut ? 'Completed' : 'Today'} />
         <SummaryCard icon="calendar" tone="blue" label="Expected Work Time" value={duration(workday.expected, false)} note={`${format(workday.shiftStart, 'hh:mm a')} – ${format(workday.shiftEnd, 'hh:mm a')}`} />
         <SummaryCard icon="timer" tone="orange" label="Remaining Time" value={duration(workday.remaining)} note={`Until ${format(workday.shiftEnd, 'hh:mm a')}`} />
+      </section>
+
+      <section className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+          <Icon type="clock" className="h-4 w-4 text-gray-400" />
+        </div>
+        <div className="space-y-4">
+          {!attendance?.check_in ? (
+            <p className="text-sm text-gray-500">No activity yet today.</p>
+          ) : (
+            <>
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+                  <Icon type="in" className="h-4 w-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Checked In</p>
+                  <p className="text-xs text-gray-500">{clock(attendance.check_in)}</p>
+                </div>
+              </div>
+              {attendance?.check_out && (
+                <div className="relative flex items-start gap-3 before:absolute before:-top-4 before:left-4 before:h-4 before:w-0.5 before:bg-gray-200">
+                  <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
+                    <Icon type="out" className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Checked Out</p>
+                    <p className="text-xs text-gray-500">{clock(attendance.check_out)}</p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </section>
 
       <div className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-sm font-medium ${onTrack ? 'border-green-100 bg-green-50 text-green-700' : checkedOut ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600'}`}>

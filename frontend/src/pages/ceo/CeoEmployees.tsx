@@ -247,18 +247,7 @@ export default function CeoEmployees() {
         </div>
         {/* Three quick-add buttons — one form, role pre-selected */}
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => { setForm({ ...emptyForm(), role: 'manager' }); setErrors({}); setAddOpen(true); }}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            + Manager
-          </button>
-          <button
-            onClick={() => { setForm({ ...emptyForm(), role: 'tl' }); setErrors({}); setAddOpen(true); }}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700 transition-colors"
-          >
-            + Team Lead
-          </button>
+
           <button
             onClick={() => { setForm({ ...emptyForm(), role: 'employee' }); setErrors({}); setAddOpen(true); }}
             className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
