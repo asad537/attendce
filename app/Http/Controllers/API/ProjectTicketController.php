@@ -6,6 +6,7 @@ use App\Models\ProjectTicket;
 use App\Models\User;
 use App\Models\TicketSubtask;
 use App\Models\TicketActivity;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -99,6 +100,21 @@ class ProjectTicketController extends Controller
             throw $error;
         }
 
+        // Notify the assignee (unless they assigned it to themselves).
+        if (!empty($data['assignee_id']) && (int) $data['assignee_id'] !== (int) $request->user()->id) {
+            $assignee = User::find($data['assignee_id']);
+            if ($assignee) {
+                NotificationService::send(
+                    $assignee,
+                    'New ticket assigned',
+                    "You've been assigned \"{$ticket->title}\" in {$project->name}.",
+                    'info',
+                    "/projects/{$project->id}?ticket={$ticket->id}",
+                    $ticket
+                );
+            }
+        }
+
         return response()->json(['ticket' => $ticket->load('assignee')], 201);
     }
 
@@ -126,6 +142,17 @@ class ProjectTicketController extends Controller
                 $oldValStr = $oldUser ? $oldUser->name : 'Unassigned';
                 $newValStr = $newUser ? $newUser->name : 'Unassigned';
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>'assignee_changed', 'old_value'=>$oldValStr, 'new_value'=>$newValStr]);
+                // Notify the newly-assigned user (unless they reassigned it to themselves).
+                if ($newUser && (int) $newUser->id !== (int) $request->user()->id) {
+                    NotificationService::send(
+                        $newUser,
+                        'Ticket assigned to you',
+                        "You've been assigned \"{$ticket->title}\" in {$ticket->project->name}.",
+                        'info',
+                        "/projects/{$ticket->project_id}?ticket={$ticket->id}",
+                        $ticket
+                    );
+                }
             } elseif (in_array($field, ['status', 'priority', 'title', 'description'])) {
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>$field.'_changed', 'old_value'=>$oldValue, 'new_value'=>$newValue]);
             }
