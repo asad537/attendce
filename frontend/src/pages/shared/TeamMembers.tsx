@@ -99,9 +99,27 @@ export default function TeamMembers() {
 
   useEffect(() => { load(); }, [load]);
 
-  // designations filtered by selected dept
-  const filteredDesigs = (deptId: number) =>
-    deptId ? designations.filter(d => !d.department || d.department.id === deptId) : designations;
+  // Words that mark a designation as belonging to a higher role level.
+  // Anything containing these should NOT be assignable to lower roles.
+  const seniorityBans: Record<string, RegExp> = {
+    // Employee can't hold any lead/managerial/exec title
+    employee: /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager|lead|team\s*lead|tl)\b/i,
+    // TL can't hold managerial or executive titles
+    tl:       /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager)\b/i,
+    // Manager can't hold executive titles
+    manager:  /\b(chief|ceo|officer|director|vp|vice\s*president|president)\b/i,
+    // CEO can pick anything
+    ceo:      /^$a/,
+  };
+
+  // designations filtered by selected dept AND by role level of the form
+  const filteredDesigs = (deptId: number, role: string) => {
+    const byDept = deptId
+      ? designations.filter(d => !d.department || d.department.id === deptId)
+      : designations;
+    const ban = seniorityBans[role];
+    return ban ? byDept.filter(d => !ban.test(d.title)) : byDept;
+  };
 
   // ── Validation ──────────────────────────────────────────────────────────────
   const validate = (f: CreateEmployeePayload): Record<string, string> => {
@@ -210,7 +228,13 @@ export default function TeamMembers() {
 
   const F = (field: keyof CreateEmployeePayload) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      setForm(prev => ({ ...prev, [field]: e.target.value }));
+      setForm(prev => {
+        const next = { ...prev, [field]: e.target.value } as CreateEmployeePayload;
+        // Role changed → previously chosen designation may now be off-limits.
+        // Reset it so the user re-picks from the role-filtered list.
+        if (field === 'role') next.designation_id = 0;
+        return next;
+      });
       setErrors(prev => ({ ...prev, [field]: '' }));
     };
 
@@ -394,7 +418,7 @@ export default function TeamMembers() {
         <MemberForm
           form={form} errors={errors}
           departments={departments}
-          filteredDesigs={filteredDesigs(form.department_id)}
+          filteredDesigs={filteredDesigs(form.department_id, form.role)}
           roleOptions={roleOptions}
           submitting={submitting}
           onField={F}
@@ -418,7 +442,7 @@ export default function TeamMembers() {
         <MemberForm
           form={form} errors={errors}
           departments={departments}
-          filteredDesigs={filteredDesigs(form.department_id)}
+          filteredDesigs={filteredDesigs(form.department_id, form.role)}
           roleOptions={roleOptions}
           submitting={submitting}
           onField={F}
