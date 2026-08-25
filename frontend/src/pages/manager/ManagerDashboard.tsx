@@ -111,7 +111,6 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
   const liveStatuses = useMemo(() => {
     const defs = [
       { key: 'working', label: 'Working', color: '#10b981' },
-      { key: 'on_break', label: 'On Break', color: '#8b5cf6' },
       { key: 'work_from_home', label: 'Work From Home', color: '#6366f1' },
       { key: 'checked_out', label: 'Checked Out', color: '#3b82f6' },
       { key: 'on_leave', label: 'On Leave', color: '#f59e0b' },
