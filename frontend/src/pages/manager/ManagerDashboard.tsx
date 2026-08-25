@@ -149,7 +149,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
       <StatCard label="On Leave" value={stats.leave} note={`${percent(stats.leave)}% of team`} tone="leave" icon={Icons.leave} badge={`${percent(stats.leave)}%`} />
     </section>
 
-    <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[0.85fr_1.15fr]">
+    <section className="grid grid-cols-1 gap-4 lg:grid-cols-[0.85fr_1.15fr]">
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
         <h2 className="font-bold text-gray-900">Today&apos;s Attendance Overview</h2>
         <div className="mt-7 flex flex-col items-center gap-7 sm:flex-row sm:justify-around">
