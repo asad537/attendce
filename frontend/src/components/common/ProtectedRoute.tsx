@@ -26,6 +26,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     // Redirect to their own dashboard
     if (user.role === 'ceo') return <Navigate to="/ceo" replace />;
     if (user.role === 'manager') return <Navigate to="/manager" replace />;
+    if (user.role === 'tl') return <Navigate to="/tl" replace />;
     return <Navigate to="/employee" replace />;
   }
 

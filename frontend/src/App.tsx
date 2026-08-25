@@ -91,7 +91,8 @@ function App() {
       <Route path="/tl" element={<ProtectedRoute allowedRoles={['tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ManagerDashboard />} />
+          {/* TL uses the same self-service check-in dashboard as employees */}
+          <Route path="dashboard" element={<EmployeeDashboard />} />
           <Route path="attendance" element={<AttendanceHistory />} />
           <Route path="leaves" element={<LeaveManagement />} />
           <Route path="team" element={<TeamMembers />} />

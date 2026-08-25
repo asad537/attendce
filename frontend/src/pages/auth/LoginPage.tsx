@@ -113,5 +113,6 @@ export default function LoginPage() {
 function getDashboardPath(role: string): string {
   if (role === 'ceo') return '/ceo';
   if (role === 'manager') return '/manager';
+  if (role === 'tl') return '/tl';
   return '/employee';
 }

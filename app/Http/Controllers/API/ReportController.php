@@ -38,11 +38,12 @@ class ReportController extends Controller
             return response()->json($this->service->userAttendanceSummary($auth, $start, $end));
         }
 
-        if ($auth->isTeamLead()) {
+        // Team Lead → only their direct reports
+        if ($auth->isTl()) {
             return response()->json(['team' => $this->service->teamAttendanceSummary($auth, $start, $end)]);
         }
 
-        // CEO
+        // Manager and CEO → whole company
         $userId = $request->get('user_id');
         if ($userId) {
             $user = User::findOrFail($userId);
