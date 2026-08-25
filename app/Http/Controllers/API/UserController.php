@@ -132,6 +132,13 @@ class UserController extends Controller
             ['email' => $user->email, 'role' => $user->role]
         );
 
+        $title = "New Employee Hired";
+        $departmentName = $user->department ? $user->department->name : 'the company';
+        $message = "New employee {$user->name} has been hired in {$departmentName}";
+        \App\Models\User::active()->where('id', '!=', $user->id)->each(function ($u) use ($title, $message, $user) {
+            \App\Services\NotificationService::send($u, $title, $message, 'info', null, $user);
+        });
+
         return response()->json([
             'message'            => 'Employee created successfully.',
             // Return plain password ONCE so the CEO can share it with the new employee

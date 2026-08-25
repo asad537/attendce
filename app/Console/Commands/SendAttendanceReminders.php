@@ -53,13 +53,13 @@ class SendAttendanceReminders extends Command
                     ->first();
 
                 if (!$attendance) {
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'title' => 'Upcoming Shift Reminder',
-                        'message' => 'Don\'t forget to check in! Your shift starts in 15 minutes at ' . Carbon::parse($shiftStart)->format('h:i A') . '.',
-                        'type' => 'info',
-                        'action_url' => '/employee/dashboard',
-                    ]);
+                    \App\Services\NotificationService::send(
+                        $user,
+                        'Upcoming Shift Reminder',
+                        'Don\'t forget to check in! Your shift starts in 15 minutes at ' . Carbon::parse($shiftStart)->format('h:i A') . '.',
+                        'info',
+                        '/employee/dashboard'
+                    );
                     $count++;
                 }
             }
@@ -74,13 +74,13 @@ class SendAttendanceReminders extends Command
                     ->first();
 
                 if ($attendance) {
-                    Notification::create([
-                        'user_id' => $user->id,
-                        'title' => 'Shift Ending Soon',
-                        'message' => 'Your shift ends in 15 minutes at ' . Carbon::parse($shiftEnd)->format('h:i A') . '. Don\'t forget to check out.',
-                        'type' => 'info',
-                        'action_url' => '/employee/dashboard',
-                    ]);
+                    \App\Services\NotificationService::send(
+                        $user,
+                        'Shift Ending Soon',
+                        'Your shift ends in 15 minutes at ' . Carbon::parse($shiftEnd)->format('h:i A') . '. Don\'t forget to check out.',
+                        'info',
+                        '/employee/dashboard'
+                    );
                     $count++;
                 }
             }
