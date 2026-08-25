@@ -15,12 +15,19 @@ class ProjectTicketController extends Controller
     private function canAssignUser(Request $request, int $targetId): bool
     {
         $actor = $request->user();
-        return User::active()
+
+        // No one can self-assign — assigners aren't the doers of the work.
+        if ($targetId === (int) $actor->id) {
+            return false;
+        }
+
+        // Active OR inactive users are both assignable (deactivated staff
+        // may still own historical work).
+        return User::query()
             ->whereKey($targetId)
             ->when(!$actor->isCeo(), function ($query) use ($actor) {
-                $query->where(function ($scope) use ($actor) {
-                    $scope->whereKey($actor->id)->orWhere('manager_id', $actor->id);
-                });
+                // Manager / TL can only assign to their direct reports.
+                $query->where('manager_id', $actor->id);
             })
             ->exists();
     }

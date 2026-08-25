@@ -102,6 +102,12 @@ export default function ProjectTickets() {
         load();
     }, [projectId]);
 
+    // Assignee pool for the *action* dropdowns (create/edit/inline reassign).
+    // The current user can never assign a ticket to themselves — assigners
+    // aren't the doers of the work. The filter dropdown up top still shows
+    // everyone so a manager can filter tickets by their own name.
+    const assignableUsers = users.filter((u) => u.id !== currentUser?.id);
+
     const save = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -484,7 +490,7 @@ export default function ProjectTickets() {
                                                     <option value="">
                                                         Unassigned
                                                     </option>
-                                                    {users.map((u) => (
+                                                    {assignableUsers.map((u) => (
                                                         <option
                                                             key={u.id}
                                                             value={u.id}
@@ -534,7 +540,7 @@ export default function ProjectTickets() {
                         }
                     >
                         <option value="">Unassigned</option>
-                        {users.map((u) => (
+                        {assignableUsers.map((u) => (
                             <option key={u.id} value={u.id}>
                                 {u.name}
                             </option>
@@ -745,7 +751,7 @@ export default function ProjectTickets() {
                                                 }}
                                             >
                                                 <option value="">Unassigned</option>
-                                                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                                                {assignableUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                                             </select>
                                         </div>
                                     </div>

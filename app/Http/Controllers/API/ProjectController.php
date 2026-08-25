@@ -13,9 +13,12 @@ class ProjectController extends Controller
 {
     private function canAssignUser(User $actor, int $targetId): bool
     {
-        return User::active()
+        // Active OR inactive users are both allowed as project lead. Picking
+        // yourself as the lead of a project you created is fine.
+        return User::query()
             ->whereKey($targetId)
             ->when(!$actor->isCeo(), function ($query) use ($actor) {
+                // Manager / TL can pick themselves OR one of their reports as lead.
                 $query->where(function ($scope) use ($actor) {
                     $scope->whereKey($actor->id)->orWhere('manager_id', $actor->id);
                 });
