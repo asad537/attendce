@@ -56,6 +56,38 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
   const total = team.length;
   const workforceRows = team.filter(member => member.role === 'tl' || member.role === 'employee');
   const percent = (n: number) => total ? Math.round(n / total * 100) : 0;
+  const attendanceRate = percent(stats.present);
+
+  const PRESENT_SET = ['working', 'on_break', 'checked_out', 'work_from_home'];
+
+  // Department-wise attendance breakdown (real, from team data).
+  const deptStats = useMemo(() => {
+    const map = new Map<string, { name: string; present: number; absent: number; leave: number; total: number }>();
+    for (const m of team) {
+      const d = m.department || 'Unassigned';
+      if (!map.has(d)) map.set(d, { name: d, present: 0, absent: 0, leave: 0, total: 0 });
+      const row = map.get(d)!;
+      row.total++;
+      if (PRESENT_SET.includes(m.current_status)) row.present++;
+      else if (m.current_status === 'on_leave') row.leave++;
+      else row.absent++;
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  }, [team]);
+
+  // Granular live status counts.
+  const liveStatuses = useMemo(() => {
+    const defs = [
+      { key: 'working', label: 'Working', color: '#10b981' },
+      { key: 'on_break', label: 'On Break', color: '#8b5cf6' },
+      { key: 'work_from_home', label: 'Work From Home', color: '#6366f1' },
+      { key: 'checked_out', label: 'Checked Out', color: '#3b82f6' },
+      { key: 'on_leave', label: 'On Leave', color: '#f59e0b' },
+      { key: 'absent', label: 'Absent', color: '#f43f5e' },
+    ];
+    return defs.map(d => ({ ...d, count: team.filter(m => m.current_status === d.key).length }));
+  }, [team]);
+  const liveMax = Math.max(1, ...liveStatuses.map(s => s.count));
 
   const toggleAttendance = async () => {
     setActionLoading(true);
@@ -80,6 +112,65 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
     <section className="grid grid-cols-1 gap-4 2xl:grid-cols-[0.85fr_1.15fr]">
       <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-gray-900">Today&apos;s Attendance Overview</h2><div className="mt-7 flex flex-col items-center gap-7 sm:flex-row sm:justify-around"><div className="grid h-44 w-44 place-items-center rounded-full" style={{ background: donut }}><div className="grid h-28 w-28 place-items-center rounded-full bg-white text-center"><div><p className="text-2xl font-bold">{total}</p><p className="text-xs text-gray-500">Total</p></div></div></div><div className="w-full max-w-xs space-y-3">{[['Present',stats.present,'bg-emerald-500'],['Absent',stats.absent,'bg-rose-500'],['On Leave',stats.leave,'bg-amber-500'],['Not Marked',Math.max(0,total-stats.present-stats.absent-stats.leave),'bg-gray-400']].map(([label,value,color]) => <div key={String(label)} className="flex items-center justify-between border-b border-gray-100 pb-2 text-sm"><span className="flex items-center gap-2"><i className={`h-3 w-3 rounded-full ${color}`}/>{label}</span><b>{value as number} ({percent(value as number)}%)</b></div>)}</div></div></div>
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b px-5 py-4"><h2 className="font-bold text-gray-900">Pending Leave Requests</h2><Link to={approvalPath} className="rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600">View all</Link></div><div className="divide-y">{pending.length ? pending.map(l => <div key={l.id} className="flex items-center justify-between gap-3 px-5 py-4"><div className="min-w-0"><p className="truncate text-sm font-semibold">{l.user?.name}</p><p className="mt-1 text-xs text-gray-500">{l.leave_type?.name} · {format(new Date(l.start_date),'MMM d')} – {format(new Date(l.end_date),'MMM d')}</p></div><span className="badge-yellow shrink-0">Pending</span></div>) : <div className="grid min-h-56 place-items-center text-sm text-gray-400">No pending leave requests</div>}</div></div>
+    </section>
+
+    <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      {/* Department-wise attendance — stacked bars */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900">Department Attendance</h2>
+            <p className="mt-0.5 text-xs text-gray-500">Present vs absent vs on-leave by department</p>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] text-gray-500">
+            <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Present</span>
+            <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-rose-500" />Absent</span>
+            <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-full bg-amber-500" />Leave</span>
+          </div>
+        </div>
+        <div className="mt-5 space-y-4">
+          {deptStats.length ? deptStats.map(d => (
+            <div key={d.name}>
+              <div className="mb-1.5 flex items-center justify-between text-xs">
+                <span className="font-semibold text-gray-700">{d.name}</span>
+                <span className="text-gray-400">{d.present}/{d.total} present</span>
+              </div>
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                <div className="bg-emerald-500 transition-all" style={{ width: `${(d.present / d.total) * 100}%` }} />
+                <div className="bg-rose-500 transition-all" style={{ width: `${(d.absent / d.total) * 100}%` }} />
+                <div className="bg-amber-500 transition-all" style={{ width: `${(d.leave / d.total) * 100}%` }} />
+              </div>
+            </div>
+          )) : <div className="grid min-h-40 place-items-center text-sm text-gray-400">No department data</div>}
+        </div>
+      </div>
+
+      {/* Live status breakdown — horizontal bars */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-gray-900">Live Status Breakdown</h2>
+            <p className="mt-0.5 text-xs text-gray-500">Where your workforce is right now</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-emerald-600">{attendanceRate}%</p>
+            <p className="text-[11px] text-gray-400">attendance rate</p>
+          </div>
+        </div>
+        <div className="mt-5 space-y-3">
+          {liveStatuses.map(s => (
+            <div key={s.key} className="flex items-center gap-3">
+              <span className="w-32 shrink-0 text-xs font-medium text-gray-600">{s.label}</span>
+              <div className="h-6 flex-1 overflow-hidden rounded-md bg-gray-100">
+                <div className="flex h-full items-center justify-end rounded-md px-2 text-[11px] font-bold text-white transition-all" style={{ width: `${Math.max((s.count / liveMax) * 100, s.count ? 12 : 0)}%`, background: s.color }}>
+                  {s.count > 0 && s.count}
+                </div>
+              </div>
+              <span className="w-8 shrink-0 text-right text-xs font-semibold text-gray-500">{s.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </section>
 
     <section className="rounded-2xl border border-gray-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b px-5 py-4"><h2 className="font-bold text-gray-900">Today&apos;s Workforce Status</h2><Link to={`${basePath}/attendance`} className="text-xs font-semibold text-indigo-600">View full attendance</Link></div><div className="overflow-x-auto"><table className="table min-w-[720px]"><thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Hours</th></tr></thead><tbody>{workforceRows.map(member => <tr key={member.id}><td className="font-semibold text-gray-900"><span className="inline-flex items-center gap-2">{member.name}{member.role === 'tl' && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">TL</span>}</span></td><td>{member.department || 'N/A'}</td><td><StatusBadge status={member.current_status}/></td><td>{member.check_in ? format(new Date(member.check_in),'hh:mm a') : '-'}</td><td>{member.check_out ? format(new Date(member.check_out),'hh:mm a') : '-'}</td><td>{member.working_hours ? `${member.working_hours}h` : (member.check_in && !member.check_out ? <span className="text-green-600 font-medium">Live</span> : '-')}</td></tr>)}</tbody></table></div></section>
