@@ -34,6 +34,8 @@ import CeoProjects from './pages/ceo/CeoProjects';
 import ProjectTickets from './pages/ceo/ProjectTickets';
 import MyTickets from './pages/shared/MyTickets';
 import AddEditEmployeePage from './pages/shared/AddEditEmployeePage';
+import CalendarPage from './pages/shared/CalendarPage';
+import EmployeeDetails from './pages/shared/EmployeeDetails';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -134,11 +136,18 @@ function App() {
         </Route>
       </Route>
 
+      <Route path="/calendar" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<CalendarPage />} />
+        </Route>
+      </Route>
+
       {/* Shared routes for user management */}
       <Route path="/users" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="new" element={<AddEditEmployeePage />} />
           <Route path=":id/edit" element={<AddEditEmployeePage />} />
+          <Route path=":id/details" element={<EmployeeDetails />} />
         </Route>
       </Route>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
 import { Attendance, Leave, TeamMemberStatus } from '../../types';
@@ -14,7 +15,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 
 const performanceData = [
   { name: 'Jan', value: 50 },
@@ -70,6 +71,17 @@ export default function CeoDashboard() {
   const total = team.length;
   const percent = (n: number) => total ? Math.round(n / total * 100) : 0;
   
+  const { events } = useCalendarEvents();
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const handlePrevMonth = () => setCalendarDate(subMonths(calendarDate, 1));
+  const handleNextMonth = () => setCalendarDate(addMonths(calendarDate, 1));
+
+  const monthStart = startOfMonth(calendarDate);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+  const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+
   if (loading) return <PageLoader />;
   
   return (
@@ -108,22 +120,41 @@ export default function CeoDashboard() {
           {/* Calendar */}
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">June 2035</h3>
+              <h3 className="font-bold text-lg">{format(calendarDate, 'MMMM yyyy')}</h3>
               <div className="flex gap-2">
-                <button className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg></button>
-                <button className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></button>
+                <button onClick={handlePrevMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg></button>
+                <button onClick={handleNextMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></button>
               </div>
             </div>
             <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
               <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
             </div>
             <div className="grid grid-cols-7 text-center text-sm gap-y-3 font-medium">
-              <div className="text-gray-300">27</div><div className="text-gray-300">28</div><div className="text-gray-300">29</div><div className="text-gray-300">30</div><div className="text-gray-300">31</div>
-              <div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">1</div><div>2</div>
-              <div>3</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div>
-              <div>10</div><div>11</div><div>12</div><div>13</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">14</div><div>15</div><div>16</div>
-              <div>17</div><div>18</div><div>19</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">20</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-900 text-white">21</div><div>22</div><div>23</div>
-              <div>24</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">25</div><div>26</div><div>27</div><div>28</div><div className="mx-auto w-7 h-7 flex items-center justify-center rounded-full bg-emerald-400 text-white shadow-md shadow-emerald-200">29</div><div>30</div>
+              {calendarDays.map((day, idx) => {
+                const isCurrentMonth = isSameMonth(day, monthStart);
+                const isCurrentDay = isToday(day);
+                const dayStr = format(day, 'yyyy-MM-dd');
+                const hasEvents = events.some(e => e.date === dayStr);
+
+                let dayContent;
+                let bgClass = "mx-auto w-7 h-7 flex items-center justify-center rounded-full transition-colors cursor-default";
+                
+                if (!isCurrentMonth) {
+                  dayContent = <div className="text-gray-300">{format(day, 'd')}</div>;
+                } else if (isCurrentDay) {
+                  dayContent = <div className={`${bgClass} bg-emerald-900 text-white`}>{format(day, 'd')}</div>;
+                } else if (hasEvents) {
+                  dayContent = <div className={`${bgClass} bg-emerald-400 text-white shadow-md shadow-emerald-200 hover:bg-emerald-300`} title="Has events">{format(day, 'd')}</div>;
+                } else {
+                  dayContent = <div className={`${bgClass} hover:bg-emerald-50 text-gray-700`}>{format(day, 'd')}</div>;
+                }
+
+                return (
+                  <React.Fragment key={idx}>
+                    {dayContent}
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
 
@@ -133,13 +164,24 @@ export default function CeoDashboard() {
               <h3 className="font-bold text-lg">Schedules</h3>
               <span className="text-xs font-medium bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                21 Jun v
+                {format(calendarDate, 'MMM yyyy')} v
               </span>
             </div>
             <div className="space-y-3">
-              <ScheduleCard category="Talent Acquisition" title="Interview - Product Designer Candidate" room="Meeting Room C" time="09:00 AM" color="text-emerald-500" />
-              <ScheduleCard category="Employee Development" title="Mid-Year Performance Review - Design Dept" room="Notion Review Sheet" time="01:00 PM" color="text-blue-500" />
-              <ScheduleCard category="Workplace Engagement" title="Quarterly Policy Review Meeting" room="Conference Room 1A" time="03:00 PM" color="text-purple-500" />
+              {(() => {
+                 const monthEvents = events.filter(e => e.date.startsWith(format(calendarDate, 'yyyy-MM'))).slice(0, 3);
+                 if (monthEvents.length === 0) return <p className="text-sm text-gray-500 italic">No schedules this month.</p>;
+                 return monthEvents.map(ev => (
+                   <ScheduleCard 
+                     key={ev.id} 
+                     category={ev.type === 'talent' ? 'Talent Acquisition' : ev.type === 'dev' ? 'Employee Development' : 'Workplace Engagement'}
+                     title={ev.title} 
+                     room={ev.location || 'Online'} 
+                     time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`} 
+                     color={ev.type === 'talent' ? 'text-emerald-500' : ev.type === 'dev' ? 'text-blue-500' : 'text-purple-500'} 
+                   />
+                 ));
+              })()}
             </div>
           </div>
         </div>

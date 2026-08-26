@@ -6,9 +6,10 @@ import { Project } from '../../types';
 
 interface NavItem {
   label: string;
-  path: string;
+  path?: string;
   icon: React.ReactNode;
   roles: string[];
+  subItems?: { label: string; path: string; }[];
 }
 
 const navItems: NavItem[] = [
@@ -125,19 +126,14 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
   {
-    label: 'All Attendance', path: '/ceo/attendance',
+    label: 'Attendance',
     roles: ['ceo'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-  },
-  {
-    label: 'Leave Approvals', path: '/ceo/leave-approvals',
-    roles: ['ceo'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  },
-  {
-    label: 'WFM Approvals', path: '/ceo/wfh-approvals',
-    roles: ['ceo'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+    subItems: [
+      { label: 'All Attendance', path: '/ceo/attendance' },
+      { label: 'Leave Approvals', path: '/ceo/leave-approvals' },
+      { label: 'WFM Approvals', path: '/ceo/wfh-approvals' },
+    ],
   },
   {
     label: 'Employees', path: '/ceo/employees',
@@ -148,6 +144,11 @@ const navItems: NavItem[] = [
     label: 'Projects', path: '/projects',
     roles: ['ceo', 'manager', 'tl', 'employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" /></svg>,
+  },
+  {
+    label: 'Calendar', path: '/calendar',
+    roles: ['ceo', 'manager', 'tl', 'employee'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>,
   },
   {
     label: 'My Tickets', path: '/my-tickets',
@@ -192,6 +193,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (label: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
+  };
 
   useEffect(() => {
     // Fetch for every role — backend already scopes the list per role
@@ -203,7 +212,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
   const filtered = navItems.filter((item) => user && item.roles.includes(user.role));
 
-  const isActive = (path: string) => {
+  const isActive = (path?: string) => {
+    if (!path) return false;
     // exact match for root dashboard paths
     if (['/employee', '/manager', '/ceo', '/tl'].includes(path)) {
       return location.pathname === path || location.pathname === path + '/dashboard';
@@ -228,7 +238,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* ── Brand ────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
-        <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
           </svg>
@@ -248,22 +258,76 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
       {/* ── Nav ──────────────────────────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-        {filtered.map((item) => (
-          <React.Fragment key={item.path}>
-            <Link
-              to={item.path}
-              onClick={onClose}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive(item.path)
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <span className={isActive(item.path) ? 'text-indigo-600' : 'text-gray-400'}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
+        {filtered.map((item) => {
+          const isItemActive = isActive(item.path);
+          const hasActiveSub = item.subItems?.some(sub => location.pathname.startsWith(sub.path));
+          const active = isItemActive || hasActiveSub;
+          const isExpanded = expandedItems[item.label] ?? hasActiveSub;
+          
+          return (
+          <React.Fragment key={item.label}>
+            {item.path ? (
+              <Link
+                to={item.path}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <span className={active ? 'text-emerald-600' : 'text-gray-400'}>
+                  {item.icon}
+                </span>
+                <span className="flex-1">{item.label}</span>
+              </Link>
+            ) : (
+              <div
+                onClick={() => toggleExpand(item.label)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  active || isExpanded
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <span className={active || isExpanded ? 'text-emerald-600' : 'text-gray-400'}>
+                  {item.icon}
+                </span>
+                <span className="flex-1">{item.label}</span>
+                {item.subItems && (
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </div>
+            )}
+
+            {item.subItems && item.subItems.length > 0 && isExpanded && (
+              <div className="ml-[1.35rem] mt-1 mb-2 space-y-0.5 border-l border-gray-200 pl-3">
+                {item.subItems.map((sub) => {
+                  const subActive = location.pathname.startsWith(sub.path);
+                  return (
+                    <Link
+                      key={sub.path}
+                      to={sub.path}
+                      onClick={onClose}
+                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                        subActive
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                          subActive ? 'bg-emerald-500' : 'bg-gray-300 group-hover:bg-gray-400'
+                        }`}
+                      />
+                      <span className="truncate">{sub.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
             
             {item.label === 'Projects' && projects.length > 0 && (
               <div className="ml-[1.35rem] mt-1 mb-2 space-y-0.5 border-l border-gray-200 pl-3">
@@ -277,13 +341,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
                       title={p.name}
                       className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
                         active
-                          ? 'bg-indigo-50 text-indigo-700'
+                          ? 'bg-emerald-50 text-emerald-700'
                           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                       }`}
                     >
                       <span
                         className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
-                          active ? 'bg-indigo-500' : 'bg-gray-300 group-hover:bg-gray-400'
+                          active ? 'bg-emerald-500' : 'bg-gray-300 group-hover:bg-gray-400'
                         }`}
                       />
                       <span className="truncate">{p.name}</span>
@@ -293,7 +357,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
               </div>
             )}
           </React.Fragment>
-        ))}
+          );
+        })}
       </nav>
 
       {/* ── User strip + Logout ──────────────────────────────────────────── */}
@@ -303,7 +368,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           {user?.avatar_url ? (
             <img src={user?.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs flex-shrink-0">
+            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-xs flex-shrink-0">
               {user?.name?.charAt(0)?.toUpperCase()}
             </div>
           )}

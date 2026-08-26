@@ -61,7 +61,10 @@ class ReportService
         $totalPresents = $records->whereIn('status', ['present', 'late'])->count();
 
         return [
-            'user'            => $user->only(['id', 'name', 'employee_id', 'role']),
+            'user'            => array_merge(
+                $user->only(['id', 'name', 'employee_id', 'role']),
+                ['department' => $user->department ? $user->department->only(['id', 'name']) : null]
+            ),
             'period'          => ['start' => $start, 'end' => $end],
             'total_days'      => $totalDays,
             'working_days_in_period' => $workingDaysInPeriod,

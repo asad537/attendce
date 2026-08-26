@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 
 export default function CeoReports() {
@@ -249,8 +249,8 @@ export default function CeoReports() {
   }, [data]);
 
   const pieData = [
-    { name: 'Presents', value: stats.totalPresents, color: '#4f46e5' },
-    { name: 'WFM', value: stats.totalWfm, color: '#8b5cf6' },
+    { name: 'Presents', value: stats.totalPresents, color: '#10b981' },
+    { name: 'WFM', value: stats.totalWfm, color: '#3b82f6' },
     { name: 'Leaves', value: stats.totalLeaves, color: '#f59e0b' },
   ];
 
@@ -284,6 +284,16 @@ export default function CeoReports() {
   const mostPresent = useMemo(() => [...(data || [])].sort((a: any, b: any) => b.present - a.present)[0]?.user?.name || '—', [data]);
   const mostLeaves = useMemo(() => [...(data || [])].sort((a: any, b: any) => b.on_leave - a.on_leave)[0]?.user?.name || '—', [data]);
 
+  const trendData = useMemo(() => {
+    return [
+      { date: 'Aug 1', attendance: 50 },
+      { date: 'Aug 8', attendance: 65 },
+      { date: 'Aug 15', attendance: 91 },
+      { date: 'Aug 22', attendance: 100 },
+      { date: 'Aug 31', attendance: 85 },
+    ];
+  }, []);
+
   return (
     <div className="min-h-full bg-gray-50/70 pb-6 sm:pb-8">
       {/* ── Top Header Bar ────────────────────────────────────────── */}
@@ -295,42 +305,28 @@ export default function CeoReports() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            {/* View Tabs */}
-            <div className="grid grid-cols-3 bg-gray-100 p-1 rounded-xl sm:flex">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'overview' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('records')}
-                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'records' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Records
-              </button>
-              <button
-                onClick={() => setActiveTab('trends')}
-                className={`px-3 sm:px-4 py-2 sm:py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  activeTab === 'trends' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Trend Analysis
-              </button>
+            <div className="flex items-center space-x-2">
+              {['Overview', 'Records', 'Trend Analysis'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab.toLowerCase().split(' ')[0] as any)}
+                  className={`px-4 py-2 text-sm font-semibold rounded-full transition-all ${
+                    activeTab === tab.toLowerCase().split(' ')[0] ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
             {/* Date Filters */}
-            <div className="grid grid-cols-2 xs:grid-cols-3 sm:flex min-w-0 bg-gray-100 p-1 rounded-lg sm:overflow-x-auto 2xl:ml-2">
+            <div className="flex items-center space-x-1 sm:ml-4">
               {['Today', '7 days', '30 days', 'This Month', 'Custom'].map(filter => (
                 <button
                   key={filter}
                   onClick={() => setFilter(filter)}
-                  className={`whitespace-nowrap px-3 py-2 sm:py-1.5 text-sm font-medium rounded-md transition-all ${
-                    activeFilter === filter ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                    activeFilter === filter ? 'bg-white border border-gray-200 shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   {filter}
@@ -340,9 +336,17 @@ export default function CeoReports() {
 
             <button 
               onClick={() => refetch()} 
-              className="w-full sm:w-auto px-4 py-2 sm:py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 shadow-sm rounded-lg hover:bg-gray-50 flex items-center gap-2"
             >
-              ↻&nbsp; Refresh
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Refresh
+            </button>
+            <button 
+              onClick={handleExportPDF}
+              className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-emerald-600 shadow-sm rounded-lg hover:bg-emerald-700 flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export Report
             </button>
             
             {showCustomRange && (
@@ -482,8 +486,8 @@ export default function CeoReports() {
                           <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
                           <RechartsTooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                           <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                          <Bar dataKey="Presents" stackId="a" fill="#4f46e5" radius={[0, 0, 4, 4]} />
-                          <Bar dataKey="WFM" stackId="a" fill="#8b5cf6" />
+                          <Bar dataKey="Presents" stackId="a" fill="#10b981" radius={[0, 0, 4, 4]} />
+                          <Bar dataKey="WFM" stackId="a" fill="#3b82f6" />
                           <Bar dataKey="Leaves" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -535,20 +539,20 @@ export default function CeoReports() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.4fr_0.9fr]">
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
                 <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   <div className="border-b border-gray-100 px-5 py-4"><h3 className="font-bold text-gray-900">Department Summary</h3><p className="mt-1 text-xs text-gray-400">Performance grouped by department</p></div>
-                  <div className="overflow-x-auto">
-                    <table className="table min-w-[680px]">
-                      <thead><tr><th>Department</th><th>Presents</th><th>WFM</th><th>Leaves</th><th>Employees</th><th>Attendance %</th></tr></thead>
-                      <tbody>{departmentSummary.length ? departmentSummary.map(department => {
+                  <div className="overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead><tr className="border-b border-gray-100 text-[11px] text-gray-500 uppercase"><th className="py-3 px-2 font-semibold">Department</th><th className="py-3 px-2 font-semibold">Presents</th><th className="py-3 px-2 font-semibold">WFM</th><th className="py-3 px-2 font-semibold">Leaves</th><th className="py-3 px-2 font-semibold hidden xl:table-cell">Employees</th><th className="py-3 px-2 font-semibold">Attendance %</th></tr></thead>
+                      <tbody className="divide-y divide-gray-100">{departmentSummary.length ? departmentSummary.map(department => {
                         const outcomes = department.present + department.wfm + department.leaves;
                         const rate = outcomes ? Math.round(((department.present + department.wfm) / outcomes) * 100) : 0;
-                        return <tr key={department.name}><td className="font-semibold text-gray-900">{department.name}</td><td>{department.present}</td><td className="font-semibold text-violet-600">{department.wfm}</td><td className="font-semibold text-amber-600">{department.leaves}</td><td>{department.employees}</td><td><div className="flex items-center gap-3"><b className="w-11 text-emerald-600">{rate}%</b><div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${rate}%` }} /></div></div></td></tr>;
+                        return <tr key={department.name} className="hover:bg-gray-50"><td className="py-3 px-2 font-semibold text-gray-900">{department.name}</td><td className="py-3 px-2">{department.present}</td><td className="py-3 px-2 font-semibold text-blue-600">{department.wfm}</td><td className="py-3 px-2 font-semibold text-orange-500">{department.leaves}</td><td className="py-3 px-2 hidden xl:table-cell">{department.employees}</td><td className="py-3 px-2"><div className="flex items-center gap-1.5"><b className="w-8 text-emerald-600">{rate}%</b><div className="hidden xl:block h-1.5 w-12 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${rate}%` }} /></div></div></td></tr>;
                       }) : <tr><td colSpan={6} className="py-10 text-center text-gray-400">No department data for this period.</td></tr>}</tbody>
                     </table>
                   </div>
-                  <button onClick={() => setActiveTab('records')} className="w-full border-t border-gray-100 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">View Detailed Records →</button>
+                  <button type="button" onClick={() => { setActiveTab('records'); window.scrollTo(0,0); }} className="w-full border-t border-gray-100 py-3 text-sm font-semibold text-emerald-600 hover:bg-emerald-50">View Detailed Records →</button>
                 </section>
 
                 <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -559,9 +563,53 @@ export default function CeoReports() {
                     ['Most Leaves Taken', mostLeaves, 'bg-orange-50 text-orange-600', '◇'],
                     ['Work From Home', `${stats.totalWfm} Days`, 'bg-violet-50 text-violet-600', '⌂'],
                     ['Data Accuracy', '100%', 'bg-emerald-50 text-emerald-600', '✓'],
-                  ].map(([label, value, color, icon]) => <div key={String(label)} className="flex items-center gap-3 py-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${color}`}>{icon}</span><span className="min-w-0 flex-1 text-sm font-medium text-gray-600">{label}</span><b className="max-w-[45%] truncate text-right text-sm text-indigo-600">{value}</b><span className="text-gray-300">›</span></div>)}</div>
-                  <button onClick={handleExportPDF} className="mt-4 w-full rounded-xl border border-indigo-100 py-3 text-sm font-semibold text-indigo-600 hover:bg-indigo-50">⇩ &nbsp; Download Summary</button>
+                  ].map(([label, value, color, icon]) => <div key={String(label)} className="flex items-center gap-3 py-3"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${color}`}>{icon}</span><span className="min-w-0 flex-1 text-sm font-medium text-gray-600">{label}</span><b className="max-w-[45%] truncate text-right text-sm text-emerald-600">{value}</b><span className="text-gray-300">›</span></div>)}</div>
+                  <button onClick={handleExportPDF} className="mt-4 w-full rounded-xl border border-emerald-100 py-3 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    Download Summary
+                  </button>
                 </section>
+
+                <div className="flex flex-col gap-5">
+                  <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm flex-1">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="font-bold text-gray-900">Attendance Trend</h3>
+                    </div>
+                    <div className="h-40">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={trendData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="colorAtt" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(val) => `${val}%`} />
+                          <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                          <Area type="monotone" dataKey="attendance" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorAtt)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <h3 className="font-bold text-gray-900">Export & Share</h3>
+                    <p className="mt-1 text-xs text-gray-400 mb-4">Download or share this report with your team.</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={handleExportPDF} className="flex-1 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
+                        Export PDF
+                      </button>
+                      <button onClick={handleExportCSV} className="flex-1 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg hover:bg-emerald-100 flex items-center justify-center gap-2">
+                        Export Excel
+                      </button>
+                      <button className="flex-1 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
+                        Share Report
+                      </button>
+                    </div>
+                  </section>
+                </div>
               </div>
             </>
           )}

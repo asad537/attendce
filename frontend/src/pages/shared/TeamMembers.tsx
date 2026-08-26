@@ -87,9 +87,9 @@ export default function TeamMembers() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => navigate('/users/new')}
-            className="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
           >
-            + Employee
+            + Add New Employee
           </button>
         </div>
       </div>

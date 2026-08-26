@@ -104,7 +104,7 @@ export default function CeoLeaveApprovals() {
               onClick={() => setFilterStatus(s)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filterStatus === s
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-emerald-600 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -152,7 +152,7 @@ export default function CeoLeaveApprovals() {
                         {l.user?.avatar_url ? (
                           <img src={l.user?.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm shrink-0">
                             {l.user?.name.charAt(0).toUpperCase()}
                           </div>
                         )}
@@ -240,7 +240,7 @@ export default function CeoLeaveApprovals() {
                     onClick={() => load(p)}
                     className={`px-3 py-1 rounded-lg transition-colors ${
                       p === data.meta.current_page
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-emerald-600 text-white'
                         : 'hover:bg-gray-100'
                     }`}
                   >
