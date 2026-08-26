@@ -73,8 +73,19 @@ export default function AddEditEmployeePage() {
         designationService.getAll(),
         authRole === 'ceo' ? userService.getList({ per_page: 500 }) : Promise.resolve({ data: [] }),
       ]);
-      setDepts(deptsRes);
+      
+      let allowedDepts = deptsRes;
+      if (authRole !== 'ceo' && authUser?.department?.id) {
+        allowedDepts = deptsRes.filter((d: Department) => d.id === authUser.department?.id);
+      }
+      
+      setDepts(allowedDepts);
       setDesigs(desigRes);
+      
+      // Auto-select department if there's only one option (i.e. restricted to their own department)
+      if (!isEdit && allowedDepts.length === 1) {
+        setForm(prev => ({ ...prev, department_id: allowedDepts[0].id }));
+      }
       if (authRole === 'ceo') {
         setAllLeads(allUsersRes.data.filter((u: User) => u.role === 'manager' || u.role === 'tl'));
       }

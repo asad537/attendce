@@ -315,7 +315,12 @@ export function SharedEmployeeForm({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Icons.Building />
                 </div>
-                <select className={`input pl-10 ${errors.department_id ? 'border-red-400' : ''}`} value={form.department_id || ''} onChange={onDeptChange}>
+                <select 
+                  className={`input pl-10 ${errors.department_id ? 'border-red-400' : ''} ${departments.length === 1 ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} 
+                  value={form.department_id || ''} 
+                  onChange={onDeptChange}
+                  disabled={departments.length === 1}
+                >
                   <option value="">Select department…</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>

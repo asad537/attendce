@@ -43,6 +43,15 @@ class UserController extends Controller
         if ($auth->isManager() || $auth->isTl()) {
             $query->where(function ($q) use ($auth) {
                 $q->where('manager_id', $auth->id)->orWhere('id', $auth->id);
+                
+                // Managers should also see employees reporting to their Team Leads
+                if ($auth->isManager()) {
+                    $q->orWhereIn('manager_id', function ($subQuery) use ($auth) {
+                        $subQuery->select('id')
+                                 ->from('users')
+                                 ->where('manager_id', $auth->id);
+                    });
+                }
             });
         }
 
@@ -132,12 +141,12 @@ class UserController extends Controller
             ['email' => $user->email, 'role' => $user->role]
         );
 
-        $title = "New Employee Hired";
-        $departmentName = $user->department ? $user->department->name : 'the company';
-        $message = "New employee {$user->name} has been hired in {$departmentName}";
-        \App\Models\User::active()->where('id', '!=', $user->id)->each(function ($u) use ($title, $message, $user) {
-            \App\Services\NotificationService::send($u, $title, $message, 'info', null, $user);
-        });
+        // $title = "New Employee Hired";
+        // $departmentName = $user->department ? $user->department->name : 'the company';
+        // $message = "New employee {$user->name} has been hired in {$departmentName}";
+        // \App\Models\User::active()->where('id', '!=', $user->id)->each(function ($u) use ($title, $message, $user) {
+        //     \App\Services\NotificationService::send($u, $title, $message, 'info', null, $user);
+        // });
 
         return response()->json([
             'message'            => 'Employee created successfully.',
