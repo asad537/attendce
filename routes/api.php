@@ -152,6 +152,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::delete('/holidays/{holiday}', [HolidayController::class, 'destroy'])->middleware('can:manage-organization');
 
     // Reports
+    Route::get('/reports/attendance-sheet',   [ReportController::class, 'attendanceSheet']);
     Route::get('/reports/daily-snapshot',    [ReportController::class, 'dailySnapshot']);
     Route::get('/reports/attendance-summary',[ReportController::class, 'attendanceSummary']);
     Route::get('/reports/leave-summary',     [ReportController::class, 'leaveSummary']);

@@ -1,6 +1,15 @@
 import api from './api';
 import { AttendanceSummary, AuditLog, DailySnapshot, Holiday, PaginatedResponse } from '../types';
 
+export interface SheetDay { day: number; weekday: string; is_weekend: boolean; is_holiday: boolean; holiday: string | null }
+export interface SheetCell { day: number; code: '' | 'P' | 'A' | 'L' | 'W' | 'H' | 'WE'; late: boolean }
+export interface SheetRow {
+  user: { id: number; name: string; employee_id: string | null; role: string; department: string | null };
+  days: SheetCell[];
+  totals: { present: number; absent: number; leave: number; wfh: number; holiday: number; late: number };
+}
+export interface AttendanceSheet { month: string; days_in_month: number; day_meta: SheetDay[]; rows: SheetRow[] }
+
 export const reportService = {
   async getDailySnapshot(): Promise<DailySnapshot> {
     const res = await api.get('/reports/daily-snapshot');
@@ -14,6 +23,11 @@ export const reportService = {
 
   async getLeaveSummary(params?: Record<string, unknown>): Promise<unknown[]> {
     const res = await api.get('/reports/leave-summary', { params });
+    return res.data;
+  },
+
+  async getAttendanceSheet(month: string): Promise<AttendanceSheet> {
+    const res = await api.get('/reports/attendance-sheet', { params: { month } });
     return res.data;
   },
 

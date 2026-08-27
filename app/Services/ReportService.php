@@ -3,10 +3,12 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\ProjectTicket;
 use App\Models\TicketWorklog;
 use App\Models\User;
+use App\Models\WfhRequest;
 use Carbon\Carbon;
 
 class ReportService
@@ -111,6 +113,107 @@ class ReportService
             'overdue_tickets'      => $overdueTickets,
             'ticket_worklog_hours' => round($ticketWorkMinutes / 60, 2),
         ];
+    }
+
+    /**
+     * Day-by-day attendance sheet (matrix) for a month.
+     * Each user gets a status for every day: P present, A absent, L leave,
+     * W work-from-home, H holiday, WE weekend, '' for future days.
+     *
+     * @param  array|null  $userIds  limit to these users (null = all active)
+     */
+    public function attendanceSheet(string $month, ?array $userIds = null): array
+    {
+        $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $end = $start->copy()->endOfMonth();
+        $daysInMonth = (int) $end->day;
+        $todayStr = today()->toDateString();
+
+        $users = User::active()
+            ->when($userIds !== null, fn ($q) => $q->whereIn('id', $userIds))
+            ->with('department:id,name')
+            ->orderBy('name')->get();
+        $ids = $users->pluck('id')->all();
+
+        // Attendance rows indexed [user_id][day].
+        $byUserDay = [];
+        foreach (Attendance::whereIn('user_id', $ids)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get(['user_id', 'date', 'status', 'is_late']) as $r) {
+            $byUserDay[$r->user_id][(int) Carbon::parse($r->date)->day] = $r;
+        }
+
+        // Approved leave / WFH day-sets indexed [user_id][day].
+        $leaveDays = $this->rangeDaysByUser(Leave::whereIn('user_id', $ids)->where('status', 'approved'), $start, $end);
+        $wfhDays = $this->rangeDaysByUser(WfhRequest::whereIn('user_id', $ids)->where('status', 'approved'), $start, $end);
+
+        // Holidays -> set of day numbers (with names).
+        $holidays = [];
+        foreach (Holiday::whereDate('date', '<=', $end->toDateString())->get(['name', 'date', 'end_date']) as $h) {
+            $hStart = Carbon::parse($h->date);
+            $hEnd = $h->end_date ? Carbon::parse($h->end_date) : $hStart;
+            for ($d = $hStart->copy(); $d->lte($hEnd); $d->addDay()) {
+                if ($d->between($start, $end)) $holidays[(int) $d->day] = $h->name;
+            }
+        }
+
+        // Header meta for each day of the month.
+        $dayMeta = [];
+        for ($n = 1; $n <= $daysInMonth; $n++) {
+            $date = $start->copy()->day($n);
+            $dayMeta[] = [
+                'day' => $n,
+                'weekday' => $date->format('D')[0],
+                'is_weekend' => $date->isWeekend(),
+                'is_holiday' => isset($holidays[$n]),
+                'holiday' => $holidays[$n] ?? null,
+            ];
+        }
+
+        $rows = $users->map(function ($user) use ($byUserDay, $leaveDays, $wfhDays, $holidays, $start, $daysInMonth, $todayStr) {
+            $days = [];
+            $totals = ['present' => 0, 'absent' => 0, 'leave' => 0, 'wfh' => 0, 'holiday' => 0, 'late' => 0];
+            for ($n = 1; $n <= $daysInMonth; $n++) {
+                $date = $start->copy()->day($n);
+                $rec = $byUserDay[$user->id][$n] ?? null;
+                $late = false;
+                if (isset($holidays[$n])) { $code = 'H'; $totals['holiday']++; }
+                elseif ($date->isWeekend()) { $code = 'WE'; }
+                elseif (isset($leaveDays[$user->id][$n])) { $code = 'L'; $totals['leave']++; }
+                elseif (isset($wfhDays[$user->id][$n])) { $code = 'W'; $totals['wfh']++; }
+                elseif ($rec && in_array($rec->status, ['present', 'late'])) { $code = 'P'; $totals['present']++; $late = (bool) $rec->is_late; if ($late) $totals['late']++; }
+                elseif ($rec && $rec->status === 'on_leave') { $code = 'L'; $totals['leave']++; }
+                elseif ($date->toDateString() > $todayStr) { $code = ''; }
+                else { $code = 'A'; $totals['absent']++; }
+                $days[] = ['day' => $n, 'code' => $code, 'late' => $late];
+            }
+            return [
+                'user' => array_merge($user->only(['id', 'name', 'employee_id', 'role']), ['department' => optional($user->department)->name]),
+                'days' => $days,
+                'totals' => $totals,
+            ];
+        })->values()->toArray();
+
+        return [
+            'month' => $month,
+            'days_in_month' => $daysInMonth,
+            'day_meta' => $dayMeta,
+            'rows' => $rows,
+        ];
+    }
+
+    /**
+     * Expand approved date-range requests into [user_id][day] => true for the month.
+     */
+    private function rangeDaysByUser($query, Carbon $start, Carbon $end): array
+    {
+        $out = [];
+        foreach ($query->where('start_date', '<=', $end->toDateString())->where('end_date', '>=', $start->toDateString())->get(['user_id', 'start_date', 'end_date']) as $req) {
+            $rStart = Carbon::parse($req->start_date)->max($start);
+            $rEnd = Carbon::parse($req->end_date)->min($end);
+            for ($d = $rStart->copy(); $d->lte($rEnd); $d->addDay()) {
+                $out[$req->user_id][(int) $d->day] = true;
+            }
+        }
+        return $out;
     }
 
     /**

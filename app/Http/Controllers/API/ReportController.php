@@ -53,6 +53,24 @@ class ReportController extends Controller
         return response()->json(['company' => $this->service->companyAttendanceSummary($start, $end)]);
     }
 
+    /** GET /api/reports/attendance-sheet — day-by-day matrix for a month */
+    public function attendanceSheet(Request $request): JsonResponse
+    {
+        $auth = $request->user();
+        abort_if($auth->isEmployee(), 403, 'Forbidden.');
+
+        $data = $request->validate(['month' => 'nullable|date_format:Y-m']);
+        $month = $data['month'] ?? now()->format('Y-m');
+
+        // CEO & Manager see everyone; Team Lead sees their own team.
+        $userIds = null;
+        if ($auth->isTl()) {
+            $userIds = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id)->unique()->values()->all();
+        }
+
+        return response()->json($this->service->attendanceSheet($month, $userIds));
+    }
+
     /** GET /api/reports/leave-summary */
     public function leaveSummary(Request $request): JsonResponse
     {
