@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userService } from '../../services/userService';
 import { documentService, UserDocument } from '../../services/documentService';
 import { leaveService } from '../../services/leaveService';
+import { employeeProfileService, InternalNote, ProfileStats } from '../../services/employeeProfileService';
+import { useSettings } from '../../contexts/SettingsContext';
 import { User, LeaveBalance } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -17,18 +19,30 @@ export default function EmployeeDetails() {
   const [user, setUser] = useState<User | null>(null);
   const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
+  const [stats, setStats] = useState<ProfileStats | null>(null);
+  const [notes, setNotes] = useState<InternalNote[]>([]);
+  const [noteForm, setNoteForm] = useState({ title: '', body: '' });
+  const [addingNote, setAddingNote] = useState(false);
   const [loading, setLoading] = useState(true);
   const authUser = useAuth().user;
+  const { money } = useSettings();
+  const canEditNotes = authUser?.role === 'ceo' || authUser?.role === 'manager';
   const [uploadDocType, setUploadDocType] = useState(authUser?.role === 'ceo' ? 'disciplinary_document' : 'salary_document');
   const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
   const [docLoading, setDocLoading] = useState(false);
 
   // Calendar State
-  const [currentMonth, setCurrentMonth] = useState(new Date(2035, 5)); // June 2035 to match design
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   useEffect(() => {
     fetchUser();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    employeeProfileService.getStats(parseInt(id, 10), format(currentMonth, 'yyyy-MM'))
+      .then(setStats).catch(() => {});
+  }, [id, currentMonth]);
 
   const fetchUser = async () => {
     try {
@@ -37,6 +51,7 @@ export default function EmployeeDetails() {
       setUser(data);
       fetchDocuments();
       fetchBalances();
+      fetchNotes();
     } catch (err) {
       toast.error(getErrorMessage(err) || 'Failed to load user details');
     } finally {
@@ -62,6 +77,28 @@ export default function EmployeeDetails() {
     } catch (error) {
       console.error('Failed to fetch balances', error);
     }
+  };
+
+  const fetchNotes = async () => {
+    if (!id) return;
+    try { setNotes(await employeeProfileService.getNotes(parseInt(id, 10))); } catch { /* ignore */ }
+  };
+
+  const handleAddNote = async () => {
+    if (!id || !noteForm.title.trim()) return;
+    setAddingNote(true);
+    try {
+      await employeeProfileService.addNote(parseInt(id, 10), noteForm);
+      setNoteForm({ title: '', body: '' });
+      fetchNotes();
+      toast.success('Note added');
+    } catch (err) { toast.error(getErrorMessage(err)); }
+    finally { setAddingNote(false); }
+  };
+
+  const handleDeleteNote = async (noteId: number) => {
+    try { await employeeProfileService.deleteNote(noteId); fetchNotes(); }
+    catch { toast.error('Failed to delete note'); }
   };
 
   const handleDocumentUpload = async (e: React.FormEvent) => {
@@ -94,37 +131,24 @@ export default function EmployeeDetails() {
   if (loading) return <PageLoader />;
   if (!user) return <div className="p-6 text-center text-gray-500">User not found.</div>;
 
-  // ─── MOCK DATA FOR CHARTS & LISTS ───────────────────────────────────────────
+  // ─── REAL DATA DERIVED FROM API ─────────────────────────────────────────────
 
-  const performanceData = [
-    { name: 'Jan', value: 72 }, { name: 'Feb', value: 80 }, { name: 'Mar', value: 82 },
-    { name: 'Apr', value: 78 }, { name: 'May', value: 75 }, { name: 'Jun', value: 70 },
-    { name: 'Jul', value: 72 }, { name: 'Aug', value: 75 }, { name: 'Sep', value: 80.5 },
-    { name: 'Oct', value: 78 }, { name: 'Nov', value: 85 }, { name: 'Dec', value: 88 },
-  ];
+  const performanceData = stats?.performance.monthly || [];
+  const perfCurrent = stats?.performance.current ?? 0;
+  const perfDelta = stats?.performance.delta ?? 0;
 
-  const hoursLoggedData = [
-    { day: 'M', hours: 8, formatted: '8:00' },
-    { day: 'T', hours: 7.5, formatted: '7:30' },
-    { day: 'W', hours: 4, formatted: '4:00' },
-    { day: 'T', hours: 8, formatted: '8:00', active: true },
-    { day: 'F', hours: 7, formatted: '7:00' },
-    { day: 'S', hours: 0, formatted: '0:00' },
-    { day: 'S', hours: 0, formatted: '0:00' },
-  ];
+  const hoursLoggedData = (stats?.hours_week.days || []).map(d => ({
+    day: d.day, hours: d.minutes / 60,
+    formatted: `${Math.floor(d.minutes / 60)}:${String(d.minutes % 60).padStart(2, '0')}`,
+    active: d.active,
+  }));
+  const hoursTotal = stats?.hours_week.total_minutes ?? 0;
+  const hoursH = Math.floor(hoursTotal / 60);
+  const hoursM = hoursTotal % 60;
 
-  const internalNotes = [
-    {
-      title: 'Promotion Feedback',
-      date: '10 January 2035',
-      content: 'Promoted from HR Assistant to HR Officer due to consistent performance and leadership in onboarding initiatives.',
-    },
-    {
-      title: 'Employee Appreciation',
-      date: '02 May 2035',
-      content: 'Recognized by the Head of HR for successfully leading the Q2 training rollout with a 98% participation rate.',
-    }
-  ];
+  const calendarCounts = stats?.calendar.counts || { present: 0, late: 0, on_leave: 0, absent: 0 };
+  const statusByDay: Record<number, string | null> = {};
+  (stats?.calendar.days || []).forEach(c => { statusByDay[c.day] = c.status; });
 
   // ─── CALENDAR LOGIC ─────────────────────────────────────────────────────────
 
@@ -135,17 +159,13 @@ export default function EmployeeDetails() {
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
-  
+
   const dateFormat = "d";
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
   const getDayStatus = (day: Date) => {
     if (!isSameMonth(day, monthStart)) return null;
-    const d = day.getDate();
-    if (d === 1 || d === 26) return 'leave';
-    if (d === 4 || d === 15 || d === 21 || d === 28) return 'late';
-    if ([5, 6, 7, 8, 11, 12, 13, 14, 18, 19, 20, 22, 25, 27, 29].includes(d)) return 'present';
-    return null;
+    return statusByDay[day.getDate()] || null;
   };
 
 
@@ -260,7 +280,7 @@ export default function EmployeeDetails() {
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Work Model</span>
-                <span className="font-semibold text-gray-900">Hybrid</span>
+                <span className="font-semibold text-gray-900">{stats?.work_model || '—'}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Join Date</span>
@@ -386,14 +406,14 @@ export default function EmployeeDetails() {
             
             <div className="mb-6">
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-gray-900">86.75%</span>
+                <span className="text-3xl font-bold text-gray-900">{perfCurrent}%</span>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-xs font-bold flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                  +2.05%
+                <span className={`px-2 py-0.5 rounded-md text-xs font-bold flex items-center gap-1 ${perfDelta < 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                  <svg className={`w-3 h-3 ${perfDelta < 0 ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                  {perfDelta >= 0 ? '+' : ''}{perfDelta}%
                 </span>
-                <span className="text-xs text-gray-500 font-medium">Increased since last year</span>
+                <span className="text-xs text-gray-500 font-medium">{perfDelta >= 0 ? 'Increased' : 'Decreased'} vs last month · attendance rate</span>
               </div>
             </div>
 
@@ -454,9 +474,9 @@ export default function EmployeeDetails() {
               </div>
               
               <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-2xl font-bold text-gray-900">34</span>
+                <span className="text-2xl font-bold text-gray-900">{hoursH}</span>
                 <span className="text-sm font-semibold text-gray-500">h</span>
-                <span className="text-2xl font-bold text-gray-900 ml-1">30</span>
+                <span className="text-2xl font-bold text-gray-900 ml-1">{hoursM}</span>
                 <span className="text-sm font-semibold text-gray-500">m</span>
               </div>
 
@@ -573,14 +593,23 @@ export default function EmployeeDetails() {
                 </svg>
               </button>
             </div>
+            {canEditNotes && (
+              <div className="mb-4 bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-2">
+                <input value={noteForm.title} onChange={e => setNoteForm({ ...noteForm, title: e.target.value })} placeholder="Note title" className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm outline-none focus:ring-1 focus:ring-emerald-500" />
+                <textarea value={noteForm.body} onChange={e => setNoteForm({ ...noteForm, body: e.target.value })} placeholder="Write a note…" rows={2} className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm outline-none focus:ring-1 focus:ring-emerald-500 resize-none" />
+                <button type="button" onClick={handleAddNote} disabled={!noteForm.title.trim() || addingNote} className="self-end px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50">{addingNote ? 'Adding…' : 'Add Note'}</button>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-4">
-              {internalNotes.map((note, idx) => (
-                <div key={idx} className="bg-[#f2faef] rounded-2xl p-5 border border-[#e3f4df]">
-                  <h4 className="font-bold text-sm text-gray-900">{note.title}</h4>
-                  <p className="text-[10px] text-gray-400 font-semibold mb-2">{note.date}</p>
-                  <p className="text-xs text-gray-600 leading-relaxed font-medium">{note.content}</p>
+              {notes.map(note => (
+                <div key={note.id} className="group relative bg-[#f2faef] rounded-2xl p-5 border border-[#e3f4df]">
+                  <h4 className="font-bold text-sm text-gray-900 pr-6">{note.title}</h4>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-2">{note.author} · {note.created_at ? format(parseISO(note.created_at), 'dd MMM yyyy') : ''}</p>
+                  {note.body && <p className="text-xs text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">{note.body.replace(/<[^>]*>/g, '')}</p>}
+                  {canEditNotes && <button type="button" onClick={() => handleDeleteNote(note.id)} className="absolute top-4 right-4 hidden group-hover:block text-red-500 hover:text-red-700"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>}
                 </div>
               ))}
+              {!notes.length && <div className="text-center text-sm text-gray-400 py-4">No notes yet.</div>}
             </div>
           </div>
 
@@ -642,28 +671,28 @@ export default function EmployeeDetails() {
                   <div className="w-1.5 h-4 bg-[#c6f6d5] rounded-sm"></div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase">Present</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 pl-3">13</span>
+                <span className="text-sm font-bold text-gray-900 pl-3">{calendarCounts.present}</span>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-1.5 h-4 bg-[#4fd1c5] rounded-sm"></div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase">Late</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 pl-3">5</span>
+                <span className="text-sm font-bold text-gray-900 pl-3">{calendarCounts.late}</span>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-1.5 h-4 bg-[#064e3b] rounded-sm"></div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase leading-tight">On<br/>Leave</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 pl-3">2</span>
+                <span className="text-sm font-bold text-gray-900 pl-3">{calendarCounts.on_leave}</span>
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 mb-1">
                   <div className="w-1.5 h-4 bg-gray-200 rounded-sm"></div>
                   <span className="text-[10px] text-gray-400 font-bold uppercase">Absent</span>
                 </div>
-                <span className="text-sm font-bold text-gray-900 pl-3">1</span>
+                <span className="text-sm font-bold text-gray-900 pl-3">{calendarCounts.absent}</span>
               </div>
             </div>
           </div>
@@ -683,65 +712,41 @@ export default function EmployeeDetails() {
               <span className="text-xs font-semibold text-gray-500">Description</span>
               <div className="text-right">
                 <span className="text-xs font-semibold text-gray-500 block">Amount</span>
-                <span className="text-[9px] text-gray-400 font-medium uppercase">USD/month</span>
+                <span className="text-[9px] text-gray-400 font-medium uppercase">per month</span>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-sm font-bold text-gray-900">Base Salary</span>
-                <span className="text-sm font-bold text-gray-900">$3,200</span>
-              </div>
-              
-              <div>
-                <h4 className="text-xs font-bold text-gray-900 mb-3 px-1">Allowances</h4>
-                <div className="space-y-3 px-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Transportation</span>
-                    <span className="font-bold text-gray-900">$120</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Meal</span>
-                    <span className="font-bold text-gray-900">$110</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Internet (Hybrid)</span>
-                    <span className="font-bold text-gray-900">$70</span>
-                  </div>
+            {!stats?.payroll.has_record ? (
+              <div className="text-center text-sm text-gray-400 py-6">No payroll record set for this employee.</div>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-sm font-bold text-gray-900">Base Salary</span>
+                  <span className="text-sm font-bold text-gray-900">{money(stats.payroll.base_salary)}</span>
                 </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-bold text-gray-900 mb-3 px-1">Benefits</h4>
-                <div className="space-y-3 px-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Health Insurance</span>
-                    <span className="font-bold text-gray-900">$120</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Life Insurance</span>
-                    <span className="font-bold text-gray-900">$40</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Company Device</span>
-                    <span className="font-bold text-gray-900">$65</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Training Program</span>
-                    <span className="font-bold text-gray-900">$80</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500 font-medium">Fitness Membership</span>
-                    <span className="font-bold text-gray-900">$50</span>
-                  </div>
+                <div className="flex justify-between text-sm px-1">
+                  <span className="text-gray-500 font-medium">Allowances</span>
+                  <span className="font-bold text-gray-900">{money(stats.payroll.allowances)}</span>
                 </div>
+                <div className="flex justify-between text-sm px-1">
+                  <span className="text-gray-500 font-medium">Incentives</span>
+                  <span className="font-bold text-gray-900">{money(stats.payroll.incentives)}</span>
+                </div>
+                <div className="flex justify-between text-sm px-1">
+                  <span className="text-gray-500 font-medium">Overtime rate / hour</span>
+                  <span className="font-bold text-gray-900">{money(stats.payroll.overtime_rate)}</span>
+                </div>
+                <div className="flex justify-between text-sm px-1">
+                  <span className="text-gray-500 font-medium">Deductions</span>
+                  <span className="font-bold text-red-500">−{money(stats.payroll.deductions)}</span>
+                </div>
+                <div className="border-t border-gray-100 pt-5 px-1 flex justify-between items-center">
+                  <span className="text-sm font-bold text-gray-900">Net Monthly</span>
+                  <span className="text-lg font-bold text-emerald-700">{money(stats.payroll.total)}</span>
+                </div>
+                {stats.payroll.month && <p className="text-[10px] text-gray-400 text-center">Latest record: {stats.payroll.month}</p>}
               </div>
-              
-              <div className="border-t border-gray-100 pt-5 px-1 flex justify-between items-center">
-                <span className="text-sm font-bold text-gray-900">Total Monthly Value</span>
-                <span className="text-lg font-bold text-emerald-700">$3,855</span>
-              </div>
-            </div>
+            )}
 
           </div>
 

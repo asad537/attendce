@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class InternalNote extends Model
 {
     use HasFactory;
+
+    protected $fillable = ['user_id', 'author_id', 'title', 'body'];
+
+    public function user() { return $this->belongsTo(User::class, 'user_id'); }
+    public function author() { return $this->belongsTo(User::class, 'author_id'); }
 }

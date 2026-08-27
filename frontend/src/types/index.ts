@@ -185,6 +185,8 @@ export interface Leave {
   half_day_period?: 'morning' | 'afternoon';
   reason: string;
   attachment_url?: string;
+  attachment?: string | null;
+  is_confidential?: boolean;
   status: LeaveStatus;
   status_label: string;
   can_be_cancelled: boolean;

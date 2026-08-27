@@ -83,7 +83,8 @@ function App() {
       <Route path="/manager" element={<ProtectedRoute allowedRoles={['manager']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<ManagerDashboard />} />
+          {/* Managers now see the richer CEO-style dashboard */}
+          <Route path="dashboard" element={<CeoDashboard />} />
           <Route path="attendance" element={<AttendanceHistory />} />
           <Route path="leave-approvals" element={<ManagerLeaveApprovals />} />
           <Route path="my-leaves" element={<LeaveManagement />} />

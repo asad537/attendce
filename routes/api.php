@@ -20,6 +20,7 @@ use App\Http\Controllers\API\UserTicketController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\CallController;
 use App\Http\Controllers\API\SettingController;
+use App\Http\Controllers\API\EmployeeProfileController;
 use App\Http\Controllers\API\PayrollController;
 use Illuminate\Support\Facades\Route;
 
@@ -92,6 +93,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/users/{user}',    [UserController::class, 'show']);
     Route::put('/users/{user}',    [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    Route::get('/users/{user}/profile-stats', [EmployeeProfileController::class, 'stats']);
+    Route::get('/users/{user}/notes',      [EmployeeProfileController::class, 'notes']);
+    Route::post('/users/{user}/notes',     [EmployeeProfileController::class, 'storeNote']);
+    Route::delete('/notes/{note}',         [EmployeeProfileController::class, 'destroyNote']);
     Route::get('/users/{user}/documents', [\App\Http\Controllers\API\UserDocumentController::class, 'index']);
     Route::post('/users/{user}/documents', [\App\Http\Controllers\API\UserDocumentController::class, 'store']);
     Route::get('/documents/{document}/download', [\App\Http\Controllers\API\UserDocumentController::class, 'download']);
