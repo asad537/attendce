@@ -89,7 +89,7 @@ export function SharedEmployeeForm({
       
       {/* ── Personal Info ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           <Icons.User />
         </div>
         <div className="flex-1 space-y-4">
@@ -150,7 +150,7 @@ export function SharedEmployeeForm({
 
       {/* ── Contact ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           <Icons.Phone />
         </div>
         <div className="flex-1 space-y-4">
@@ -171,7 +171,7 @@ export function SharedEmployeeForm({
             </div>
             <div>
               <label className="label">Phone Number <span className="text-red-500">*</span></label>
-              <div className={`flex items-center w-full rounded-lg border bg-white transition-shadow ${errors.phone ? 'border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20' : 'border-gray-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20'} overflow-hidden`}>
+              <div className={`flex items-center w-full rounded-lg border bg-white transition-shadow ${errors.phone ? 'border-red-400 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20' : 'border-gray-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20'} overflow-hidden`}>
                 <select 
                   className="h-full py-2 pl-3 pr-7 bg-transparent border-transparent outline-none text-gray-600 text-sm focus:ring-0 focus:outline-none focus:border-transparent cursor-pointer"
                   value={derivedCountryCode}
@@ -199,8 +199,8 @@ export function SharedEmployeeForm({
             </div>
           </div>
           {mode === 'create' && (
-            <div className="flex items-center gap-2 p-3 bg-indigo-50 text-indigo-700 text-xs rounded-lg border border-indigo-100 mt-2">
-              <svg className="w-4 h-4 shrink-0 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex items-center gap-2 p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 mt-2">
+              <svg className="w-4 h-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {/* TODO: re-enable email invite text once SMTP is configured.
@@ -215,7 +215,7 @@ export function SharedEmployeeForm({
 
       {/* ── Employment ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           <Icons.Briefcase />
         </div>
         <div className="flex-1 space-y-4">
@@ -300,7 +300,7 @@ export function SharedEmployeeForm({
 
       {/* ── Organisation ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           <Icons.Building />
         </div>
         <div className="flex-1 space-y-4">
@@ -385,7 +385,7 @@ export function SharedEmployeeForm({
 
       {/* ── Additional ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           <Icons.Clipboard />
         </div>
         <div className="flex-1 space-y-4">
@@ -420,7 +420,7 @@ export function SharedEmployeeForm({
 
       {/* ── Account & Invitation (Create) / Security (Edit) ── */}
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        <div className="w-12 h-12 shrink-0 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
           {mode === 'create' ? <Icons.ShieldCheck /> : <Icons.Lock />}
         </div>
         <div className="flex-1 space-y-4">
@@ -433,14 +433,14 @@ export function SharedEmployeeForm({
               {/* TODO: SMTP not configured yet — email invitation disabled.
                   Re-enable the "Send account invitation email" option below
                   once mail is set up.
-              <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-start sm:items-center gap-3">
-                <input type="checkbox" id="send_invite" defaultChecked className="w-4 h-4 mt-0.5 sm:mt-0 text-indigo-600 rounded border-indigo-300 focus:ring-indigo-600" />
+              <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl flex items-start sm:items-center gap-3">
+                <input type="checkbox" id="send_invite" defaultChecked className="w-4 h-4 mt-0.5 sm:mt-0 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-600" />
                 <div className="flex-1">
-                  <label htmlFor="send_invite" className="text-sm font-semibold text-indigo-900 select-none cursor-pointer">Send account invitation email</label>
-                  <p className="text-xs text-indigo-700/70">The employee will receive an email to set up their account.</p>
+                  <label htmlFor="send_invite" className="text-sm font-semibold text-emerald-900 select-none cursor-pointer">Send account invitation email</label>
+                  <p className="text-xs text-emerald-700/70">The employee will receive an email to set up their account.</p>
                 </div>
                 <div className="hidden sm:block">
-                   <svg className="w-12 h-12 text-indigo-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                   <svg className="w-12 h-12 text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                      <polyline points="22,6 12,13 2,6"/>
                      <path d="M19 1l3 3-3 3" />
@@ -492,7 +492,7 @@ export function SharedEmployeeForm({
         <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors">
           Cancel
         </button>
-        <button type="submit" className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2" disabled={submitting}>
+        <button type="submit" className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors flex items-center gap-2" disabled={submitting}>
           {submitting ? (
             <span>{mode === 'create' ? 'Adding…' : 'Saving…'}</span>
           ) : (

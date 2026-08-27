@@ -14,6 +14,7 @@ class Designation extends Model
         'department_id',
         'description',
         'is_active',
+        'created_by'
     ];
 
     protected $casts = [
@@ -28,6 +29,11 @@ class Designation extends Model
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function scopeActive($query)

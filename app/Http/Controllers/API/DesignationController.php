@@ -40,7 +40,12 @@ class DesignationController extends Controller
             'is_active'     => 'boolean',
         ]);
 
+        if (!$request->user()->isCeo() && $request->user()->department_id != $data['department_id']) {
+            abort(403, 'Unauthorized. You can only manage positions in your own department.');
+        }
+
         $data['is_active'] = $data['is_active'] ?? true;
+        $data['created_by'] = $request->user()->id;
 
         $designation = Designation::create($data);
 
@@ -60,6 +65,18 @@ class DesignationController extends Controller
             'is_active'     => 'boolean',
         ]);
 
+        if (!$request->user()->isCeo()) {
+            if ($request->user()->department_id != $designation->department_id) {
+                abort(403, 'Unauthorized. You can only modify positions in your own department.');
+            }
+            if (isset($data['department_id']) && $request->user()->department_id != $data['department_id']) {
+                abort(403, 'Unauthorized. You cannot move positions to another department.');
+            }
+            if ($request->user()->isTl() && $designation->created_by != $request->user()->id) {
+                abort(403, 'Unauthorized. You can only modify positions that you added.');
+            }
+        }
+
         $designation->update($data);
 
         return response()->json([
@@ -69,8 +86,16 @@ class DesignationController extends Controller
     }
 
     /** DELETE /api/designations/{designation} */
-    public function destroy(Designation $designation): JsonResponse
+    public function destroy(Request $request, Designation $designation): JsonResponse
     {
+        if (!$request->user()->isCeo() && $request->user()->department_id != $designation->department_id) {
+            abort(403, 'Unauthorized. You can only delete positions in your own department.');
+        }
+
+        if ($request->user()->isTl() && $designation->created_by != $request->user()->id) {
+            abort(403, 'Unauthorized. You can only delete positions that you added.');
+        }
+
         $designation->delete();
         return response()->json(['message' => 'Designation deleted.']);
     }

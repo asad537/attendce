@@ -166,8 +166,8 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4Zm0 3 8 6 8-6" /></svg>,
   },
   {
-    label: 'Departments', path: '/ceo/departments',
-    roles: ['ceo'],
+    label: 'Departments', path: '/departments',
+    roles: ['ceo', 'manager', 'tl'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
   },
   {
@@ -386,7 +386,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-gray-900 truncate leading-tight">{user?.name}</p>
             <p className={`text-xs ${roleColors[user?.role || 'employee']} leading-tight`}>
-              {roleLabel[user?.role || 'employee']}
+              {user?.designation?.title || roleLabel[user?.role || 'employee']}
             </p>
           </div>
         </div>

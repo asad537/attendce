@@ -70,13 +70,13 @@ export default function TicketModal({ open, onClose, ticketId, children, onDelet
                 Issue
               </span>
               <span>/</span>
-              <span className="flex items-center gap-2 hover:bg-gray-100 px-2 py-1 rounded cursor-pointer transition-colors text-indigo-600">
-                <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 bg-white text-indigo-600 focus:ring-indigo-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
+              <span className="flex items-center gap-2 hover:bg-gray-100 px-2 py-1 rounded cursor-pointer transition-colors text-emerald-600">
+                <input type="checkbox" className="w-3.5 h-3.5 rounded border-gray-300 bg-white text-emerald-600 focus:ring-emerald-500 cursor-pointer" onClick={(e)=>e.stopPropagation()} />
                 KAN-{ticketId || 'X'}
               </span>
             </div>
             <div className="flex items-center gap-2 relative">
-              <button onClick={handleWatch} className={`${watching ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400 hover:bg-gray-100'} hover:text-gray-700 p-1.5 rounded transition-colors`} title="Watch ticket">
+              <button onClick={handleWatch} className={`${watching ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400 hover:bg-gray-100'} hover:text-gray-700 p-1.5 rounded transition-colors`} title="Watch ticket">
                 <svg className="w-5 h-5" fill={watching ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               </button>
               <button onClick={handleShare} className="text-gray-400 hover:text-gray-700 p-1.5 rounded hover:bg-gray-100 transition-colors" title="Share ticket">

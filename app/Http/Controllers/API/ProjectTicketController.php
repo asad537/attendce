@@ -36,9 +36,7 @@ class ProjectTicketController extends Controller
     private function canManageProject(Request $request, Project $project): bool
     {
         $user = $request->user();
-        return $user->isCeo()
-            || (int) $project->created_by === (int) $user->id
-            || (int) $project->project_lead_id === (int) $user->id;
+        return in_array($user->role, ['ceo', 'manager', 'tl']);
     }
 
     private function authorizeProjectView(Request $request, Project $project): void

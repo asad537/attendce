@@ -160,7 +160,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 scale-100 opacity-100 ring-1 ring-gray-900/5 max-h-[90vh] flex flex-col">
         
         {/* Header styling with a subtle gradient background */}
-        <div className="relative px-8 pt-8 pb-4 bg-gradient-to-b from-indigo-50/50 to-white shrink-0">
+        <div className="relative px-8 pt-8 pb-4 bg-gradient-to-b from-emerald-50/50 to-white shrink-0">
           <div className="absolute top-4 right-4">
             <button 
               onClick={onClose} 
@@ -175,11 +175,11 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
           <div className="flex flex-col items-center">
             {/* Elegant Avatar Section */}
             <div className="relative group mb-4">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-indigo-100 shadow-md ring-4 ring-white">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-emerald-100 shadow-md ring-4 ring-white">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold text-3xl shadow-inner">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold text-3xl shadow-inner">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </div>
                 )}
@@ -195,28 +195,28 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             </div>
             
             <h2 className="text-xl font-bold text-gray-900">{user?.name}</h2>
-            <p className="text-sm font-medium text-indigo-600">{user?.employee_id || 'Employee'}</p>
+            <p className="text-sm font-medium text-emerald-600">{user?.employee_id || 'Employee'}</p>
           </div>
 
           <div className="flex justify-center gap-4 mt-6 border-b border-gray-100">
             <button
               type="button"
               onClick={() => setActiveTab('education')}
-              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'education' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'education' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Educational Background
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('security')}
-              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'security' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'security' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Security Settings
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('documents')}
-              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'documents' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'documents' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Documents
             </button>
@@ -230,7 +230,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                  <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
@@ -238,7 +238,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                   </div>
                   <h3 className="text-sm font-semibold text-gray-900">Your Education</h3>
                 </div>
-                <button type="button" onClick={addEducation} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                <button type="button" onClick={addEducation} className="text-xs font-semibold text-emerald-600 hover:text-emerald-800">
                   + Add Entry
                 </button>
               </div>
@@ -262,7 +262,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                             type="text"
                             value={edu.degree}
                             onChange={(e) => updateEducation(idx, 'degree', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                             placeholder="e.g. BS Computer Science"
                           />
                         </div>
@@ -272,7 +272,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                             type="text"
                             value={edu.institution}
                             onChange={(e) => updateEducation(idx, 'institution', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                             placeholder="e.g. MIT"
                           />
                         </div>
@@ -282,7 +282,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                             type="text"
                             value={edu.field}
                             onChange={(e) => updateEducation(idx, 'field', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                             placeholder="e.g. Software Engineering"
                           />
                         </div>
@@ -292,7 +292,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                             type="text"
                             value={edu.year}
                             onChange={(e) => updateEducation(idx, 'year', e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                             placeholder="e.g. 2023"
                           />
                         </div>
@@ -308,7 +308,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
           {activeTab === 'security' && (
             <div className="space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
@@ -324,7 +324,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                       type={showCurrent ? "text" : "password"}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder-gray-400"
+                      className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder-gray-400"
                       placeholder="Enter current password to change"
                     />
                     <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -345,7 +345,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                         type={showNew ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder-gray-400"
+                        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder-gray-400"
                         placeholder="Min 8 chars"
                       />
                       <button type="button" onClick={() => setShowNew(!showNew)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
@@ -365,7 +365,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={!newPassword}
-                        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder-gray-400 disabled:opacity-50 disabled:bg-gray-100"
+                        className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-900 transition-all duration-200 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 placeholder-gray-400 disabled:opacity-50 disabled:bg-gray-100"
                         placeholder="Repeat password"
                       />
                       <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none" disabled={!newPassword}>
@@ -387,7 +387,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             <div className="space-y-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                  <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
@@ -412,13 +412,13 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                       type="file"
                       accept=".pdf"
                       onChange={(e) => setUploadDocFile(e.target.files ? e.target.files[0] : null)}
-                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
                     />
                     <button 
                       type="button" 
                       onClick={handleDocumentUpload}
                       disabled={!uploadDocFile || docLoading}
-                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
                     >
                       {docLoading ? 'Uploading...' : 'Upload'}
                     </button>
@@ -438,7 +438,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                         <span className="text-xs text-gray-500 capitalize">{doc.type.replace('_', ' ')}</span>
                       </div>
                       <div className="flex gap-2">
-                        <button type="button" onClick={() => handleDocumentDownload(doc)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded">
+                        <button type="button" onClick={() => handleDocumentDownload(doc)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         </button>
                         <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
@@ -463,7 +463,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             <button
               type="submit"
               disabled={loading || (!avatar && !newPassword && activeTab === 'security' && educationList.length === 0)}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

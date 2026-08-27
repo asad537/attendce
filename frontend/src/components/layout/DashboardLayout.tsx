@@ -51,7 +51,7 @@ export default function DashboardLayout() {
                 className="flex items-center gap-2.5 focus:outline-none"
               >
                 <div className="relative w-8 h-8">
-                  <div className="absolute inset-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                  <div className="absolute inset-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </div>
                   {user?.avatar_url && (

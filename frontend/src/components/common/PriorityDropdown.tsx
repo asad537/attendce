@@ -76,7 +76,7 @@ export default function PriorityDropdown({ value, onChange, readonly = false, ic
                     {options.map((option) => (
                         <div
                             key={option.value}
-                            className={`flex items-center gap-2 px-3 py-2 text-[13px] cursor-pointer hover:bg-gray-100 ${value === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700'}`}
+                            className={`flex items-center gap-2 px-3 py-2 text-[13px] cursor-pointer hover:bg-gray-100 ${value === option.value ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700'}`}
                             onClick={() => {
                                 onChange(option.value);
                                 setOpen(false);
