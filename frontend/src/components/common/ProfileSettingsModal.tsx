@@ -406,13 +406,6 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                     <option value="resume">Resume</option>
                     <option value="certificate">Certificate</option>
                     <option value="id_document">ID Document</option>
-                    {(user?.role === 'ceo' || user?.role === 'manager') && (
-                      <>
-                        <option value="salary_document">Salary Document</option>
-                        <option value="bank_details">Bank Details</option>
-                        <option value="disciplinary_document">Disciplinary Document</option>
-                      </>
-                    )}
                   </select>
                   <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
                     <input

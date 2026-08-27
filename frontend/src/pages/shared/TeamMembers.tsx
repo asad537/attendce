@@ -140,7 +140,11 @@ export default function TeamMembers() {
               const colorIndex = charCode % gradients.length;
               
               return (
-              <div key={u.id} className={`rounded-2xl border border-gray-100/60 shadow-sm p-5 relative flex flex-col hover:shadow-md transition-shadow ${gradients[colorIndex]}`}>
+              <div 
+                key={u.id} 
+                className={`rounded-2xl border border-gray-100/60 shadow-sm p-5 relative flex flex-col hover:shadow-md transition-shadow cursor-pointer ${gradients[colorIndex]}`}
+                onClick={() => navigate(`/users/${u.id}/details`)}
+              >
                 <div className="flex justify-between items-start mb-4">
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shadow-sm" />
@@ -201,7 +205,7 @@ export default function TeamMembers() {
                   
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => navigate(`/users/${u.id}/edit`)}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/users/${u.id}/edit`); }}
                       className="p-1.5 rounded-lg border border-indigo-100 bg-indigo-50/50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                       title="Edit"
                     >
@@ -210,7 +214,7 @@ export default function TeamMembers() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => setDeleteUser(u)}
+                      onClick={(e) => { e.stopPropagation(); setDeleteUser(u); }}
                       className="p-1.5 rounded-lg border border-red-100 bg-red-50/50 text-red-500 hover:bg-red-100 transition-colors"
                       title="Delete"
                     >

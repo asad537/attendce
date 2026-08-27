@@ -16,10 +16,10 @@ export default function EmployeeDetails() {
   const [user, setUser] = useState<User | null>(null);
   const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploadDocType, setUploadDocType] = useState('performance_review');
+  const authUser = useAuth().user;
+  const [uploadDocType, setUploadDocType] = useState(authUser?.role === 'ceo' ? 'disciplinary_document' : 'salary_document');
   const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
   const [docLoading, setDocLoading] = useState(false);
-  const authUser = useAuth().user;
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date(2035, 5)); // June 2035 to match design
@@ -491,12 +491,14 @@ export default function EmployeeDetails() {
                     onChange={(e) => setUploadDocType(e.target.value)}
                     className="w-full px-2 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-1 focus:ring-emerald-500"
                   >
-                    <option value="resume">Resume</option>
-                    <option value="certificate">Certificate</option>
-                    <option value="id_document">ID Document</option>
-                    <option value="salary_document">Salary Document</option>
-                    <option value="bank_details">Bank Details</option>
-                    <option value="disciplinary_document">Disciplinary Document</option>
+                    {authUser?.role === 'ceo' ? (
+                      <option value="disciplinary_document">Disciplinary Document</option>
+                    ) : (
+                      <>
+                        <option value="salary_document">Salary Document</option>
+                        <option value="bank_details">Bank Details</option>
+                      </>
+                    )}
                   </select>
                   <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
                     <input
