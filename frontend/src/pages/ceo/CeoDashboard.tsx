@@ -5,6 +5,7 @@ import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
 import { Attendance, Leave, TeamMemberStatus } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
+import EmployeeSatisfactionCard from '../../components/employee/EmployeeSatisfactionCard';
 import toast from 'react-hot-toast';
 import {
   LineChart,
@@ -229,40 +230,7 @@ export default function CeoDashboard() {
           </div>
 
           {/* Employee Satisfaction */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-bold text-lg">Employee Satisfaction</h3>
-              <button className="text-gray-400">...</button>
-            </div>
-            
-            <div className="flex items-end justify-between mb-4">
-              <div>
-                <span className="text-3xl font-bold">73%</span>
-                <p className="text-xs text-gray-500 font-medium mt-1 mb-1">Employee Satisfied</p>
-                <div className="flex text-amber-400 text-xs">
-                  ★ ★ ★ ★ <span className="text-gray-300">★</span> <span className="text-gray-800 font-bold ml-2">4.2/5</span>
-                </div>
-              </div>
-              <div className="w-24 h-12 relative overflow-hidden">
-                 {/* Gauge simulation */}
-                 <div className="w-24 h-24 rounded-full border-[12px] border-gray-100 absolute bottom-0 left-0"></div>
-                 <div className="w-24 h-24 rounded-full border-[12px] border-emerald-400 absolute bottom-0 left-0" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)', transform: 'rotate(45deg)' }}></div>
-                 <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-2 h-8 bg-gray-800 rounded-full origin-bottom" style={{ transform: 'rotate(30deg)' }}></div>
-                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-800 rounded-full border-4 border-white"></div>
-              </div>
-            </div>
-            
-            <div className="bg-emerald-50 text-emerald-800 text-xs font-medium px-4 py-2 rounded-xl mb-6">
-              That's an <strong className="text-emerald-700">increase of 6%</strong> from last month
-            </div>
-            
-            <div className="space-y-4">
-              <SatisfactionBar label="Compensation & Benefits" val="78%" score="4.5/5" />
-              <SatisfactionBar label="Work Culture" val="74%" score="4.3/5" />
-              <SatisfactionBar label="Work-Life Balance" val="71%" score="4.1/5" />
-              <SatisfactionBar label="Career Growth Opportunities" val="68%" score="3.9/5" />
-            </div>
-          </div>
+          <EmployeeSatisfactionCard />
         </div>
 
         {/* RIGHT COLUMN */}

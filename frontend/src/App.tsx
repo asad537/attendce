@@ -14,6 +14,8 @@ import AttendanceHistory from './pages/employee/AttendanceHistory';
 import LeaveManagement from './pages/employee/LeaveManagement';
 import WfhManagement from './pages/employee/WfhManagement';
 
+import RateEmployeesPage from './pages/employee/RateEmployeesPage';
+
 // Manager pages
 import ManagerDashboard from './pages/manager/ManagerDashboard';
 import ManagerLeaveApprovals from './pages/manager/ManagerLeaveApprovals';
@@ -76,6 +78,7 @@ function App() {
           <Route path="attendance" element={<AttendanceHistory />} />
           <Route path="leaves" element={<LeaveManagement />} />
           <Route path="wfh" element={<WfhManagement />} />
+          <Route path="rate-peers" element={<RateEmployeesPage />} />
         </Route>
       </Route>
 
@@ -109,6 +112,7 @@ function App() {
           <Route path="reports" element={<CeoReports />} />
           <Route path="wfh" element={<WfhManagement />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
+          <Route path="rate-peers" element={<RateEmployeesPage />} />
         </Route>
       </Route>
 

@@ -13,6 +13,7 @@ import { getErrorMessage } from '../../services/api';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
+
 export default function EmployeeDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -366,6 +367,11 @@ export default function EmployeeDetails() {
                 </div>
               </div>
             </div>
+          </div>
+          
+          {/* Satisfaction Card */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-64 flex items-center justify-center text-gray-500 italic">
+            More details coming soon...
           </div>
         </div>
 

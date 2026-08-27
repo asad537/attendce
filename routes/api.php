@@ -101,6 +101,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/users/{user}/documents', [\App\Http\Controllers\API\UserDocumentController::class, 'store']);
     Route::get('/documents/{document}/download', [\App\Http\Controllers\API\UserDocumentController::class, 'download']);
     Route::delete('/documents/{document}', [\App\Http\Controllers\API\UserDocumentController::class, 'destroy']);
+    
+    // Employee Satisfaction Ratings
+    Route::get('/satisfaction-ratings/company-overall', [\App\Http\Controllers\API\EmployeeSatisfactionRatingController::class, 'companyOverall']);
+    Route::get('/users/{user}/satisfaction-ratings', [\App\Http\Controllers\API\EmployeeSatisfactionRatingController::class, 'index']);
+    Route::post('/satisfaction-ratings', [\App\Http\Controllers\API\EmployeeSatisfactionRatingController::class, 'store']);
 
     // Projects — employees cannot create or access projects.
     Route::get('/my-tickets', [UserTicketController::class, 'myTickets']);
