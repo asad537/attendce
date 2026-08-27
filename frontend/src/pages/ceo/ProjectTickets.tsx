@@ -93,7 +93,7 @@ export default function ProjectTickets() {
             );
             const currentProject = (Array.isArray(p) ? p : []).find((project) => project.id === Number(projectId));
             setProjectName(currentProject?.name || "Project");
-            setCanManage(Boolean(currentUser?.role === 'ceo' || currentProject?.creator?.id === currentUser?.id || currentProject?.project_lead?.id === currentUser?.id));
+            setCanManage(Boolean(['ceo', 'manager', 'tl'].includes(currentUser?.role || '')));
         } catch (e) {
             toast.error(getErrorMessage(e));
         }

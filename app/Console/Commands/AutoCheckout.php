@@ -44,8 +44,8 @@ class AutoCheckout extends Command
             $user = $attendance->user;
             $shift = $user->shift;
 
-            // Default auto-checkout time is 19:00:00 (7:00 PM) if no shift is defined
-            $checkoutTimeStr = $shift ? $shift->end_time : '19:00:00';
+            // Default auto-checkout time is 21:00:00 (9:00 PM) if no shift is defined
+            $checkoutTimeStr = $shift ? $shift->end_time : '21:00:00';
             $checkoutTime = Carbon::parse($today . ' ' . $checkoutTimeStr);
 
             // If the checkout time is somehow before check in, adjust it

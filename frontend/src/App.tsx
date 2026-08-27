@@ -115,7 +115,6 @@ function App() {
           <Route path="attendance" element={<CeoAttendance />} />
           <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="employees" element={<CeoEmployees />} />
-          <Route path="departments" element={<CeoDepartments />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
           <Route path="reports" element={<CeoReports />} />
           <Route path="holidays" element={<CeoHolidays />} />
@@ -127,6 +126,12 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route index element={<div className="p-4 sm:p-6"><CeoProjects /></div>} />
           <Route path=":projectId" element={<ProjectTickets />} />
+        </Route>
+      </Route>
+
+      <Route path="/departments" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<CeoDepartments />} />
         </Route>
       </Route>
 

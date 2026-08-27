@@ -164,7 +164,7 @@ export default function CeoEmployees() {
                 <h3 className="font-bold text-gray-900 text-lg">{u.name}</h3>
                 <div className="mt-1.5">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${roleColors[u.role] || ''}`}>
-                    {roleLabel[u.role] || u.role}
+                    {u.designation?.title || roleLabel[u.role] || u.role}
                   </span>
                 </div>
                 

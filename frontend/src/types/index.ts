@@ -21,6 +21,7 @@ export interface Designation {
   description?: string;
   is_active: boolean;
   department?: Department;
+  created_by?: number;
 }
 
 export interface Shift {

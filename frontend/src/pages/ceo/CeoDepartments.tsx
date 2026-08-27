@@ -5,6 +5,7 @@ import Modal from '../../components/common/Modal';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const emptyDesig  = (): DesigForm => ({ title: '', description: '', department_i
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CeoDepartments() {
+  const { user } = useAuth();
   const [departments, setDepts]     = useState<Department[]>([]);
   const [designations, setDesigs]   = useState<Designation[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -48,8 +50,12 @@ export default function CeoDepartments() {
         departmentService.getAll(),
         designationService.getAll(),
       ]);
-      setDepts(depts);
+      const filteredDepts = user?.role === 'ceo' ? depts : depts.filter(d => d.id === user?.department?.id);
+      setDepts(filteredDepts);
       setDesigs(desigs);
+      if (user?.role !== 'ceo' && user?.department?.id) {
+        setExpanded(user.department.id);
+      }
     } catch {
       toast.error('Failed to load departments');
     } finally {
@@ -185,17 +191,21 @@ export default function CeoDepartments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Departments</h1>
+          <h1 className="text-xl font-bold text-gray-900">
+            {user?.role === 'ceo' ? 'Departments' : `Department - ${user?.department?.name || ''}`}
+          </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Manage departments and their designations (positions)
+            Manage {user?.role === 'ceo' ? 'departments and their' : 'your department and its'} designations (positions)
           </p>
         </div>
-        <button
-          onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
-          className="btn-primary shrink-0"
-        >
-          + Add Department
-        </button>
+        {user?.role === 'ceo' && (
+          <button
+            onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
+            className="btn-primary shrink-0"
+          >
+            + Add Department
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -220,7 +230,10 @@ export default function CeoDepartments() {
               No departments yet. Add one to get started.
             </div>
           ) : departments.map(dept => {
-            const positions = desigFor(dept.id);
+            let positions = desigFor(dept.id);
+            if (user?.role === 'tl' && user?.designation?.id) {
+              positions = positions.filter(pos => pos.id !== user.designation?.id);
+            }
             const isOpen    = expanded === dept.id;
 
             return (
@@ -245,33 +258,36 @@ export default function CeoDepartments() {
                       </p>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 shrink-0 ml-4">
-                    {/* Edit dept */}
-                    <button
-                      onClick={ev => {
-                        ev.stopPropagation();
-                        setDeptEdit(dept);
-                        setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' });
-                        setDeptErrs({});
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
-                      title="Edit department"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    {/* Delete dept */}
-                    <button
-                      onClick={ev => { ev.stopPropagation(); setDeptDel(dept); }}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                      title="Delete department"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    {user?.role === 'ceo' && (
+                      <>
+                        {/* Edit dept */}
+                        <button
+                          onClick={ev => {
+                            ev.stopPropagation();
+                            setDeptEdit(dept);
+                            setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' });
+                            setDeptErrs({});
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+                          title="Edit department"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {/* Delete dept */}
+                        <button
+                          onClick={ev => { ev.stopPropagation(); setDeptDel(dept); }}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete department"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
                     {/* Chevron */}
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -320,28 +336,32 @@ export default function CeoDepartments() {
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  setDesigEdit(d);
-                                  setDesigForm({ title: d.title, description: d.description || '', department_id: d.department?.id || 0 });
-                                  setDesigErrs({});
-                                }}
-                                className="p-1 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
-                                title="Edit"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => setDesigDel(d)}
-                                className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                                title="Delete"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                              {!(user?.role === 'tl' && d.created_by !== user?.id) && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setDesigEdit(d);
+                                      setDesigForm({ title: d.title, description: d.description || '', department_id: d.department?.id || 0 });
+                                      setDesigErrs({});
+                                    }}
+                                    className="p-1 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => setDesigDel(d)}
+                                    className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         ))}

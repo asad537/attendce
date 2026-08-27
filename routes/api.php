@@ -103,9 +103,9 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Designations
     Route::get('/designations',                   [DesignationController::class, 'index']);
-    Route::post('/designations',                  [DesignationController::class, 'store'])->middleware('can:manage-organization');
-    Route::put('/designations/{designation}',     [DesignationController::class, 'update'])->middleware('can:manage-organization');
-    Route::delete('/designations/{designation}',  [DesignationController::class, 'destroy'])->middleware('can:manage-organization');
+    Route::post('/designations',                  [DesignationController::class, 'store']);
+    Route::put('/designations/{designation}',     [DesignationController::class, 'update']);
+    Route::delete('/designations/{designation}',  [DesignationController::class, 'destroy']);
 
     // Shifts
     Route::get('/shifts',           [ShiftController::class, 'index']);
