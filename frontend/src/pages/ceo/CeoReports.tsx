@@ -356,7 +356,7 @@ export default function CeoReports() {
                 <input type="date" className="input py-2 sm:py-1 text-sm" value={endDate} onChange={e => setEndDate(e.target.value)} min={startDate} />
               </div>
             )}
-            {!showCustomRange && <div className="w-full text-right text-xs font-semibold text-indigo-600">▣ &nbsp;{format(new Date(`${startDate}T00:00:00`), 'MMM dd')} – {format(new Date(`${endDate}T00:00:00`), 'MMM dd, yyyy')}</div>}
+            {!showCustomRange && <div className="w-full text-right text-xs font-semibold text-emerald-600">▣ &nbsp;{format(new Date(`${startDate}T00:00:00`), 'MMM dd')} – {format(new Date(`${endDate}T00:00:00`), 'MMM dd, yyyy')}</div>}
           </div>
         </div>
       </div>
@@ -638,8 +638,8 @@ export default function CeoReports() {
                   </button>
                   <div className="absolute right-0 pt-2 w-36 z-50 hidden group-hover:block">
                     <div className="bg-white rounded-md shadow-lg border border-gray-200 overflow-hidden flex flex-col">
-                      <button onClick={handleExportCSV} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">Export as CSV</button>
-                      <button onClick={handleExportPDF} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 border-t border-gray-100 transition-colors">Export as PDF</button>
+                      <button onClick={handleExportCSV} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-emerald-600 transition-colors">Export as CSV</button>
+                      <button onClick={handleExportPDF} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-emerald-600 border-t border-gray-100 transition-colors">Export as PDF</button>
                     </div>
                   </div>
                   </div>
@@ -650,7 +650,7 @@ export default function CeoReports() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      <th className="px-6 py-3 w-12"><input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" onChange={toggleAll} checked={filteredRecords.length > 0 && filteredRecords.every((r: any) => selectedEmployees.has(r.user.id))} /></th>
+                      <th className="px-6 py-3 w-12"><input type="checkbox" className="rounded text-emerald-600 focus:ring-emerald-500" onChange={toggleAll} checked={filteredRecords.length > 0 && filteredRecords.every((r: any) => selectedEmployees.has(r.user.id))} /></th>
                       <th className="px-6 py-3">Employee Name</th>
                       <th className="px-6 py-3">Total Days</th>
                       <th className="px-6 py-3">Total Working Days</th>
@@ -671,7 +671,7 @@ export default function CeoReports() {
                     ) : (
                       filteredRecords.map((r: any) => (
                         <tr key={r.user.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4"><input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={selectedEmployees.has(r.user.id)} onChange={() => toggleEmployee(r.user.id)} /></td>
+                          <td className="px-6 py-4"><input type="checkbox" className="rounded text-emerald-600 focus:ring-emerald-500" checked={selectedEmployees.has(r.user.id)} onChange={() => toggleEmployee(r.user.id)} /></td>
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.user.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-600">{r.total_days}</td>
                           <td className="px-6 py-4 text-sm text-gray-600">{r.working_days_in_period}</td>
@@ -679,7 +679,7 @@ export default function CeoReports() {
                           <td className="px-6 py-4 text-sm text-gray-600 font-semibold">{r.present}</td>
                           <td className="px-6 py-4 text-sm text-purple-600 font-semibold">{r.work_from_home}</td>
                           <td className="px-6 py-4 text-sm text-amber-600 font-semibold">{r.on_leave}</td>
-                          <td className="px-6 py-4 text-sm text-indigo-600 font-bold">{r.days_worked_excl_weekends}</td>
+                          <td className="px-6 py-4 text-sm text-emerald-600 font-bold">{r.days_worked_excl_weekends}</td>
                         </tr>
                       ))
                     )}

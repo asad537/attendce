@@ -57,14 +57,14 @@ export default function MyTickets() {
                     <p className="text-sm text-gray-500 mt-1">All tickets assigned to you across all projects</p>
                 </div>
                 <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     <span><strong className="text-gray-900">{tickets.length}</strong> assigned</span>
                 </div>
             </div>
 
             {tickets.length === 0 ? (
                 <div className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white px-5 py-12 text-center shadow-sm">
-                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                         <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -80,7 +80,7 @@ export default function MyTickets() {
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{t.project?.name || 'Unknown project'}</p>
-                                    {t.project ? <Link to={`/projects/${t.project.id}`} className="mt-1 block font-semibold text-indigo-700 hover:underline">{t.title}</Link> : <h2 className="mt-1 font-semibold text-gray-900">{t.title}</h2>}
+                                    {t.project ? <Link to={`/projects/${t.project.id}`} className="mt-1 block font-semibold text-emerald-700 hover:underline">{t.title}</Link> : <h2 className="mt-1 font-semibold text-gray-900">{t.title}</h2>}
                                 </div>
                                 <span className={`shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-full ${getStatusBadge(t.status)}`}>{formatStatus(t.status)}</span>
                             </div>
@@ -110,7 +110,7 @@ export default function MyTickets() {
                                         {t.project ? (
                                             <Link 
                                                 to={`/projects/${t.project.id}`}
-                                                className="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline line-clamp-2 block"
+                                                className="text-sm font-medium text-emerald-600 hover:text-emerald-900 hover:underline line-clamp-2 block"
                                             >
                                                 {t.title}
                                             </Link>
@@ -124,7 +124,7 @@ export default function MyTickets() {
                                         {t.project ? (
                                             <Link 
                                                 to={`/projects/${t.project.id}`} 
-                                                className="text-sm text-indigo-600 hover:text-indigo-900 hover:underline"
+                                                className="text-sm text-emerald-600 hover:text-emerald-900 hover:underline"
                                             >
                                                 {t.project.name}
                                             </Link>

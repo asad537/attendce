@@ -201,9 +201,9 @@ export default function CeoDepartments() {
       {/* Stats */}
       {!loading && (
         <div className="flex gap-4">
-          <div className="px-4 py-2 bg-indigo-50 rounded-xl text-sm">
-            <span className="font-bold text-indigo-700">{departments.length}</span>
-            <span className="text-indigo-500 ml-1">Departments</span>
+          <div className="px-4 py-2 bg-emerald-50 rounded-xl text-sm">
+            <span className="font-bold text-emerald-700">{departments.length}</span>
+            <span className="text-emerald-500 ml-1">Departments</span>
           </div>
           <div className="px-4 py-2 bg-emerald-50 rounded-xl text-sm">
             <span className="font-bold text-emerald-700">{designations.length}</span>
@@ -233,15 +233,15 @@ export default function CeoDepartments() {
                 >
                   <div className="flex items-center gap-4 min-w-0">
                     {/* colour swatch from code hash */}
-                    <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
-                      <span className="text-indigo-700 font-bold text-xs">{dept.code}</span>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                      <span className="text-emerald-700 font-bold text-xs">{dept.code}</span>
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900">{dept.name}</p>
                       <p className="text-xs text-gray-400 truncate">
                         {dept.description || 'No description'}
                         {' · '}
-                        <span className="text-indigo-500">{positions.length} position{positions.length !== 1 ? 's' : ''}</span>
+                        <span className="text-emerald-500">{positions.length} position{positions.length !== 1 ? 's' : ''}</span>
                       </p>
                     </div>
                   </div>
@@ -255,7 +255,7 @@ export default function CeoDepartments() {
                         setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' });
                         setDeptErrs({});
                       }}
-                      className="p-1.5 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
                       title="Edit department"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,7 +296,7 @@ export default function CeoDepartments() {
                           setDesigErrs({});
                           setDesigAdd(dept.id);
                         }}
-                        className="flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                        className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -326,7 +326,7 @@ export default function CeoDepartments() {
                                   setDesigForm({ title: d.title, description: d.description || '', department_id: d.department?.id || 0 });
                                   setDesigErrs({});
                                 }}
-                                className="p-1 rounded-lg hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-colors"
+                                className="p-1 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
                                 title="Edit"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

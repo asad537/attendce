@@ -13,7 +13,7 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="inline-block w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="inline-block w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
           <p className="mt-3 text-gray-500 text-sm">Loading…</p>
         </div>
       </div>

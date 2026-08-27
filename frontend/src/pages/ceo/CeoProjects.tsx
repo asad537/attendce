@@ -12,7 +12,7 @@ const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ n
 
 const statusMeta: Record<ProjectStatus, { label: string; badge: string }> = {
   planning:    { label: 'To Do',       badge: 'bg-slate-100 text-slate-600' },
-  in_progress: { label: 'In Progress', badge: 'bg-indigo-100 text-indigo-700' },
+  in_progress: { label: 'In Progress', badge: 'bg-emerald-100 text-emerald-700' },
   on_hold:     { label: 'In Review',   badge: 'bg-amber-100 text-amber-700' },
   completed:   { label: 'Done',        badge: 'bg-emerald-100 text-emerald-700' },
 };
@@ -78,7 +78,7 @@ export default function CeoProjects() {
     <div className="space-y-5">
       <div className="card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">Workspace</p>
           <h1 className="mt-1 text-2xl font-bold text-gray-900">Projects</h1>
           <p className="mt-1 text-sm text-gray-500">Track every project from planning to completion.</p>
         </div>
@@ -121,8 +121,8 @@ export default function CeoProjects() {
                     <td className="text-sm text-gray-500">{fmtDate(p.due_date)}</td>
                     <td className="text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-3">
-                        <button onClick={() => navigate(`/projects/${p.id}`)} className="text-xs font-semibold text-gray-500 hover:text-indigo-600">Open</button>
-                        <button onClick={() => edit(p)} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Edit</button>
+                        <button onClick={() => navigate(`/projects/${p.id}`)} className="text-xs font-semibold text-gray-500 hover:text-emerald-600">Open</button>
+                        <button onClick={() => edit(p)} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Edit</button>
                       </div>
                     </td>
                   </tr>

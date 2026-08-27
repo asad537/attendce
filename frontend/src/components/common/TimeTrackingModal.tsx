@@ -58,7 +58,7 @@ export default function TimeTrackingModal({ open, onClose, ticketId, onSuccess }
                     <label className="block text-[13px] font-semibold text-gray-700 mb-1.5">Time spent</label>
                     <input 
                         type="text"
-                        className="w-full border border-gray-300 rounded p-2 text-[14px] text-gray-900 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        className="w-full border border-gray-300 rounded p-2 text-[14px] text-gray-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                         value={timeSpent}
                         onChange={(e) => setTimeSpent(e.target.value)}
                         placeholder="e.g. 2w 4d 6h 45m"
@@ -72,7 +72,7 @@ export default function TimeTrackingModal({ open, onClose, ticketId, onSuccess }
                     </label>
                     <input 
                         type="text"
-                        className="w-full border border-gray-300 rounded p-2 text-[14px] text-gray-900 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                        className="w-full border border-gray-300 rounded p-2 text-[14px] text-gray-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                         value={timeRemaining}
                         onChange={(e) => setTimeRemaining(e.target.value)}
                         placeholder="e.g. 1d 2h"
@@ -94,7 +94,7 @@ export default function TimeTrackingModal({ open, onClose, ticketId, onSuccess }
                 <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
                     Cancel
                 </button>
-                <button type="button" onClick={handleSave} disabled={loading} className="px-4 py-2 text-[14px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors disabled:opacity-50 shadow-sm">
+                <button type="button" onClick={handleSave} disabled={loading} className="px-4 py-2 text-[14px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50 shadow-sm">
                     {loading ? 'Saving...' : 'Save'}
                 </button>
             </div>

@@ -207,7 +207,7 @@ export default function CeoEmployees() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate(`/users/${u.id}/edit`); }}
-                      className="p-1.5 rounded-lg border border-indigo-100 bg-indigo-50/50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                      className="p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-emerald-600 hover:bg-emerald-100 transition-colors"
                       title="Edit"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -239,7 +239,7 @@ export default function CeoEmployees() {
                   <button
                     key={p}
                     onClick={() => load(p)}
-                    className={`px-3 py-1 rounded-lg transition-colors ${p === data.meta.current_page ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100'}`}
+                    className={`px-3 py-1 rounded-lg transition-colors ${p === data.meta.current_page ? 'bg-emerald-600 text-white' : 'hover:bg-gray-100'}`}
                   >
                     {p}
                   </button>

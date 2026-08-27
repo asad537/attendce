@@ -327,7 +327,7 @@ export default function AddEditEmployeePage() {
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-gray-500">Temporary Password</span>
-                <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded select-all">
+                <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded select-all">
                   {tempPwd.password}
                 </span>
               </div>

@@ -53,7 +53,7 @@ export default function DashboardLayout() {
                 {user?.avatar_url ? (
                   <img src={user?.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </div>
                 )}

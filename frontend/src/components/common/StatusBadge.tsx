@@ -8,7 +8,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   late:           { label: 'Late',           className: 'badge-yellow' },
   half_day:       { label: 'Half Day',       className: 'badge-yellow' },
   on_leave:       { label: 'On Leave',       className: 'badge-blue' },
-  holiday:        { label: 'Holiday',        className: 'badge-indigo' },
+  holiday:        { label: 'Holiday',        className: 'badge-emerald' },
   work_from_home: { label: 'WFM',            className: 'badge-purple' },
   weekend:        { label: 'Weekend',        className: 'badge-gray' },
   // Current status
