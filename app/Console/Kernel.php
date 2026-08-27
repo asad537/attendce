@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('attendance:reminders')->everyMinute();
         $schedule->command('notifications:birthdays')->dailyAt('09:00');
+        $schedule->command('attendance:autocheckout')->dailyAt('23:59');
     }
 
     /**
