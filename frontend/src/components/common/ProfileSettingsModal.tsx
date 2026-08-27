@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
+import { documentService, UserDocument } from '../../services/documentService';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
 export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
   const { user, refreshUser, logout } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'education' | 'security'>('education');
+  const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents'>('education');
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
@@ -30,6 +31,63 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
   const [educationList, setEducationList] = useState<Array<{degree: string, institution: string, year: string, field: string}>>(
     user?.education || []
   );
+
+  // Documents state
+  const [documents, setDocuments] = useState<UserDocument[]>([]);
+  const [docLoading, setDocLoading] = useState(false);
+  const [uploadDocType, setUploadDocType] = useState('resume');
+  const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      fetchDocuments();
+    }
+  }, [isOpen, user?.id]);
+
+  const fetchDocuments = async () => {
+    if (!user) return;
+    try {
+      const data = await documentService.getDocuments(user.id);
+      setDocuments(data);
+    } catch (error) {
+      console.error('Failed to fetch documents', error);
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !uploadDocFile) return;
+
+    setDocLoading(true);
+    try {
+      await documentService.uploadDocument(user.id, uploadDocType, uploadDocFile);
+      toast.success('Document uploaded successfully');
+      setUploadDocFile(null);
+      fetchDocuments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setDocLoading(false);
+    }
+  };
+
+  const handleDocumentDelete = async (docId: number) => {
+    try {
+      await documentService.deleteDocument(docId);
+      toast.success('Document deleted');
+      fetchDocuments();
+    } catch (err: any) {
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const handleDocumentDownload = async (doc: UserDocument) => {
+    try {
+      await documentService.downloadDocument(doc.id, doc.name);
+    } catch (err) {
+      toast.error('Failed to download document');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -154,6 +212,13 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
               className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'security' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Security Settings
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('documents')}
+              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'documents' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Documents
             </button>
           </div>
         </div>
@@ -313,6 +378,83 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Documents Tab */}
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-900">Your Documents</h3>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="flex flex-col gap-3">
+                  <select 
+                    value={uploadDocType}
+                    onChange={(e) => setUploadDocType(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none"
+                  >
+                    <option value="resume">Resume</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="id_document">ID Document</option>
+                    {(user?.role === 'ceo' || user?.role === 'manager') && (
+                      <>
+                        <option value="salary_document">Salary Document</option>
+                        <option value="bank_details">Bank Details</option>
+                        <option value="disciplinary_document">Disciplinary Document</option>
+                      </>
+                    )}
+                  </select>
+                  <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setUploadDocFile(e.target.files ? e.target.files[0] : null)}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleDocumentUpload}
+                      disabled={!uploadDocFile || docLoading}
+                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {docLoading ? 'Uploading...' : 'Upload'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium mt-1">Only PDF files up to 2MB are allowed.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {documents.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-gray-500">No documents found.</div>
+                ) : (
+                  documents.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-white shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-900">{doc.name}</span>
+                        <span className="text-xs text-gray-500 capitalize">{doc.type.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => handleDocumentDownload(doc)} className="p-1 text-indigo-600 hover:bg-indigo-50 rounded">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        </button>
+                        <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

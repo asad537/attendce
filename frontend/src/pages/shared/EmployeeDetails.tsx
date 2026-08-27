@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { userService } from '../../services/userService';
+import { documentService, UserDocument } from '../../services/documentService';
 import { User } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -12,25 +14,69 @@ export default function EmployeeDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [documents, setDocuments] = useState<UserDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadDocType, setUploadDocType] = useState('performance_review');
+  const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
+  const [docLoading, setDocLoading] = useState(false);
+  const authUser = useAuth().user;
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date(2035, 5)); // June 2035 to match design
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        if (!id) return;
-        const data = await userService.getById(parseInt(id, 10));
-        setUser(data);
-      } catch (err) {
-        toast.error(getErrorMessage(err) || 'Failed to load user details');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchUser();
   }, [id]);
+
+  const fetchUser = async () => {
+    try {
+      if (!id) return;
+      const data = await userService.getById(parseInt(id, 10));
+      setUser(data);
+      fetchDocuments();
+    } catch (err) {
+      toast.error(getErrorMessage(err) || 'Failed to load user details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    if (!id) return;
+    try {
+      const docsData = await documentService.getDocuments(parseInt(id, 10));
+      setDocuments(docsData);
+    } catch (error) {
+      console.error('Failed to fetch documents', error);
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !uploadDocFile) return;
+
+    setDocLoading(true);
+    try {
+      await documentService.uploadDocument(user.id, uploadDocType, uploadDocFile);
+      toast.success('Document uploaded successfully');
+      setUploadDocFile(null);
+      fetchDocuments();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setDocLoading(false);
+    }
+  };
+
+  const handleDocumentDelete = async (docId: number) => {
+    try {
+      await documentService.deleteDocument(docId);
+      toast.success('Document deleted');
+      fetchDocuments();
+    } catch (err: any) {
+      toast.error('Failed to delete document');
+    }
+  };
 
   if (loading) return <PageLoader />;
   if (!user) return <div className="p-6 text-center text-gray-500">User not found.</div>;
@@ -52,13 +98,6 @@ export default function EmployeeDetails() {
     { day: 'F', hours: 7, formatted: '7:00' },
     { day: 'S', hours: 0, formatted: '0:00' },
     { day: 'S', hours: 0, formatted: '0:00' },
-  ];
-
-  const documents = [
-    { name: 'Performance Evaluation.pdf', size: '1.24 MB', type: 'PDF' },
-    { name: 'Contract Agreement.pdf', size: '895 KB', type: 'PDF' },
-    { name: 'Curriculum Vitae.pdf', size: '1.27 MB', type: 'PDF' },
-    { name: 'Portfolio.pdf', size: '3.68 MB', type: 'PDF' },
   ];
 
   const internalNotes = [
@@ -443,25 +482,67 @@ export default function EmployeeDetails() {
             <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col h-full">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900 text-lg">Documents</h3>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                  </svg>
-                </button>
               </div>
+              
+              {(authUser?.role === 'ceo' || authUser?.role === 'manager') && (
+                <div className="bg-gray-50 p-3 rounded-xl mb-4 border border-gray-100 flex flex-col gap-3">
+                  <select 
+                    value={uploadDocType}
+                    onChange={(e) => setUploadDocType(e.target.value)}
+                    className="w-full px-2 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="resume">Resume</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="id_document">ID Document</option>
+                    <option value="salary_document">Salary Document</option>
+                    <option value="bank_details">Bank Details</option>
+                    <option value="disciplinary_document">Disciplinary Document</option>
+                  </select>
+                  <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setUploadDocFile(e.target.files ? e.target.files[0] : null)}
+                      className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={handleDocumentUpload}
+                      disabled={!uploadDocFile || docLoading}
+                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      {docLoading ? 'Uploading...' : 'Upload'}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-medium">Only PDF files up to 2MB are allowed.</p>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {documents.map((doc, idx) => (
-                  <div key={idx} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer">
+                  <div key={idx} onClick={() => documentService.downloadDocument(doc.id, doc.name)} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer">
                     <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex flex-col items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                      <span className="text-[9px] font-bold mt-0.5">{doc.type}</span>
+                      <span className="text-[9px] font-bold mt-0.5" title={doc.type}>{doc.type.substring(0, 3).toUpperCase()}</span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-gray-900 truncate">{doc.name}</p>
-                      <p className="text-xs text-gray-500 font-medium">{doc.type} · {doc.size}</p>
+                      <p className="text-xs text-gray-500 font-medium capitalize">{doc.type.replace('_', ' ')}</p>
                     </div>
+                    {(authUser?.role === 'ceo' || authUser?.role === 'manager') && (
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.stopPropagation(); handleDocumentDelete(doc.id); }} 
+                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    )}
                   </div>
                 ))}
+                {documents.length === 0 && (
+                  <div className="text-center text-sm text-gray-500 py-4">No documents found.</div>
+                )}
               </div>
             </div>
           </div>

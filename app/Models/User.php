@@ -123,6 +123,11 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class);
     }
 
+    public function documents()
+    {
+        return $this->hasMany(UserDocument::class);
+    }
+
     // ─── Scopes ────────────────────────────────────────────────────
     public function scopeActive($query)
     {
