@@ -55,6 +55,7 @@ const StarRating = ({ rating }: { rating: number }) => {
 export default function EmployeeSatisfactionCard() {
   const [data, setData] = useState<SatisfactionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
   useEffect(() => {
     const fetchRatings = async () => {
@@ -69,6 +70,16 @@ export default function EmployeeSatisfactionCard() {
     };
     fetchRatings();
   }, []);
+
+  useEffect(() => {
+    if (data) {
+      // Small delay to ensure the browser paints the initial 0 state before transitioning
+      const timer = setTimeout(() => {
+        setAnimatedPercentage(data.overall_percentage);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [data]);
 
   if (isLoading) return <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 min-h-[300px] flex items-center justify-center"><PageLoader /></div>;
   if (!data || data.total_ratings === 0) {
@@ -100,7 +111,7 @@ export default function EmployeeSatisfactionCard() {
   const circumference = 2 * Math.PI * radius;
   // Let's make it a semi-circle like a gauge
   const strokeDasharray = circumference;
-  const strokeDashoffset = circumference - (data.overall_percentage / 100) * (circumference / 2);
+  const strokeDashoffset = circumference - (animatedPercentage / 100) * (circumference / 2);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg w-full font-sans">
@@ -124,6 +135,7 @@ export default function EmployeeSatisfactionCard() {
         {/* Circular Gauge */}
         <div className="relative w-32 h-20 overflow-hidden flex justify-center">
           <svg className="w-32 h-32 transform -rotate-180" viewBox="0 0 100 100">
+            {/* Background Track */}
             <circle
               className="text-gray-100"
               strokeWidth="12"
@@ -136,8 +148,9 @@ export default function EmployeeSatisfactionCard() {
               strokeDashoffset={circumference / 2}
               strokeLinecap="round"
             />
+            {/* Value Track */}
             <circle
-              className="text-emerald-400"
+              className="text-emerald-400 transition-all duration-1000 ease-out"
               strokeWidth="12"
               stroke="currentColor"
               fill="transparent"
@@ -145,18 +158,20 @@ export default function EmployeeSatisfactionCard() {
               cx="50"
               cy="50"
               strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset + circumference / 2}
+              strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
             />
           </svg>
-          {/* Needle for gauge (simplified) */}
+          {/* Needle for gauge */}
           <div
-            className="absolute bottom-0 w-2 h-12 bg-gray-800 rounded-full origin-bottom transform transition-transform duration-1000"
-            style={{ transform: `rotate(${((data.overall_percentage / 100) * 180) - 90}deg)` }}
+            className="absolute bottom-0 left-1/2 w-2 h-12 bg-gray-800 rounded-t-full origin-bottom transform transition-transform duration-1000 ease-out"
+            style={{ 
+              transform: `translateX(-50%) rotate(${((animatedPercentage / 100) * 180) - 90}deg)`,
+              transformOrigin: 'bottom center'
+            }}
           >
-            <div className="absolute bottom-0 -left-1 w-4 h-4 bg-gray-800 rounded-full">
-              <div className="w-2 h-2 bg-white rounded-full mx-auto mt-1"></div>
-            </div>
+            {/* Needle Pivot Circle */}
+            <div className="absolute -bottom-2 -left-1.5 w-5 h-5 bg-gray-800 rounded-full border-4 border-white shadow-sm"></div>
           </div>
         </div>
       </div>
