@@ -160,7 +160,7 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): ?string
     {
         return $this->avatar
-            ? URL::temporarySignedRoute('users.avatar', now()->addMinutes(10), ['user' => $this->id])
+            ? URL::temporarySignedRoute('users.avatar', now()->addDays(7), ['user' => $this->id], false)
             : null;
     }
 

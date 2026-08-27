@@ -36,6 +36,8 @@ import MyTickets from './pages/shared/MyTickets';
 import AddEditEmployeePage from './pages/shared/AddEditEmployeePage';
 import CalendarPage from './pages/shared/CalendarPage';
 import EmployeeDetails from './pages/shared/EmployeeDetails';
+import InboxPage from './pages/shared/InboxPage';
+import CeoPayroll from './pages/ceo/CeoPayroll';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -118,6 +120,7 @@ function App() {
           <Route path="departments" element={<CeoDepartments />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
           <Route path="reports" element={<CeoReports />} />
+          <Route path="payroll" element={<CeoPayroll />} />
           <Route path="holidays" element={<CeoHolidays />} />
           <Route path="audit-logs" element={<CeoAuditLogs />} />
         </Route>
@@ -139,6 +142,12 @@ function App() {
       <Route path="/calendar" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<CalendarPage />} />
+        </Route>
+      </Route>
+
+      <Route path="/inbox" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<InboxPage />} />
         </Route>
       </Route>
 

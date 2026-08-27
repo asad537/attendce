@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\Leave;
+use App\Models\ProjectTicket;
+use App\Models\TicketWorklog;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -60,10 +62,34 @@ class ReportService
         
         $totalPresents = $records->whereIn('status', ['present', 'late'])->count();
 
+        // Project delivery metrics use the same selected report period.
+        $assignedTickets = ProjectTicket::where('assignee_id', $user->id)
+            ->whereDate('created_at', '<=', $end)
+            ->count();
+        $completedTickets = ProjectTicket::where('assignee_id', $user->id)
+            ->where('status', 'done')
+            ->whereBetween('updated_at', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
+            ->count();
+        $inProgressTickets = ProjectTicket::where('assignee_id', $user->id)
+            ->whereIn('status', ['in_progress', 'in_review'])
+            ->whereDate('created_at', '<=', $end)
+            ->count();
+        $overdueTickets = ProjectTicket::where('assignee_id', $user->id)
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '<', ($endDate->lessThan(now()) ? $endDate : now())->toDateString())
+            ->where('status', '!=', 'done')
+            ->count();
+        $ticketWorkMinutes = TicketWorklog::where('user_id', $user->id)
+            ->whereBetween('created_at', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
+            ->sum('time_spent');
+
         return [
             'user'            => array_merge(
                 $user->only(['id', 'name', 'employee_id', 'role']),
-                ['department' => $user->department ? $user->department->only(['id', 'name']) : null]
+                [
+                    'department' => $user->department ? $user->department->only(['id', 'name']) : null,
+                    'designation' => $user->designation ? $user->designation->only(['id', 'name']) : null,
+                ]
             ),
             'period'          => ['start' => $start, 'end' => $end],
             'total_days'      => $totalDays,
@@ -79,6 +105,11 @@ class ReportService
             'avg_working_hours'    => $records->count() > 0
                 ? round($records->avg('working_minutes') / 60, 2)
                 : 0,
+            'assigned_tickets'     => $assignedTickets,
+            'completed_tickets'    => $completedTickets,
+            'in_progress_tickets'  => $inProgressTickets,
+            'overdue_tickets'      => $overdueTickets,
+            'ticket_worklog_hours' => round($ticketWorkMinutes / 60, 2),
         ];
     }
 

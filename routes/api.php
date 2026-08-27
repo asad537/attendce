@@ -17,6 +17,9 @@ use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\ShiftController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserTicketController;
+use App\Http\Controllers\API\MessageController;
+use App\Http\Controllers\API\CallController;
+use App\Http\Controllers\API\PayrollController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -28,7 +31,7 @@ use Illuminate\Support\Facades\Route;
 // ── Public ──────────────────────────────────────────────────────────────
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::get('/users/{user}/avatar', [UserController::class, 'avatar'])
-    ->middleware(['signed', 'throttle:60,1'])
+    ->middleware(['signed:relative', 'throttle:60,1'])
     ->name('users.avatar');
 
 // ── Authenticated ────────────────────────────────────────────────────────
@@ -38,6 +41,22 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/logout',         [AuthController::class, 'logout']);
     Route::get('/me',              [AuthController::class, 'me']);
     Route::post('/me',             [AuthController::class, 'updateProfile']);
+
+    // Internal inbox
+    Route::get('/messages',                    [MessageController::class, 'index']);
+    Route::get('/messages/recipients',         [MessageController::class, 'recipients']);
+    Route::get('/messages/conversations',      [MessageController::class, 'conversations']);
+    Route::get('/messages/thread/{user}',      [MessageController::class, 'thread']);
+    Route::post('/messages',                   [MessageController::class, 'store']);
+    Route::patch('/messages/{message}',        [MessageController::class, 'update']);
+    Route::delete('/messages/{message}',       [MessageController::class, 'destroy']);
+
+    // Calls (WebRTC signalling over polling)
+    Route::post('/calls/signal',               [CallController::class, 'signal']);
+    Route::get('/calls/poll',                  [CallController::class, 'poll']);
+
+    Route::get('/payroll',                     [PayrollController::class, 'index']);
+    Route::put('/payroll/{user}',              [PayrollController::class, 'update']);
 
     // Attendance
     Route::get('/attendance',               [AttendanceController::class, 'index']);

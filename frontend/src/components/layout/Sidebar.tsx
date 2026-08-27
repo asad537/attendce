@@ -126,6 +126,11 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
   {
+    label: 'Payroll', path: '/ceo/payroll',
+    roles: ['ceo'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16v12H4V6Zm3 3h.01M17 15h.01M9 12h6m-3-3v6" /></svg>,
+  },
+  {
     label: 'Attendance',
     roles: ['ceo'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
@@ -154,6 +159,11 @@ const navItems: NavItem[] = [
     label: 'My Tickets', path: '/my-tickets',
     roles: ['ceo', 'manager', 'tl', 'employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
+    label: 'Inbox', path: '/inbox',
+    roles: ['ceo', 'manager', 'tl', 'employee'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4Zm0 3 8 6 8-6" /></svg>,
   },
   {
     label: 'Departments', path: '/ceo/departments',
@@ -365,13 +375,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
       <div className="p-3 border-t border-gray-100 space-y-1">
         {/* compact user row */}
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50">
-          {user?.avatar_url ? (
-            <img src={user?.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-xs flex-shrink-0">
+          <div className="relative w-7 h-7 flex-shrink-0">
+            <div className="absolute inset-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-xs">
               {user?.name?.charAt(0)?.toUpperCase()}
             </div>
-          )}
+            {user?.avatar_url && (
+              <img src={user.avatar_url} alt="" onError={e => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 w-7 h-7 rounded-full object-cover" />
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-gray-900 truncate leading-tight">{user?.name}</p>
             <p className={`text-xs ${roleColors[user?.role || 'employee']} leading-tight`}>

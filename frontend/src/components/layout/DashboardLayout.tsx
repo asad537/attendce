@@ -50,13 +50,14 @@ export default function DashboardLayout() {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2.5 focus:outline-none"
               >
-                {user?.avatar_url ? (
-                  <img src={user?.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                <div className="relative w-8 h-8">
+                  <div className="absolute inset-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
                     {user?.name?.charAt(0)?.toUpperCase()}
                   </div>
-                )}
+                  {user?.avatar_url && (
+                    <img src={user.avatar_url} alt="" onError={e => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 w-8 h-8 rounded-full object-cover" />
+                  )}
+                </div>
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-medium text-gray-900 leading-none">{user?.name}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{user?.employee_id}</p>

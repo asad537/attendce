@@ -241,7 +241,6 @@ export default function CalendarPage() {
                   time={ev.time}
                   location={ev.location}
                   note={ev.note}
-                  note={ev.note}
                   bgColor={getEventBgColor(ev.type)}
                   textColor={getEventTextColor(ev.type)}
                   onEdit={() => handleEditEvent(ev.id)}

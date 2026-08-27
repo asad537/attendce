@@ -30,6 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        // Refresh from the server so cached fields (e.g. the signed avatar URL,
+        // which expires) are renewed on every app load.
+        authService.me()
+          .then(fresh => { setUser(fresh); localStorage.setItem('auth_user', JSON.stringify(fresh)); })
+          .catch(() => {});
       } catch {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');

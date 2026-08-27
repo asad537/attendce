@@ -295,7 +295,7 @@ export interface DailySnapshot {
 }
 
 export interface AttendanceSummary {
-  user: { id: number; name: string; employee_id?: string; role: Role };
+  user: { id: number; name: string; employee_id?: string; role: Role; department?: { id: number; name: string } | null; designation?: { id: number; name: string } | null };
   period: { start: string; end: string };
   total_days: number;
   present: number;
@@ -306,4 +306,11 @@ export interface AttendanceSummary {
   total_working_hours: number;
   total_overtime_hours: number;
   avg_working_hours: number;
+  working_days_in_period?: number;
+  days_worked_excl_weekends?: number;
+  assigned_tickets?: number;
+  completed_tickets?: number;
+  in_progress_tickets?: number;
+  overdue_tickets?: number;
+  ticket_worklog_hours?: number;
 }

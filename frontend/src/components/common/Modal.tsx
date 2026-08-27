@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 
 interface ModalProps {
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
@@ -10,14 +11,15 @@ interface ModalProps {
 
 const sizes = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl', '2xl': 'max-w-2xl', '3xl': 'max-w-3xl', '4xl': 'max-w-4xl', '5xl': 'max-w-5xl' };
 
-export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
+export default function Modal({ open, isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+  const visible = open ?? isOpen ?? false;
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    if (open) document.addEventListener('keydown', handler);
+    if (visible) document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  }, [visible, onClose]);
 
-  if (!open) return null;
+  if (!visible) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
