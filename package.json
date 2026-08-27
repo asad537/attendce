@@ -2,7 +2,7 @@
     "private": true,
     "scripts": {
         "dev": "concurrently --kill-others --names \"BACKEND,FRONTEND\" --prefix-colors \"bgBlue.bold,bgGreen.bold\" \"php artisan serve\" \"npm run frontend\"",
-        "frontend": "cd frontend && npm install --silent && npm run dev",
+        "frontend": "cd frontend && npm install --silent --legacy-peer-deps && npm run dev",
         "backend": "php artisan serve",
         "development": "mix",
         "watch": "mix watch",

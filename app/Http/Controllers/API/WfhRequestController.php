@@ -52,11 +52,20 @@ class WfhRequestController extends Controller
             'end_date'        => 'required|date|after_or_equal:start_date',
             'is_half_day'     => 'boolean',
             'half_day_period' => 'required_if:is_half_day,1,true|in:morning,afternoon',
-            'reason'          => 'required|string|max:1000',
+            'reason'          => 'required|string',
+            'attachment'      => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+            'drive_link'      => 'nullable|url',
+            'is_confidential' => 'boolean',
+            'signature'       => 'nullable|string',
         ]);
 
         $data['user_id'] = $request->user()->id;
         $data['is_half_day'] = $request->boolean('is_half_day');
+        $data['is_confidential'] = $request->boolean('is_confidential');
+
+        if ($request->hasFile('attachment')) {
+            $data['attachment'] = $request->file('attachment')->store('wfh-attachments');
+        }
 
         $wfh = WfhRequest::create($data);
 

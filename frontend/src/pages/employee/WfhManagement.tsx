@@ -8,6 +8,7 @@ import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { PaginatedResponse } from '../../types';
+import RichTextComposer from '../../components/common/RichTextComposer';
 
 export default function WfhManagement() {
   const { user } = useAuth();
@@ -22,7 +23,11 @@ export default function WfhManagement() {
     is_half_day: false,
     half_day_period: 'morning',
     reason: '',
+    drive_link: '',
+    is_confidential: false,
+    signature: '',
   });
+  const [attachment, setAttachment] = useState<File | null>(null);
 
   const load = async (page = 1) => {
     setLoading(true);
@@ -42,10 +47,21 @@ export default function WfhManagement() {
     e.preventDefault();
     setSubmit(true);
     try {
-      await wfhService.request(form);
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => {
+        if (v !== '' && v !== undefined) {
+          fd.append(k, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
+        }
+      });
+      if (attachment) {
+        fd.append('attachment', attachment);
+      }
+
+      await wfhService.request(fd); // Assuming wfhService supports FormData for attachments now
       toast.success('WFM request submitted!');
       setModal(false);
-      setForm({ start_date: '', end_date: '', is_half_day: false, half_day_period: 'morning', reason: '' });
+      setForm({ start_date: '', end_date: '', is_half_day: false, half_day_period: 'morning', reason: '', drive_link: '', is_confidential: false, signature: '' });
+      setAttachment(null);
       load();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -92,6 +108,7 @@ export default function WfhManagement() {
                     {format(parseISO(r.start_date), 'MMM d')}
                     {r.start_date !== r.end_date && ` – ${format(parseISO(r.end_date), 'MMM d, yyyy')}`}
                     {r.start_date === r.end_date && `, ${format(parseISO(r.start_date), 'yyyy')}`}
+                    {r.is_confidential && <span className="text-xs ml-2 text-red-500">🔒</span>}
                   </td>
                   <td>
                     {r.is_half_day ? (
@@ -100,7 +117,10 @@ export default function WfhManagement() {
                       <span className="badge-indigo">Full Day</span>
                     )}
                   </td>
-                  <td className="max-w-xs truncate text-gray-500">{r.reason}</td>
+                  <td className="max-w-xs truncate text-gray-500">
+                    <div dangerouslySetInnerHTML={{ __html: r.reason }} />
+                    {r.attachment && <a href={`/api/wfh/${r.id}/attachment`} target="_blank" className="text-xs text-indigo-600 block mt-1">📎 Attachment</a>}
+                  </td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>
                     {r.status === 'pending' && (
@@ -132,9 +152,17 @@ export default function WfhManagement() {
 
           <div>
             <label className="label">Reason</label>
-            <textarea className="input resize-none" rows={3} value={form.reason}
-              onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
-              placeholder="Why do you need to work from home?" required minLength={10} />
+            <RichTextComposer
+              value={form.reason}
+              onChange={(val) => setForm(f => ({ ...f, reason: val }))}
+              onAttachmentChange={setAttachment}
+              driveLink={form.drive_link}
+              onDriveLinkChange={(val) => setForm(f => ({ ...f, drive_link: val }))}
+              isConfidential={form.is_confidential}
+              onConfidentialChange={(val) => setForm(f => ({ ...f, is_confidential: val }))}
+              signature={form.signature}
+              onSignatureChange={(val) => setForm(f => ({ ...f, signature: val }))}
+            />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={() => setModal(false)} className="btn-secondary flex-1">Cancel</button>

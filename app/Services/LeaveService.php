@@ -70,6 +70,9 @@ class LeaveService
             'half_day_period'=> $data['half_day_period'] ?? null,
             'reason'         => $data['reason'],
             'attachment'     => $attachment,
+            'drive_link'     => $data['drive_link'] ?? null,
+            'is_confidential'=> $data['is_confidential'] ?? false,
+            'signature'      => $data['signature'] ?? null,
             'status'         => 'pending',
         ]);
 

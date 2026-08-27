@@ -441,9 +441,11 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                         <button type="button" onClick={() => handleDocumentDownload(doc)} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         </button>
-                        <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
+                        {!(doc.type === 'disciplinary_document' && user?.role !== 'ceo') && (
+                          <button type="button" onClick={() => handleDocumentDelete(doc.id)} className="p-1 text-red-600 hover:bg-red-50 rounded">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))

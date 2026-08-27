@@ -27,6 +27,9 @@ class Leave extends Model
         'reviewed_by_ceo',
         'ceo_reviewed_at',
         'ceo_remarks',
+        'drive_link',
+        'is_confidential',
+        'signature',
     ];
 
     protected $casts = [

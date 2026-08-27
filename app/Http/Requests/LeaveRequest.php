@@ -18,8 +18,11 @@ class LeaveRequest extends FormRequest
             'end_date'       => 'required|date|after_or_equal:start_date',
             'is_half_day'    => 'boolean',
             'half_day_period'=> 'required_if:is_half_day,true|in:morning,afternoon',
-            'reason'         => 'required|string|min:10|max:1000',
-            'attachment'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'reason'         => 'required|string|min:10',
+            'attachment'     => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+            'drive_link'     => 'nullable|url',
+            'is_confidential'=> 'boolean',
+            'signature'      => 'nullable|string',
         ];
     }
 

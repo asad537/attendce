@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { userService } from '../../services/userService';
 import { documentService, UserDocument } from '../../services/documentService';
-import { User } from '../../types';
+import { leaveService } from '../../services/leaveService';
+import { User, LeaveBalance } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
@@ -15,6 +16,7 @@ export default function EmployeeDetails() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [documents, setDocuments] = useState<UserDocument[]>([]);
+  const [balances, setBalances] = useState<LeaveBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const authUser = useAuth().user;
   const [uploadDocType, setUploadDocType] = useState(authUser?.role === 'ceo' ? 'disciplinary_document' : 'salary_document');
@@ -34,6 +36,7 @@ export default function EmployeeDetails() {
       const data = await userService.getById(parseInt(id, 10));
       setUser(data);
       fetchDocuments();
+      fetchBalances();
     } catch (err) {
       toast.error(getErrorMessage(err) || 'Failed to load user details');
     } finally {
@@ -48,6 +51,16 @@ export default function EmployeeDetails() {
       setDocuments(docsData);
     } catch (error) {
       console.error('Failed to fetch documents', error);
+    }
+  };
+
+  const fetchBalances = async () => {
+    if (!id) return;
+    try {
+      const res = await leaveService.getBalances({ user_id: parseInt(id, 10) });
+      setBalances(res.balances);
+    } catch (error) {
+      console.error('Failed to fetch balances', error);
     }
   };
 
@@ -340,21 +353,23 @@ export default function EmployeeDetails() {
         <div className="md:col-span-6 space-y-6">
           
           {/* Leaves Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6">
             <CircularProgress 
-              value={14} max={20} label="All Leaves" 
-              colorClass="text-emerald-800" trailClass="bg-[#E8F5E9]" suffix="Days" 
+              value={balances.filter(b => ['Annual Leave', 'Casual Leave', 'Sick Leave'].includes(b.leave_type?.name || '')).reduce((acc, b) => acc + (b.remaining || 0), 0)} 
+              max={balances.filter(b => ['Annual Leave', 'Casual Leave', 'Sick Leave'].includes(b.leave_type?.name || '')).reduce((acc, b) => acc + (b.allocated || 0), 0) || 1} 
+              label="All Leaves" 
+              colorClass="text-emerald-800" trailClass="bg-white border border-gray-100 shadow-sm" suffix="Days" 
             />
             <CircularProgress 
-              value={10} max={15} label="Annual Leaves" 
+              value={balances.find(b => b.leave_type?.code === 'AL' || b.leave_type?.name === 'Annual Leave')?.remaining || 0} 
+              max={balances.find(b => b.leave_type?.code === 'AL' || b.leave_type?.name === 'Annual Leave')?.allocated || 1} 
+              label="Annual Leaves" 
               colorClass="text-teal-500" trailClass="bg-white border border-gray-100 shadow-sm" suffix="Days" 
             />
             <CircularProgress 
-              value={8} max={24} label="Casual Leaves" 
-              colorClass="text-emerald-300" trailClass="bg-white border border-gray-100 shadow-sm" suffix="Hours" 
-            />
-            <CircularProgress 
-              value={3} max={4} label="Sick Leaves" 
+              value={balances.find(b => b.leave_type?.code === 'SL' || b.leave_type?.name === 'Sick Leave')?.remaining || 0} 
+              max={balances.find(b => b.leave_type?.code === 'SL' || b.leave_type?.name === 'Sick Leave')?.allocated || 1} 
+              label="Sick Leaves" 
               colorClass="text-emerald-600" trailClass="bg-white border border-gray-100 shadow-sm" suffix="Days" 
             />
           </div>
@@ -364,8 +379,8 @@ export default function EmployeeDetails() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-gray-900 text-lg">Performance Overview</h3>
               <select className="bg-emerald-50 border-none text-emerald-700 text-sm font-semibold rounded-xl px-4 py-2 appearance-none cursor-pointer outline-none ring-0 pr-8 relative">
-                <option>Last Year</option>
                 <option>This Year</option>
+                <option>Last Year</option>
               </select>
             </div>
             
@@ -378,7 +393,7 @@ export default function EmployeeDetails() {
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
                   +2.05%
                 </span>
-                <span className="text-xs text-gray-500 font-medium">Increased by last year</span>
+                <span className="text-xs text-gray-500 font-medium">Increased since last year</span>
               </div>
             </div>
 
@@ -491,9 +506,8 @@ export default function EmployeeDetails() {
                     onChange={(e) => setUploadDocType(e.target.value)}
                     className="w-full px-2 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-1 focus:ring-emerald-500"
                   >
-                    {authUser?.role === 'ceo' ? (
-                      <option value="disciplinary_document">Disciplinary Document</option>
-                    ) : (
+                    <option value="disciplinary_document">Disciplinary Document</option>
+                    {authUser?.role !== 'ceo' && (
                       <>
                         <option value="salary_document">Salary Document</option>
                         <option value="bank_details">Bank Details</option>

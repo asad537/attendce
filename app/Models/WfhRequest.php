@@ -8,7 +8,8 @@ class WfhRequest extends Model
 {
     protected $fillable = [
         'user_id', 'start_date', 'end_date', 'is_half_day', 'half_day_period',
-        'reason', 'status', 'reviewed_by_id', 'remarks', 'reviewed_at'
+        'reason', 'status', 'reviewed_by_id', 'remarks', 'reviewed_at',
+        'attachment', 'drive_link', 'is_confidential', 'signature'
     ];
 
     protected $casts = [
