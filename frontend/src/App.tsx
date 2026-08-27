@@ -37,6 +37,7 @@ import AddEditEmployeePage from './pages/shared/AddEditEmployeePage';
 import CalendarPage from './pages/shared/CalendarPage';
 import EmployeeDetails from './pages/shared/EmployeeDetails';
 import InboxPage from './pages/shared/InboxPage';
+import SettingsPage from './pages/shared/SettingsPage';
 import CeoPayroll from './pages/ceo/CeoPayroll';
 
 function App() {
@@ -153,6 +154,12 @@ function App() {
       <Route path="/inbox" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
         <Route element={<DashboardLayout />}>
           <Route index element={<InboxPage />} />
+        </Route>
+      </Route>
+
+      <Route path="/settings" element={<ProtectedRoute allowedRoles={['ceo', 'manager']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<SettingsPage />} />
         </Route>
       </Route>
 

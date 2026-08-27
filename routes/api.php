@@ -19,6 +19,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserTicketController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\CallController;
+use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\PayrollController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // Calls (WebRTC signalling over polling)
     Route::post('/calls/signal',               [CallController::class, 'signal']);
     Route::get('/calls/poll',                  [CallController::class, 'poll']);
+
+    // Organisation settings (currency + theme accent)
+    Route::get('/settings',                    [SettingController::class, 'index']);
+    Route::put('/settings',                    [SettingController::class, 'update']);
 
     Route::get('/payroll',                     [PayrollController::class, 'index']);
     Route::put('/payroll/{user}',              [PayrollController::class, 'update']);
