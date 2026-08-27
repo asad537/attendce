@@ -20,19 +20,14 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
   {
-    label: 'My Attendance', path: '/employee/attendance',
+    label: 'Attendance',
     roles: ['employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-  },
-  {
-    label: 'My Leaves', path: '/employee/leaves',
-    roles: ['employee'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-  },
-  {
-    label: 'Work From Home (WFM)', path: '/employee/wfh',
-    roles: ['employee'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+    subItems: [
+      { label: 'My Attendance', path: '/employee/attendance' },
+      { label: 'My Leaves', path: '/employee/leaves' },
+      { label: 'My WFM', path: '/employee/wfh' },
+    ],
   },
   {
     label: 'Company Rating', path: '/employee/rate-peers',
@@ -104,22 +99,17 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   },
   {
-    label: 'My Attendance', path: '/tl/my-attendance',
+    label: 'Attendance',
     roles: ['tl'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-  },
-  {
-    label: 'My Leaves', path: '/tl/my-leaves',
-    roles: ['tl'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    subItems: [
+      { label: 'My Attendance', path: '/tl/my-attendance' },
+      { label: 'My Leaves', path: '/tl/my-leaves' },
+      { label: 'My WFM', path: '/tl/wfh' },
+    ],
   },
   {
     label: 'WFM Approvals', path: '/tl/wfh-approvals',
-    roles: ['tl'],
-    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
-  },
-  {
-    label: 'My WFM', path: '/tl/wfh',
     roles: ['tl'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
@@ -156,7 +146,7 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   },
   {
-    label: 'Projects', path: '/projects',
+    label: 'Projects',
     roles: ['ceo', 'manager', 'tl', 'employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" /></svg>,
   },
@@ -300,7 +290,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
               <Link
                 to={item.path}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none ${
                   active
                     ? 'bg-emerald-50 text-emerald-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -314,7 +304,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
             ) : (
               <div
                 onClick={() => toggleExpand(item.label)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer focus:outline-none ${
                   active || isExpanded
                     ? 'bg-emerald-50 text-emerald-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -341,7 +331,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                       key={sub.path}
                       to={sub.path}
                       onClick={onClose}
-                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus:outline-none ${
                         subActive
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
@@ -359,8 +349,20 @@ export default function Sidebar({ onClose }: SidebarProps) {
               </div>
             )}
             
-            {item.label === 'Projects' && projects.length > 0 && (
+            {item.label === 'Projects' && isExpanded && (
               <div className="ml-[1.35rem] mt-1 mb-2 space-y-0.5 border-l border-gray-200 pl-3">
+                <Link
+                  to="/projects"
+                  onClick={onClose}
+                  className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus:outline-none ${
+                    location.pathname === '/projects'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${location.pathname === '/projects' ? 'bg-emerald-500' : 'bg-gray-300 group-hover:bg-gray-400'}`} />
+                  <span className="truncate">All Projects</span>
+                </Link>
                 {projects.map((p) => {
                   const active = location.pathname === `/projects/${p.id}`;
                   return (
@@ -369,7 +371,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                       to={`/projects/${p.id}`}
                       onClick={onClose}
                       title={p.name}
-                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                      className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus:outline-none ${
                         active
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
