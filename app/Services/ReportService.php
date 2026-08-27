@@ -137,13 +137,16 @@ class ReportService
 
         // Attendance rows indexed [user_id][day].
         $byUserDay = [];
-        foreach (Attendance::whereIn('user_id', $ids)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get(['user_id', 'date', 'status', 'is_late']) as $r) {
+        foreach (Attendance::whereIn('user_id', $ids)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get(['user_id', 'date', 'status', 'is_late', 'work_mode']) as $r) {
             $byUserDay[$r->user_id][(int) Carbon::parse($r->date)->day] = $r;
         }
 
         // Approved leave / WFH day-sets indexed [user_id][day].
         $leaveDays = $this->rangeDaysByUser(Leave::whereIn('user_id', $ids)->where('status', 'approved'), $start, $end);
         $wfhDays = $this->rangeDaysByUser(WfhRequest::whereIn('user_id', $ids)->where('status', 'approved'), $start, $end);
+
+        // Payroll (net salary) for the month, indexed by user.
+        $payrolls = \App\Models\Payroll::whereIn('user_id', $ids)->whereDate('payroll_month', $start->toDateString())->get()->keyBy('user_id');
 
         // Holidays -> set of day numbers (with names).
         $holidays = [];
@@ -168,7 +171,7 @@ class ReportService
             ];
         }
 
-        $rows = $users->map(function ($user) use ($byUserDay, $leaveDays, $wfhDays, $holidays, $start, $daysInMonth, $todayStr) {
+        $rows = $users->map(function ($user) use ($byUserDay, $leaveDays, $wfhDays, $holidays, $start, $daysInMonth, $todayStr, $payrolls) {
             $days = [];
             $totals = ['present' => 0, 'absent' => 0, 'leave' => 0, 'wfh' => 0, 'holiday' => 0, 'late' => 0];
             for ($n = 1; $n <= $daysInMonth; $n++) {
@@ -179,16 +182,20 @@ class ReportService
                 elseif ($date->isWeekend()) { $code = 'WE'; }
                 elseif (isset($leaveDays[$user->id][$n])) { $code = 'L'; $totals['leave']++; }
                 elseif (isset($wfhDays[$user->id][$n])) { $code = 'W'; $totals['wfh']++; }
+                elseif ($rec && $rec->work_mode === 'remote') { $code = 'W'; $totals['wfh']++; }
                 elseif ($rec && in_array($rec->status, ['present', 'late'])) { $code = 'P'; $totals['present']++; $late = (bool) $rec->is_late; if ($late) $totals['late']++; }
                 elseif ($rec && $rec->status === 'on_leave') { $code = 'L'; $totals['leave']++; }
                 elseif ($date->toDateString() > $todayStr) { $code = ''; }
                 else { $code = 'A'; $totals['absent']++; }
                 $days[] = ['day' => $n, 'code' => $code, 'late' => $late];
             }
+            $pr = $payrolls->get($user->id);
+            $salary = $pr ? ((float) $pr->base_salary + (float) $pr->allowances + (float) $pr->incentives - (float) $pr->deductions) : 0;
             return [
                 'user' => array_merge($user->only(['id', 'name', 'employee_id', 'role']), ['department' => optional($user->department)->name]),
                 'days' => $days,
                 'totals' => $totals,
+                'salary' => $salary,
             ];
         })->values()->toArray();
 
@@ -231,7 +238,8 @@ class ReportService
      */
     public function companyAttendanceSummary(string $start, string $end): array
     {
-        $users = User::active()->get();
+        // The CEO is the viewer, not a tracked employee — leave them out of the list.
+        $users = User::active()->where('role', '!=', 'ceo')->get();
         return $users->map(fn ($u) => $this->userAttendanceSummary($u, $start, $end))->toArray();
     }
 

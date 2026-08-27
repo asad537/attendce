@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { reportService, SheetCell } from '../../services/reportService';
+import { getErrorMessage } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 
 const CODE_STYLE: Record<string, string> = {
@@ -16,20 +20,41 @@ const CODE_STYLE: Record<string, string> = {
 const LEGEND: [string, string][] = [
   ['P', 'Present'], ['A', 'Absent'], ['L', 'Leave'], ['W', 'Work from home'], ['H', 'Holiday'], ['WE', 'Weekend'],
 ];
+const STATUS_OPTIONS: { status: 'present' | 'late' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday'; label: string }[] = [
+  { status: 'present', label: 'Present' },
+  { status: 'late', label: 'Late' },
+  { status: 'on_leave', label: 'Leave' },
+  { status: 'work_from_home', label: 'Work from home' },
+  { status: 'absent', label: 'Absent' },
+  { status: 'holiday', label: 'Holiday' },
+];
 const cellText = (c: SheetCell) => (c.code === 'WE' ? '·' : c.code === '' ? '' : c.code);
 
 export default function AttendanceSheetPage() {
+  const { user } = useAuth();
+  const { money } = useSettings();
+  const queryClient = useQueryClient();
+  const canEdit = ['ceo', 'manager'].includes(user?.role || '');
+
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'));
   const { data, isLoading } = useQuery({ queryKey: ['attendance-sheet', month], queryFn: () => reportService.getAttendanceSheet(month) });
   const monthLabel = useMemo(() => format(new Date(`${month}-01T00:00:00`), 'MMMM yyyy'), [month]);
 
+  const [editing, setEditing] = useState<{ userId: number; day: number; x: number; y: number } | null>(null);
+  const setCell = useMutation({
+    mutationFn: reportService.updateSheetCell,
+    onSuccess: () => { setEditing(null); queryClient.invalidateQueries({ queryKey: ['attendance-sheet', month] }); },
+    onError: e => toast.error(getErrorMessage(e)),
+  });
+  const dateFor = (day: number) => `${month}-${String(day).padStart(2, '0')}`;
+
   const exportCsv = () => {
     if (!data) return;
-    const head = ['Name', 'Employee ID', 'Department', ...data.day_meta.map(d => String(d.day)), 'Present', 'Absent', 'Leave', 'WFH', 'Late'];
+    const head = ['Name', 'Employee ID', 'Department', ...data.day_meta.map(d => String(d.day)), 'Present', 'Absent', 'Leave', 'WFH', 'Late', 'Salary'];
     const lines = data.rows.map(r => [
       r.user.name, r.user.employee_id || '', r.user.department || '',
       ...r.days.map(c => c.code || '-'),
-      r.totals.present, r.totals.absent, r.totals.leave, r.totals.wfh, r.totals.late,
+      r.totals.present, r.totals.absent, r.totals.leave, r.totals.wfh, r.totals.late, r.salary,
     ]);
     const csv = [head, ...lines].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -54,10 +79,11 @@ export default function AttendanceSheetPage() {
       </div>
     </header>
 
-    <div className="mb-4 flex flex-wrap gap-4 text-xs text-gray-600 print:mb-2">
+    <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-gray-600 print:mb-2">
       {LEGEND.map(([code, label]) => <span key={code} className="flex items-center gap-1.5">
         <span className={`grid h-5 w-5 place-items-center rounded text-[10px] font-bold ${CODE_STYLE[code]}`}>{code === 'WE' ? '·' : code}</span>{label}
       </span>)}
+      {canEdit && <span className="ml-auto text-[11px] font-medium text-emerald-600 print:hidden">Tip: click any day cell to change it.</span>}
     </div>
 
     {isLoading || !data ? <PageLoader /> : !data.rows.length ? <p className="rounded-2xl border border-gray-100 bg-white p-10 text-center text-sm text-gray-500">No employees to show.</p> :
@@ -70,6 +96,7 @@ export default function AttendanceSheetPage() {
               <div className="leading-none">{d.day}</div><div className="text-[9px] font-normal text-gray-400">{d.weekday}</div>
             </th>)}
             {['P', 'A', 'L', 'W'].map(t => <th key={t} className="w-9 border-b border-l border-gray-100 px-0 py-3 font-bold">{t}</th>)}
+            <th className="min-w-[90px] border-b border-l border-gray-100 px-3 py-3 text-right font-bold">Salary</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-50">
@@ -78,16 +105,35 @@ export default function AttendanceSheetPage() {
               <b className="block text-[12px] leading-tight text-[#1f2c28]">{r.user.name}</b>
               <small className="text-gray-400">{r.user.employee_id || '—'} · {r.user.department || '—'}</small>
             </td>
-            {r.days.map(c => <td key={c.day} className="px-0 py-1.5">
-              <span className={`relative mx-auto grid h-6 w-6 place-items-center rounded text-[10px] font-bold ${CODE_STYLE[c.code]}`}>{cellText(c)}{c.late && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-amber-500" title="Late" />}</span>
-            </td>)}
+            {r.days.map(c => {
+              const clickable = canEdit && c.code !== 'WE' && c.code !== 'H';
+              return <td key={c.day} className="px-0 py-1.5">
+                <span
+                  onClick={e => { if (clickable) { const rect = e.currentTarget.getBoundingClientRect(); setEditing({ userId: r.user.id, day: c.day, x: rect.left, y: rect.bottom }); } }}
+                  className={`relative mx-auto grid h-6 w-6 place-items-center rounded text-[10px] font-bold ${CODE_STYLE[c.code]} ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-emerald-300' : ''}`}>
+                  {cellText(c)}{c.late && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-amber-500" title="Late" />}
+                </span>
+              </td>;
+            })}
             <td className="border-l border-gray-100 font-bold text-emerald-600">{r.totals.present}</td>
             <td className="font-bold text-red-500">{r.totals.absent}</td>
             <td className="font-bold text-amber-600">{r.totals.leave}</td>
             <td className="font-bold text-blue-600">{r.totals.wfh}</td>
+            <td className="border-l border-gray-100 px-3 text-right font-bold text-[#1f2c28]">{r.salary ? money(r.salary) : '—'}</td>
           </tr>)}
         </tbody>
       </table>
     </div>}
+
+    {editing && <>
+      <div className="fixed inset-0 z-40" onClick={() => setEditing(null)} />
+      <div style={{ position: 'fixed', left: editing.x, top: editing.y + 4 }} className="z-50 w-28 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 text-left text-xs shadow-xl">
+        {STATUS_OPTIONS.map(o => (
+          <button key={o.status} disabled={setCell.isPending}
+            onClick={() => setCell.mutate({ user_id: editing.userId, date: dateFor(editing.day), status: o.status })}
+            className="block w-full px-3 py-1.5 text-left hover:bg-gray-50 disabled:opacity-50">{o.label}</button>
+        ))}
+      </div>
+    </>}
   </div></div>;
 }

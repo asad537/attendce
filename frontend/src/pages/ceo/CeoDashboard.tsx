@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
+import { reportService, DashboardStats } from '../../services/reportService';
 import { Attendance, Leave, TeamMemberStatus } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -17,46 +18,31 @@ import {
 } from 'recharts';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 
-const performanceData = [
-  { name: 'Jan', value: 50 },
-  { name: 'Feb', value: 58 },
-  { name: 'Mar', value: 55 },
-  { name: 'Apr', value: 75 },
-  { name: 'May', value: 95.2 },
-  { name: 'Jun', value: 70 },
-];
-
-const attendanceData = [
-  { time: '8:00 AM', mon: 100, tue: 100, wed: 100, thu: 100, fri: 100 },
-  { time: '8:30 AM', mon: 100, tue: 80, wed: 100, thu: 100, fri: 100 },
-  { time: '9:00 AM', mon: 60, tue: 60, wed: 80, thu: 100, fri: 100 },
-  { time: '9:30 AM', mon: 40, tue: 40, wed: 80, thu: 80, fri: 60 },
-  { time: '10:00 AM', mon: 20, tue: 40, wed: 60, thu: 40, fri: 40 },
-  { time: '10:30 AM', mon: 10, tue: 20, wed: 20, thu: 20, fri: 10 },
-];
-
 export default function CeoDashboard() {
   const { user } = useAuth();
   
   const [attendance, setAttendance] = useState<Attendance | null>(null);
   const [team, setTeam] = useState<TeamMemberStatus[]>([]);
   const [pending, setPending] = useState<Leave[]>([]);
+  const [dstats, setDstats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [today, teamStatus, leaves] = await Promise.all([
-        attendanceService.getToday(), 
-        attendanceService.getTeamStatus(), 
-        leaveService.getList({ status: 'pending', per_page: 5 })
+      const [today, teamStatus, leaves, stats] = await Promise.all([
+        attendanceService.getToday(),
+        attendanceService.getTeamStatus(),
+        leaveService.getList({ status: 'pending', per_page: 5 }),
+        reportService.getDashboardStats(),
       ]);
-      setAttendance(today.attendance); 
-      setTeam(teamStatus); 
+      setAttendance(today.attendance);
+      setTeam(teamStatus);
       setPending(leaves.data);
-    } catch { 
-      toast.error('Failed to load dashboard'); 
-    } finally { 
-      setLoading(false); 
+      setDstats(stats);
+    } catch {
+      toast.error('Failed to load dashboard');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -81,6 +67,17 @@ export default function CeoDashboard() {
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+
+  // ── Real dashboard data (from /reports/dashboard-stats) ──
+  const performanceData = dstats?.team_performance.monthly || [];
+  const attendanceHeatmap = dstats?.attendance_report.heatmap || [];
+  const teamPerf = dstats?.team_performance;
+  const attReport = dstats?.attendance_report;
+  const employment = dstats?.employment_status;
+  const tasks = dstats?.tasks || [];
+  const withSign = (n?: number) => `${(n ?? 0) >= 0 ? '' : ''}${n ?? 0}%`;
+  const legendColors = ['bg-[#115e59]', 'bg-[#34d399]', 'bg-[#a7f3d0]', 'bg-[#ecfdf5] border border-gray-200'];
+  const barColors = ['#115e59', '#34d399', '#a7f3d0', '#ecfdf5'];
 
   if (loading) return <PageLoader />;
   
@@ -194,10 +191,10 @@ export default function CeoDashboard() {
               <div>
                 <h3 className="font-bold text-lg">Attendance Report</h3>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-2xl font-bold">92%</span>
-                  <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                    1.54%
+                  <span className="text-2xl font-bold">{attReport?.rate ?? 0}%</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${(attReport?.delta ?? 0) < 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <svg className={`w-3 h-3 ${(attReport?.delta ?? 0) < 0 ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                    {withSign(attReport?.delta)}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Attendance Rate</p>
@@ -213,7 +210,7 @@ export default function CeoDashboard() {
                   <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
                 </div>
               </div>
-              {attendanceData.map((row, i) => (
+              {attendanceHeatmap.map((row, i) => (
                 <div key={i} className="flex items-center mb-1.5">
                   <span className="w-16 text-[10px] font-semibold text-gray-400 text-right pr-3">{row.time}</span>
                   <div className="flex-1 flex justify-between gap-1">
@@ -272,13 +269,13 @@ export default function CeoDashboard() {
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="font-bold text-lg">Team Performance</h3>
-                <div className="text-3xl font-bold mt-2">89.52%</div>
+                <div className="text-3xl font-bold mt-2">{teamPerf?.current ?? 0}%</div>
                 <div className="flex items-center gap-2 mt-2">
-                   <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md flex items-center gap-1">
-                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
-                     3.84%
+                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${(teamPerf?.delta ?? 0) < 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                     <svg className={`w-3 h-3 ${(teamPerf?.delta ?? 0) < 0 ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+                     {withSign(teamPerf?.delta)}
                    </span>
-                   <span className="text-xs text-gray-400">Increased vs last week</span>
+                   <span className="text-xs text-gray-400">vs last month · attendance</span>
                 </div>
               </div>
               <button className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg flex items-center gap-1">Last 6 Months v</button>
@@ -305,27 +302,26 @@ export default function CeoDashboard() {
             </div>
             
             <div className="flex items-end gap-2 mb-4">
-              <span className="text-3xl font-bold leading-none">128</span>
+              <span className="text-3xl font-bold leading-none">{employment?.total ?? 0}</span>
               <span className="text-sm text-gray-500 font-medium mb-1">Employees</span>
             </div>
-            
+
             {/* Progress Bar */}
-            <div className="flex h-3 w-full rounded-full overflow-hidden mb-2">
-              <div className="bg-[#115e59]" style={{ width: '68%' }}></div>
-              <div className="bg-[#34d399]" style={{ width: '15%' }}></div>
-              <div className="bg-[#a7f3d0]" style={{ width: '10%' }}></div>
-              <div className="bg-[#ecfdf5]" style={{ width: '7%' }}></div>
+            <div className="flex h-3 w-full rounded-full overflow-hidden mb-2 bg-gray-100">
+              {(employment?.breakdown || []).map((b, i) => (
+                <div key={b.type} style={{ width: `${b.percent}%`, backgroundColor: barColors[i % barColors.length] }}></div>
+              ))}
             </div>
             <div className="flex justify-between text-xs font-semibold text-gray-400 mb-6">
               <span>0%</span>
               <span>100%</span>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-y-5">
-               <StatusLegend dot="bg-[#115e59]" label="Full-Time" percent="68%" count="87" />
-               <StatusLegend dot="bg-[#34d399]" label="Part-Time" percent="15%" count="19" />
-               <StatusLegend dot="bg-[#a7f3d0]" label="Freelance" percent="10%" count="13" />
-               <StatusLegend dot="bg-[#ecfdf5] border border-gray-200" label="Internship" percent="7%" count="9" />
+              {(employment?.breakdown || []).map((b, i) => (
+                <StatusLegend key={b.type} dot={legendColors[i % legendColors.length]} label={b.type} percent={`${b.percent}%`} count={String(b.count)} />
+              ))}
+              {!employment?.breakdown.length && <p className="text-sm text-gray-400">No employee data.</p>}
             </div>
           </div>
 
@@ -336,15 +332,20 @@ export default function CeoDashboard() {
               <button className="text-gray-400">...</button>
             </div>
             
-            <div className="flex items-start gap-3">
-              <input type="checkbox" className="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
-              <div>
-                <p className="text-sm font-medium text-gray-800 leading-snug">Complete pre-session survey for Leadership Track session</p>
-                <div className="flex items-center gap-3 mt-3">
-                  <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md uppercase tracking-wider">Employee Development</span>
-                  <span className="text-[11px] font-semibold text-gray-400">28 June 2035</span>
+            <div className="space-y-4">
+              {tasks.map((t, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <input type="checkbox" className="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 leading-snug truncate">{t.title}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-md uppercase tracking-wider">{t.category}</span>
+                      {t.due_date && <span className="text-[11px] font-semibold text-gray-400">{format(parseISO(t.due_date), 'dd MMM yyyy')}</span>}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
+              {!tasks.length && <p className="text-sm text-gray-400 italic">No pending tasks.</p>}
             </div>
           </div>
         </div>

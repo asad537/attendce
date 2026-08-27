@@ -53,6 +53,121 @@ class ReportController extends Controller
         return response()->json(['company' => $this->service->companyAttendanceSummary($start, $end)]);
     }
 
+    /** POST /api/reports/attendance-sheet/cell — set one employee's status for a day */
+    public function updateAttendanceCell(Request $request): JsonResponse
+    {
+        abort_unless(in_array($request->user()->role, ['ceo', 'manager']), 403, 'Not allowed.');
+
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'date' => 'required|date',
+            'status' => 'required|in:present,late,on_leave,absent,work_from_home,holiday',
+        ]);
+
+        // A holiday is organisation-wide — mark the whole date.
+        if ($data['status'] === 'holiday') {
+            \App\Models\Holiday::firstOrCreate(['date' => $data['date']], ['name' => 'Holiday', 'type' => 'public']);
+            return response()->json(['ok' => true]);
+        }
+
+        if ($data['status'] === 'absent') {
+            Attendance::where('user_id', $data['user_id'])->whereDate('date', $data['date'])->delete();
+        } elseif ($data['status'] === 'work_from_home') {
+            Attendance::updateOrCreate(
+                ['user_id' => $data['user_id'], 'date' => $data['date']],
+                ['status' => 'present', 'is_late' => false, 'work_mode' => 'remote']
+            );
+        } else {
+            Attendance::updateOrCreate(
+                ['user_id' => $data['user_id'], 'date' => $data['date']],
+                ['status' => $data['status'], 'is_late' => $data['status'] === 'late', 'work_mode' => 'office']
+            );
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** GET /api/reports/dashboard-stats — dynamic widgets for the dashboard */
+    public function dashboardStats(Request $request): JsonResponse
+    {
+        $auth = $request->user();
+        abort_if($auth->isEmployee(), 403, 'Forbidden.');
+
+        // CEO sees the whole company; manager / team lead see their team.
+        $users = $auth->isCeo()
+            ? \App\Models\User::active()->get(['id', 'employment_type'])
+            : \App\Models\User::active()->where('manager_id', $auth->id)->get(['id', 'employment_type']);
+        $ids = $users->pluck('id')->all();
+        $count = max(1, count($ids));
+
+        // ── Employment status ─────────────────────────────────────────────
+        $labels = ['full_time' => 'Full-Time', 'part_time' => 'Part-Time', 'freelance' => 'Freelance', 'internship' => 'Internship', 'contract' => 'Contract'];
+        $employmentStatus = $users->groupBy('employment_type')->map(function ($group, $type) use ($users, $labels) {
+            return [
+                'type' => $labels[$type] ?? ucfirst(str_replace('_', ' ', (string) $type)),
+                'count' => $group->count(),
+                'percent' => $users->count() ? round($group->count() / $users->count() * 100) : 0,
+            ];
+        })->values();
+
+        // ── Team performance: attendance rate over the last 6 months ──────
+        $monthly = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $m = now()->copy()->subMonths($i);
+            $monthStart = $m->copy()->startOfMonth();
+            $limit = $m->isSameMonth(now()) ? now() : $monthStart->copy()->endOfMonth();
+            $weekdays = $monthStart->diffInWeekdays($limit->copy()->addDay());
+            $presents = \App\Models\Attendance::whereIn('user_id', $ids)->whereIn('status', ['present', 'late'])
+                ->whereYear('date', $m->year)->whereMonth('date', $m->month)->count();
+            $expected = max(1, $weekdays * $count);
+            $monthly[] = ['name' => $m->format('M'), 'value' => min(100, round($presents / $expected * 100, 1))];
+        }
+        $current = end($monthly)['value'];
+        $prev = count($monthly) > 1 ? $monthly[count($monthly) - 2]['value'] : 0;
+
+        // ── Attendance heatmap: check-in distribution this month ──────────
+        $slots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30'];
+        $grid = array_fill(0, 6, array_fill(1, 5, 0));
+        foreach (\App\Models\Attendance::whereIn('user_id', $ids)->whereNotNull('check_in')
+            ->whereYear('date', now()->year)->whereMonth('date', now()->month)->get(['date', 'check_in']) as $rec) {
+            $wd = Carbon::parse($rec->date)->dayOfWeekIso;
+            if ($wd < 1 || $wd > 5) continue;
+            $t = Carbon::parse($rec->check_in);
+            $mins = ($t->hour - 8) * 60 + $t->minute;
+            $slot = max(0, min(5, intdiv($mins, 30)));
+            $grid[$slot][$wd]++;
+        }
+        $maxCell = 0;
+        foreach ($grid as $row) $maxCell = max($maxCell, max($row));
+        $heatmap = [];
+        foreach ($slots as $idx => $time) {
+            $heatmap[] = [
+                'time' => $time,
+                'mon' => $maxCell ? round($grid[$idx][1] / $maxCell * 100) : 0,
+                'tue' => $maxCell ? round($grid[$idx][2] / $maxCell * 100) : 0,
+                'wed' => $maxCell ? round($grid[$idx][3] / $maxCell * 100) : 0,
+                'thu' => $maxCell ? round($grid[$idx][4] / $maxCell * 100) : 0,
+                'fri' => $maxCell ? round($grid[$idx][5] / $maxCell * 100) : 0,
+            ];
+        }
+
+        // ── Tasks: pending tickets in scope ──────────────────────────────
+        $tasks = \App\Models\ProjectTicket::whereIn('assignee_id', $ids)->where('status', '!=', 'done')
+            ->with('project:id,name')->orderByRaw('due_date IS NULL, due_date ASC')->limit(4)->get()
+            ->map(fn ($t) => [
+                'title' => $t->title,
+                'category' => optional($t->project)->name ?: 'General',
+                'due_date' => $t->due_date,
+            ]);
+
+        return response()->json([
+            'employment_status' => ['total' => $users->count(), 'breakdown' => $employmentStatus],
+            'team_performance' => ['current' => $current, 'delta' => round($current - $prev, 2), 'monthly' => $monthly],
+            'attendance_report' => ['rate' => $current, 'delta' => round($current - $prev, 2), 'heatmap' => $heatmap],
+            'tasks' => $tasks,
+        ]);
+    }
+
     /** GET /api/reports/attendance-sheet — day-by-day matrix for a month */
     public function attendanceSheet(Request $request): JsonResponse
     {
