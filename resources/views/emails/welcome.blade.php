@@ -5,24 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to ERP System</title>
 </head>
-<body style="margin: 0; padding: 40px 20px; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-        
+<body style="margin: 0; padding: 40px 20px; background-color: {{ $themeColor }}0d; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #eef0f2; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);">
+
         <!-- Header -->
-        <div style="background-color: {{ $themeColor }}; padding: 30px 20px 40px 20px; text-align: center; border-bottom-left-radius: 50% 15px; border-bottom-right-radius: 50% 15px;">
-            <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 600;">&#10004; Attendance System</h2>
+        <div style="background-color: {{ $themeColor }}; padding: 28px 20px 42px 20px; text-align: center; border-bottom-left-radius: 50% 18px; border-bottom-right-radius: 50% 18px;">
+            <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">
+                <span style="display: inline-block; width: 24px; height: 24px; border: 2px solid #ffffff; border-radius: 50%; font-size: 14px; line-height: 24px; vertical-align: middle;">&#10004;</span>
+                <span style="vertical-align: middle;">&nbsp; Attendance System</span>
+            </h2>
         </div>
-        
+
         <!-- Content -->
-        <div style="padding: 0 40px 40px 40px; text-align: center; margin-top: -30px;">
-            
-            <!-- Illustration -->
-            <div style="width: 70px; height: 70px; background-color: #ffffff; border-radius: 50%; margin: 0 auto 20px auto; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 2px solid {{ $themeColor }}15; text-align: center; line-height: 70px;">
-                <span style="font-size: 32px; color: {{ $themeColor }};">&#9993;</span>
+        <div style="padding: 24px 40px 40px 40px; text-align: center;">
+
+            <!-- Illustration: envelope with a confirmation badge -->
+            <div style="width: 110px; height: 110px; background-color: #f1f6f4; border-radius: 50%; margin: 0 auto 20px auto;">
+                <div style="width: 70px; margin: 0 auto; padding-top: 26px;">
+                    <div style="text-align: center; margin-bottom: -8px;">
+                        <span style="display: inline-block; width: 26px; height: 26px; background-color: {{ $themeColor }}; border: 3px solid #ffffff; border-radius: 50%; color: #ffffff; font-size: 13px; line-height: 24px; box-shadow: 0 2px 4px rgba(0,0,0,.12);">&#10004;</span>
+                    </div>
+                    <div style="height: 40px; background-color: {{ $themeColor }}; border-radius: 6px; overflow: hidden;">
+                        <div style="width: 0; height: 0; margin: 0 auto; border-left: 35px solid transparent; border-right: 35px solid transparent; border-top: 24px solid rgba(255,255,255,.28);"></div>
+                    </div>
+                </div>
             </div>
-            
-            <h1 style="margin: 0 0 5px 0; font-size: 24px; color: #1f2937; font-weight: 800;">Welcome to ERP System!</h1>
-            <p style="margin: 0 0 30px 0; font-size: 15px; font-weight: 600; color: {{ $themeColor }};">Your account has been successfully registered.</p>
+
+            <h1 style="margin: 0 0 6px 0; font-size: 26px; color: #1f2937; font-weight: 800;">Welcome to ERP System!</h1>
+            <p style="margin: 0 0 18px 0; font-size: 15px; font-weight: 700; color: {{ $themeColor }};">Your account has been successfully registered.</p>
+
+            <!-- Divider -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 0 26px 0;"><tr>
+                <td style="border-bottom: 1px solid #eef0f2;"></td>
+                <td width="10" style="text-align: center;"><span style="display: inline-block; width: 6px; height: 6px; background-color: {{ $themeColor }}55; border-radius: 50%;"></span></td>
+                <td style="border-bottom: 1px solid #eef0f2;"></td>
+            </tr></table>
             
             <div style="text-align: left;">
                 <p style="margin: 0 0 5px 0; font-size: 16px; font-weight: 700; color: #111827;">Hello {{ $user->first_name }},</p>
@@ -34,14 +51,15 @@
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                                 <td width="40" valign="middle">
-                                    <div style="width: 32px; height: 32px; background-color: {{ $themeColor }}15; border-radius: 50%; text-align: center; line-height: 32px;">
-                                        <span style="color: {{ $themeColor }}; font-size: 16px;">&#9993;</span>
+                                    <div style="width: 36px; height: 36px; background-color: {{ $themeColor }}; border-radius: 50%; text-align: center; line-height: 36px;">
+                                        <span style="color: #ffffff; font-size: 16px;">&#9993;</span>
                                     </div>
                                 </td>
                                 <td valign="middle">
                                     <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 3px;">Email Address</div>
                                     <div style="font-size: 15px; font-weight: 600; color: #111827;">{{ $user->email }}</div>
                                 </td>
+                                <td width="28" valign="middle" align="right"><span style="display: inline-block; width: 13px; height: 15px; border: 1.6px solid {{ $themeColor }}59; border-radius: 3px;">&nbsp;</span></td>
                             </tr>
                         </table>
                     </div>
@@ -50,14 +68,15 @@
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                                 <td width="40" valign="middle">
-                                    <div style="width: 32px; height: 32px; background-color: {{ $themeColor }}15; border-radius: 50%; text-align: center; line-height: 32px;">
-                                        <span style="color: {{ $themeColor }}; font-size: 16px;">&#128274;</span>
+                                    <div style="width: 36px; height: 36px; background-color: {{ $themeColor }}; border-radius: 50%; text-align: center; line-height: 36px;">
+                                        <span style="color: #ffffff; font-size: 16px;">&#128274;</span>
                                     </div>
                                 </td>
                                 <td valign="middle">
                                     <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 3px;">Temporary Password</div>
                                     <div style="font-size: 18px; font-family: monospace; font-weight: 700; letter-spacing: 1px; color: {{ $themeColor }};">{{ $password }}</div>
                                 </td>
+                                <td width="28" valign="middle" align="right"><span style="display: inline-block; width: 13px; height: 15px; border: 1.6px solid {{ $themeColor }}59; border-radius: 3px;">&nbsp;</span></td>
                             </tr>
                         </table>
                     </div>
@@ -68,8 +87,8 @@
                 <span style="color: {{ $themeColor }}; font-weight: bold;">&#9888;</span> Please change your password after logging in for security.
             </p>
             
-            <a href="{{ config('app.url', 'http://localhost:5176') }}" style="display: inline-block; padding: 14px 30px; background-color: {{ $themeColor }}; color: #ffffff; text-decoration: none; font-weight: 600; border-radius: 6px; box-shadow: 0 4px 6px {{ $themeColor }}44;">
-                Login to Your Account &rarr;
+            <a href="{{ config('app.url', 'http://localhost:5176') }}" style="display: block; width: 80%; margin: 0 auto; padding: 15px 30px; background-color: {{ $themeColor }}; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 10px; box-shadow: 0 6px 14px {{ $themeColor }}40;">
+                Login to Your Account &nbsp;&rarr;
             </a>
         </div>
         
