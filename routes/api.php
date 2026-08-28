@@ -21,6 +21,7 @@ use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\CallController;
 use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\EmployeeProfileController;
+use App\Http\Controllers\API\ResignationController;
 use App\Http\Controllers\API\PayrollController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +53,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/messages',                   [MessageController::class, 'store']);
     Route::patch('/messages/{message}',        [MessageController::class, 'update']);
     Route::delete('/messages/{message}',       [MessageController::class, 'destroy']);
+
+    // Resignations
+    Route::get('/resignations',                       [ResignationController::class, 'index']);
+    Route::post('/resignations',                      [ResignationController::class, 'store']);
+    Route::post('/resignations/{resignation}/review', [ResignationController::class, 'review']);
+    Route::post('/resignations/{resignation}/withdraw', [ResignationController::class, 'withdraw']);
 
     // Calls (WebRTC signalling over polling)
     Route::post('/calls/signal',               [CallController::class, 'signal']);
