@@ -4,12 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Reset</title>
+    <style>
+        @media only screen and (max-width: 480px) {
+            .em-header { padding: 22px 14px 34px !important; }
+            .em-content { padding: 20px 16px 28px !important; }
+            .em-title { font-size: 22px !important; }
+            .em-btn { width: 100% !important; box-sizing: border-box !important; padding: 14px 12px !important; }
+        }
+    </style>
 </head>
 <body style="margin: 0; padding: 40px 20px; background-color: {{ $themeColor }}0d; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; border: 1px solid #eef0f2; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);">
 
         <!-- Header -->
-        <div style="background-color: {{ $themeColor }}; padding: 28px 20px 42px 20px; text-align: center; border-bottom-left-radius: 50% 18px; border-bottom-right-radius: 50% 18px;">
+        <div class="em-header" style="background-color: {{ $themeColor }}; padding: 28px 20px 42px 20px; text-align: center; border-bottom-left-radius: 50% 18px; border-bottom-right-radius: 50% 18px;">
             <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">
                 <span style="display: inline-block; width: 24px; height: 24px; border: 2px solid #ffffff; border-radius: 50%; font-size: 14px; line-height: 24px; vertical-align: middle;">&#10004;</span>
                 <span style="vertical-align: middle;">&nbsp; Attendance System</span>
@@ -17,14 +25,14 @@
         </div>
 
         <!-- Content -->
-        <div style="padding: 24px 40px 40px 40px; text-align: center;">
+        <div class="em-content" style="padding: 24px 40px 40px 40px; text-align: center;">
 
             <!-- Illustration: lock badge -->
             <div style="width: 110px; height: 110px; background-color: #f1f6f4; border-radius: 50%; margin: 0 auto 20px auto; line-height: 110px; text-align: center;">
                 <span style="display: inline-block; width: 62px; height: 62px; background-color: {{ $themeColor }}; border-radius: 50%; line-height: 62px; vertical-align: middle;"><span style="font-size: 30px; color: #ffffff;">&#128274;</span></span>
             </div>
 
-            <h1 style="margin: 0 0 6px 0; font-size: 26px; color: #1f2937; font-weight: 800;">Password Reset</h1>
+            <h1 class="em-title" style="margin: 0 0 6px 0; font-size: 26px; color: #1f2937; font-weight: 800;">Password Reset</h1>
             <p style="margin: 0 0 18px 0; font-size: 15px; font-weight: 700; color: {{ $themeColor }};">Your account password has been updated.</p>
 
             <!-- Divider -->
@@ -50,7 +58,7 @@
                                 </td>
                                 <td valign="middle">
                                     <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 3px;">Email Address</div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #111827;">{{ $user->email }}</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #111827; word-break: break-all;">{{ $user->email }}</div>
                                 </td>
                                 <td width="28" valign="middle" align="right"><span style="display: inline-block; width: 13px; height: 15px; border: 1.6px solid {{ $themeColor }}59; border-radius: 3px;">&nbsp;</span></td>
                             </tr>
@@ -67,7 +75,7 @@
                                 </td>
                                 <td valign="middle">
                                     <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 3px;">New Password</div>
-                                    <div style="font-size: 18px; font-family: monospace; font-weight: 700; letter-spacing: 1px; color: {{ $themeColor }};">{{ $password }}</div>
+                                    <div style="font-size: 18px; font-family: monospace; font-weight: 700; letter-spacing: 1px; color: {{ $themeColor }}; word-break: break-all;">{{ $password }}</div>
                                 </td>
                                 <td width="28" valign="middle" align="right"><span style="display: inline-block; width: 13px; height: 15px; border: 1.6px solid {{ $themeColor }}59; border-radius: 3px;">&nbsp;</span></td>
                             </tr>
@@ -80,7 +88,7 @@
                 <span style="color: {{ $themeColor }}; font-weight: bold;">&#9888;</span> Please change your password after logging in for security.
             </p>
             
-            <a href="{{ config('app.url', 'http://localhost:5176') }}" style="display: block; width: 80%; margin: 0 auto; padding: 15px 30px; background-color: {{ $themeColor }}; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 10px; box-shadow: 0 6px 14px {{ $themeColor }}40;">
+            <a href="{{ config('app.url', 'http://localhost:5176') }}" class="em-btn" style="display: block; width: 80%; margin: 0 auto; padding: 15px 30px; background-color: {{ $themeColor }}; color: #ffffff; text-decoration: none; font-weight: 700; font-size: 15px; border-radius: 10px; box-shadow: 0 6px 14px {{ $themeColor }}40;">
                 Login to Your Account &nbsp;&rarr;
             </a>
         </div>
