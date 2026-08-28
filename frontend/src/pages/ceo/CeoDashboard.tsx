@@ -100,13 +100,20 @@ export default function CeoDashboard() {
 
   if (loading) return <PageLoader />;
   
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
     <div className="min-h-screen bg-[#f8f9fb] p-6 lg:p-8 font-sans text-gray-900">
       {/* Header section is managed by DashboardLayout, but we can override page title */}
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h2 className="text-gray-500 font-medium text-sm">Hello {user?.name?.split(' ')[0] || 'Davis'}!</h2>
-          <h1 className="text-3xl font-bold tracking-tight mt-1">Good Morning</h1>
+          <h1 className="text-3xl font-bold tracking-tight mt-1">{getGreeting()}</h1>
         </div>
         
         {/* We add a custom search and icons just to show how it looks, though it might duplicate DashboardLayout topbar. We will just leave it out to avoid duplication, or add a styled search bar if desired. We'll add a beautiful styled search bar. */}

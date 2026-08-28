@@ -67,7 +67,7 @@ export default function AttendanceSheetPage() {
     <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <h1 className="text-[26px] font-bold tracking-[-.03em]">Attendance Sheet</h1>
-        <p className="mt-1 text-sm text-gray-500"><span className="font-semibold text-emerald-600">Reports</span> &nbsp;/&nbsp; Attendance Sheet · {monthLabel}</p>
+        <p className="mt-1 text-sm text-gray-500">Attendance Sheet · {monthLabel}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2 print:hidden">
         <label className="flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-white px-4">
