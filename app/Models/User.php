@@ -28,6 +28,7 @@ class User extends Authenticatable
         'role',
         'allowed_ip',
         'employment_type',
+        'work_mode',
         'status',
         'department_id',
         'designation_id',

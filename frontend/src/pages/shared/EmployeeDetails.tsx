@@ -281,7 +281,11 @@ export default function EmployeeDetails() {
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Work Model</span>
-                <span className="font-semibold text-gray-900">{stats?.work_model || '—'}</span>
+                <span className="font-semibold text-gray-900">
+                  {user.work_mode
+                    ? ({ office: 'Onsite', remote: 'Remote', hybrid: 'Hybrid' } as Record<string, string>)[user.work_mode]
+                    : (stats?.work_model || '—')}
+                </span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Join Date</span>

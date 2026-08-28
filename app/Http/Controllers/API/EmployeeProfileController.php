@@ -33,7 +33,10 @@ class EmployeeProfileController extends Controller
 
     private function workModel(User $user): ?string
     {
-        $mode = Attendance::where('user_id', $user->id)->whereNotNull('work_mode')->latest('date')->value('work_mode');
+        // Prefer the work mode configured on the employee's profile; fall back
+        // to whatever their most recent attendance record was logged under.
+        $mode = $user->work_mode
+            ?: Attendance::where('user_id', $user->id)->whereNotNull('work_mode')->latest('date')->value('work_mode');
         return $mode ? ucfirst(str_replace('_', ' ', $mode)) : null;
     }
 

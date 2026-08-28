@@ -25,6 +25,7 @@ class UserResource extends JsonResource
 
             'role'            => $this->role,
             'employment_type' => $this->employment_type,
+            'work_mode'       => $this->work_mode,
             'status'          => $this->status,
             'current_status'  => $this->current_status,
 
