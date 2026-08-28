@@ -143,6 +143,18 @@ class UserController extends Controller
             ['email' => $user->email, 'role' => $user->role]
         );
 
+        // Notify everyone that a new employee has joined the organisation
+        $deptName = optional($user->department)->name;
+        \App\Services\NotificationService::notifyAll(
+            'New Employee Joined',
+            $deptName
+                ? "{$user->full_name} has joined the {$deptName} department."
+                : "{$user->full_name} has joined the team.",
+            'info',
+            $user,
+            [$user->id, $creator->id]
+        );
+
         // Fetch accent color from settings to theme the email dynamically
         $accent = \App\Models\Setting::where('key', 'accent')->value('value') ?: 'emerald';
         $themeColors = ['slate'=>'#475569','gray'=>'#4b5563','zinc'=>'#52525b','neutral'=>'#525252','stone'=>'#57534e','red'=>'#dc2626','orange'=>'#ea580c','amber'=>'#d97706','yellow'=>'#ca8a04','lime'=>'#65a30d','green'=>'#16a34a','emerald'=>'#059669','teal'=>'#0d9488','cyan'=>'#0891b2','sky'=>'#0284c7','blue'=>'#2563eb','indigo'=>'#4f46e5','violet'=>'#7c3aed','purple'=>'#9333ea','fuchsia'=>'#c026d3','pink'=>'#db2777','rose'=>'#e11d48'];

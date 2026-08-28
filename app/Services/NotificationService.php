@@ -36,6 +36,20 @@ class NotificationService
         return $notif;
     }
 
+    /**
+     * Notify every active user in the organisation (optionally excluding some IDs).
+     */
+    public static function notifyAll(string $title, string $message, string $type = 'info', ?object $notifiable = null, array $exceptIds = []): void
+    {
+        User::active()
+            ->when(!empty($exceptIds), function ($q) use ($exceptIds) {
+                $q->whereNotIn('id', $exceptIds);
+            })
+            ->each(function (User $user) use ($title, $message, $type, $notifiable) {
+                self::send($user, $title, $message, $type, null, $notifiable);
+            });
+    }
+
     public static function notifyManagers(string $title, string $message, string $type = 'info', ?object $notifiable = null): void
     {
         User::byRole('manager')->active()->each(function (User $mgr) use ($title, $message, $type, $notifiable) {
