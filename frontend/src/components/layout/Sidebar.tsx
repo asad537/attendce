@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { projectService } from '../../services/projectService';
+import { resignationService } from '../../services/resignationService';
 import { Project } from '../../types';
 
 interface NavItem {
@@ -176,6 +177,11 @@ const navItems: NavItem[] = [
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4Zm0 3 8 6 8-6" /></svg>,
   },
   {
+    label: 'Resignation', path: '/resignation',
+    roles: ['ceo', 'manager', 'tl', 'employee'],
+    icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+  },
+  {
     label: 'Departments', path: '/departments',
     roles: ['ceo', 'manager', 'tl'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
@@ -223,6 +229,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation();
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [resignationCount, setResignationCount] = useState(0);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (label: string) => {
@@ -239,6 +246,14 @@ export default function Sidebar({ onClose }: SidebarProps) {
       projectService.getAll().then(setProjects).catch(() => {});
     }
   }, [user]);
+
+  // Pending-resignation count for the sidebar badge (refreshes on navigation).
+  useEffect(() => {
+    if (!user) return;
+    resignationService.list()
+      .then(list => setResignationCount(list.filter(r => r.status === 'pending').length))
+      .catch(() => {});
+  }, [user, location.pathname]);
 
   const filtered = navItems.filter((item) => user && item.roles.includes(user.role));
 
@@ -310,6 +325,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
                   {item.icon}
                 </span>
                 <span className="flex-1">{item.label}</span>
+                {item.path === '/resignation' && resignationCount > 0 && (
+                  <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">{resignationCount}</span>
+                )}
               </Link>
             ) : (
               <div
