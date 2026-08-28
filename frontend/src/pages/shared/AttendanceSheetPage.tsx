@@ -74,7 +74,7 @@ export default function AttendanceSheetPage() {
           <span className="text-xs font-semibold text-gray-500">Month</span>
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="bg-transparent text-sm font-semibold outline-none" />
         </label>
-        <button onClick={exportCsv} disabled={!data} className="h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">Export CSV</button>
+        <button onClick={exportCsv} disabled={!data} className="h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white  disabled:opacity-50">Export CSV</button>
         <button onClick={() => window.print()} disabled={!data} className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Print / PDF</button>
       </div>
     </header>

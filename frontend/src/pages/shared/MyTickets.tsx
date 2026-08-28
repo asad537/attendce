@@ -22,6 +22,8 @@ export default function MyTickets() {
         try {
             const res = await api.get('/my-tickets');
             setTickets(res.data.tickets || []);
+            // Mark tickets as seen so badge count clears
+            await api.post('/my-tickets/mark-seen').catch(() => {});
         } catch (err) {
             toast.error(getErrorMessage(err));
         } finally {
@@ -44,7 +46,7 @@ export default function MyTickets() {
             case 'todo': return 'bg-gray-100 text-gray-700';
             case 'in_progress': return 'bg-blue-100 text-blue-700';
             case 'in_review': return 'bg-yellow-100 text-yellow-700';
-            case 'done': return 'bg-green-100 text-green-700';
+            case 'done': return 'bg-emerald-100 text-emerald-700';
             default: return 'bg-gray-100 text-gray-700';
         }
     };

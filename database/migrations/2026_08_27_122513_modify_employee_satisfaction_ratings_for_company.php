@@ -12,10 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_satisfaction_ratings', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-            $table->dropUnique(['user_id', 'rated_by_id']);
-            $table->dropColumn('user_id');
-            $table->unique('rated_by_id');
+            if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+                $table->dropForeign(['user_id']);
+                $table->dropUnique(['user_id', 'rated_by_id']);
+                $table->dropColumn('user_id');
+                $table->unique('rated_by_id');
+            }
         });
     }
 

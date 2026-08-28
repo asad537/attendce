@@ -44,19 +44,19 @@
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 text-white  focus:ring-emerald-500;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-indigo-500;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white text-gray-700 border border-gray-300  focus:ring-indigo-500;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 text-white  focus:ring-red-500;
   }
   .btn-success {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-emerald-600 text-white  focus:ring-emerald-500;
   }
   .btn-warning {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500 text-white  focus:ring-amber-400;
   }
   .btn-sm { @apply px-3 py-1.5 text-xs; }
   .btn-lg { @apply px-6 py-3 text-base; }
@@ -85,6 +85,7 @@
   .badge-purple  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800; }
   .badge-gray    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800; }
   .badge-indigo  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800; }
+  .badge-cyan    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800; }
 
   .table-wrapper {
     @apply overflow-x-auto rounded-xl border border-gray-100;
@@ -100,4 +101,112 @@
   }
   .table tbody tr:hover { @apply bg-gray-50/70; }
   .table tbody tr:last-child td { @apply border-b-0; }
+}
+
+/* Quill Link Tooltip Positioning & Layout Fix */
+.ql-tooltip {
+  position: absolute !important;
+  left: 12px !important;
+  margin-left: 0 !important;
+  transform: none !important;
+  max-width: calc(100% - 24px) !important;
+  z-index: 50 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  border: 1px solid #e5e7eb !important;
+  background-color: #ffffff !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  white-space: normal !important;
+  flex-wrap: wrap !important;
+  box-sizing: border-box !important;
+}
+
+.ql-tooltip.ql-hidden {
+  display: none !important;
+}
+
+.ql-tooltip::before {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-right: 4px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ql-tooltip input[type="text"] {
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  outline: none !important;
+  font-size: 13px !important;
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  width: auto !important;
+  flex: 1 !important;
+  min-width: 80px !important;
+  max-width: 220px !important;
+  height: 34px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.ql-tooltip input[type="text"]:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+}
+
+.ql-tooltip a.ql-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 34px !important;
+  padding: 0 16px !important;
+  background-color: #10b981 !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  transition: background-color 0.15s ease !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  text-align: center !important;
+}
+
+.ql-tooltip a.ql-action::after {
+  content: 'Save' !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.ql-tooltip a.ql-action:hover {
+  background-color: #059669 !important;
+}
+
+.ql-tooltip a.ql-remove {
+  color: #ef4444 !important;
+  font-size: 12px !important;
+  margin-left: 4px !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ql-tooltip a.ql-remove:hover {
+  text-decoration: underline !important;
 }

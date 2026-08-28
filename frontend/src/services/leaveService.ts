@@ -1,4 +1,5 @@
 import api from './api';
+import { sidebarService } from './sidebarService';
 import { Leave, LeaveBalance, LeaveType, PaginatedResponse } from '../types';
 
 export const leaveService = {
@@ -16,21 +17,25 @@ export const leaveService = {
     const res = await api.post('/leaves', data, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    sidebarService.refresh();
     return res.data.leave;
   },
 
   async managerReview(id: number, action: 'approve' | 'reject', remarks?: string): Promise<Leave> {
     const res = await api.post(`/leaves/${id}/manager-review`, { action, remarks });
+    sidebarService.refresh();
     return res.data.leave;
   },
 
   async ceoReview(id: number, action: 'approve' | 'reject', remarks?: string): Promise<Leave> {
     const res = await api.post(`/leaves/${id}/ceo-review`, { action, remarks });
+    sidebarService.refresh();
     return res.data.leave;
   },
 
   async cancel(id: number): Promise<Leave> {
     const res = await api.post(`/leaves/${id}/cancel`);
+    sidebarService.refresh();
     return res.data.leave;
   },
 

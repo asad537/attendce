@@ -7,10 +7,33 @@ const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 // Tailwind colour scale (Tailwind v4 exposes each shade as a CSS variable).
 export function applyAccent(accent: string) {
   const root = document.documentElement;
-  SHADES.forEach(shade => {
-    if (!accent || accent === 'emerald') root.style.removeProperty(`--color-emerald-${shade}`);
-    else root.style.setProperty(`--color-emerald-${shade}`, `var(--color-${accent}-${shade})`);
-  });
+  
+  if (!accent || accent === 'emerald') {
+    SHADES.forEach(shade => root.style.removeProperty(`--color-emerald-${shade}`));
+    return;
+  }
+
+  // If it's a custom color (starts with #, rgb, hsl)
+  if (accent.startsWith('#') || accent.startsWith('rgb') || accent.startsWith('hsl')) {
+    const percentages: Record<number, string> = {
+      50: 'white 90%', 100: 'white 80%', 200: 'white 60%', 300: 'white 40%', 400: 'white 20%',
+      500: '', 
+      600: 'black 20%', 700: 'black 40%', 800: 'black 60%', 900: 'black 80%', 950: 'black 90%'
+    };
+    
+    SHADES.forEach(shade => {
+      if (shade === 500) {
+        root.style.setProperty(`--color-emerald-500`, accent);
+      } else {
+        root.style.setProperty(`--color-emerald-${shade}`, `color-mix(in srgb, ${accent}, ${percentages[shade]})`);
+      }
+    });
+  } else {
+    // Standard Tailwind accent
+    SHADES.forEach(shade => {
+      root.style.setProperty(`--color-emerald-${shade}`, `var(--color-${accent}-${shade})`);
+    });
+  }
 }
 
 export function formatMoney(value: number, currency: string) {

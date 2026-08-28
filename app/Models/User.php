@@ -40,6 +40,7 @@ class User extends Authenticatable
         'annual_leave_balance',
         'sick_leave_balance',
         'casual_leave_balance',
+        'tickets_last_seen_at',
     ];
 
     protected $hidden = [
@@ -48,9 +49,10 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'join_date'         => 'date',
-        'birth_date'        => 'date',
+        'email_verified_at'    => 'datetime',
+        'join_date'            => 'date',
+        'birth_date'           => 'date',
+        'tickets_last_seen_at' => 'datetime',
     ];
 
     // ─── Role Helpers ─────────────────────────────────────────────

@@ -36,7 +36,7 @@ export default function AttendanceHistory() {
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
-      <header><div className="mb-2 inline-flex rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-600">ATTENDANCE</div><h1 className="text-2xl font-bold tracking-tight text-gray-950">My Attendance</h1><p className="mt-1 text-sm text-gray-500">Review your attendance, working hours and punctuality.</p></header>
+      <header><div className="mb-2 inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600">ATTENDANCE</div><h1 className="text-2xl font-bold tracking-tight text-gray-950">My Attendance</h1><p className="mt-1 text-sm text-gray-500">Review your attendance, working hours and punctuality.</p></header>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[
         ['Total Records', summary.records, '◎', 'bg-indigo-50 text-indigo-600'],

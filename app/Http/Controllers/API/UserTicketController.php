@@ -25,4 +25,13 @@ class UserTicketController extends Controller
             'tickets' => $tickets
         ]);
     }
+
+    /**
+     * Mark assigned tickets as seen for the authenticated user.
+     */
+    public function markSeen(Request $request): JsonResponse
+    {
+        $request->user()->update(['tickets_last_seen_at' => now()]);
+        return response()->json(['message' => 'Tickets marked as seen.']);
+    }
 }

@@ -15,7 +15,7 @@ export default function DashboardLayout() {
     <div className="flex min-h-screen h-dvh bg-gray-50 overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-60 xl:w-64 flex-shrink-0">
-        <Sidebar />
+        <Sidebar onOpenSettings={() => setSettingsOpen(true)} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -23,7 +23,7 @@ export default function DashboardLayout() {
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-gray-900/50" onClick={() => setSidebarOpen(false)} />
           <aside className="relative w-[min(18rem,86vw)] h-full">
-            <Sidebar onClose={() => setSidebarOpen(false)} />
+            <Sidebar onClose={() => setSidebarOpen(false)} onOpenSettings={() => setSettingsOpen(true)} />
           </aside>
         </div>
       )}
@@ -45,36 +45,6 @@ export default function DashboardLayout() {
 
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <div className="relative">
-              <button 
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2.5 focus:outline-none"
-              >
-                <div className="relative w-8 h-8">
-                  <div className="absolute inset-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold text-sm">
-                    {user?.name?.charAt(0)?.toUpperCase()}
-                  </div>
-                  {user?.avatar_url && (
-                    <img src={user.avatar_url} alt="" onError={e => { e.currentTarget.style.display = 'none'; }} className="absolute inset-0 w-8 h-8 rounded-full object-cover" />
-                  )}
-                </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900 leading-none">{user?.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{user?.employee_id}</p>
-                </div>
-              </button>
-
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                  <button
-                    onClick={() => { setDropdownOpen(false); setSettingsOpen(true); }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    My Settings
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </header>
 

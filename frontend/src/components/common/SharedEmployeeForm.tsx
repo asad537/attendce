@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CreateEmployeePayload, Department, Designation, User } from '../../types';
 
 // SVGs for sections and inputs
@@ -40,6 +40,7 @@ export function SharedEmployeeForm({
   onField, onDeptChange, onSubmit, onCancel, mode,
   showManagerSelection, allLeads = []
 }: SharedEmployeeFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
   
   const Err = ({ field }: { field: string }) => errors[field]
     ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p> : null;
@@ -104,7 +105,10 @@ export function SharedEmployeeForm({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Icons.User />
                 </div>
-                <input className={`input pl-10 ${errors.first_name ? 'border-red-400' : ''}`} placeholder="Enter first name" value={form.first_name} onChange={onField('first_name')} />
+                <input className={`input pl-10 ${errors.first_name ? 'border-red-400' : ''}`} placeholder="Enter first name" value={form.first_name} onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                  onField('first_name')({ target: { value: val } } as any);
+                }} />
               </div>
               <Err field="first_name" />
             </div>
@@ -114,7 +118,10 @@ export function SharedEmployeeForm({
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Icons.User />
                 </div>
-                <input className={`input pl-10 ${errors.last_name ? 'border-red-400' : ''}`} placeholder="Enter last name" value={form.last_name} onChange={onField('last_name')} />
+                <input className={`input pl-10 ${errors.last_name ? 'border-red-400' : ''}`} placeholder="Enter last name" value={form.last_name} onChange={(e) => {
+                  const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                  onField('last_name')({ target: { value: val } } as any);
+                }} />
               </div>
               <Err field="last_name" />
             </div>
@@ -190,7 +197,7 @@ export function SharedEmployeeForm({
                   placeholder="555 000 0000" 
                   value={localPhoneNumber} 
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[^0-9]/g, '');
                     onField('phone')({ target: { value: val ? `${derivedCountryCode} ${val}` : '' } } as any);
                   }} 
                 />
@@ -430,9 +437,6 @@ export function SharedEmployeeForm({
                 <h3 className="text-sm font-bold text-gray-900">Account Access</h3>
                 <p className="text-xs text-gray-500">A temporary password is generated automatically on save.</p>
               </div>
-              {/* TODO: SMTP not configured yet — email invitation disabled.
-                  Re-enable the "Send account invitation email" option below
-                  once mail is set up.
               <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl flex items-start sm:items-center gap-3">
                 <input type="checkbox" id="send_invite" defaultChecked className="w-4 h-4 mt-0.5 sm:mt-0 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-600" />
                 <div className="flex-1">
@@ -446,16 +450,6 @@ export function SharedEmployeeForm({
                      <path d="M19 1l3 3-3 3" />
                      <path d="M12 9l10-8" />
                    </svg>
-                </div>
-              </div>
-              */}
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
-                <svg className="w-5 h-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-900">Share credentials manually</p>
-                  <p className="text-xs text-amber-700/80">Email invites are turned off for now. After saving, a one-time temporary password appears on screen — copy it and give it to the employee.</p>
                 </div>
               </div>
             </>
@@ -472,13 +466,20 @@ export function SharedEmployeeForm({
                     <Icons.Lock />
                   </div>
                   <input 
-                    type="password"
-                    className={`input pl-10 ${errors.new_password ? 'border-red-400' : ''}`} 
+                    type={showPassword ? 'text' : 'password'}
+                    className={`input pl-10 pr-10 ${errors.new_password ? 'border-red-400' : ''}`} 
                     placeholder="Leave blank to keep current password"
                     value={form.new_password || ''} 
                     onChange={onField('new_password')} 
                     autoComplete="new-password"
                   />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none">
+                    {showPassword ? (
+                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                    ) : (
+                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    )}
+                  </button>
                 </div>
                 <Err field="new_password" />
               </div>
@@ -489,10 +490,10 @@ export function SharedEmployeeForm({
 
       {/* Bottom actions */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-8">
-        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors">
+        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm  transition-colors">
           Cancel
         </button>
-        <button type="submit" className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-colors flex items-center gap-2" disabled={submitting}>
+        <button type="submit" className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold text-sm  transition-colors flex items-center gap-2" disabled={submitting}>
           {submitting ? (
             <span>{mode === 'create' ? 'Adding…' : 'Saving…'}</span>
           ) : (

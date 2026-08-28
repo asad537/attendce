@@ -223,4 +223,30 @@ class SecurityAuthorizationTest extends TestCase
         $this->assertSame('pending', $leave->fresh()->status);
         $this->assertSame('0.0', LeaveBalance::first()->used);
     }
+
+    public function test_employee_cannot_move_ticket_from_review_to_done_but_manager_can(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager', 'status' => 'active']);
+        $employee = User::factory()->create(['role' => 'employee', 'manager_id' => $manager->id, 'status' => 'active']);
+        $project = \App\Models\Project::create(['name' => 'Test Project', 'created_by' => $manager->id]);
+        $ticket = \App\Models\ProjectTicket::create([
+            'project_id' => $project->id,
+            'title' => 'Feature Ticket',
+            'status' => 'in_review',
+            'assignee_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        // Employee tries to move ticket from in_review to done -> forbidden 403
+        Sanctum::actingAs($employee);
+        $this->putJson("/api/tickets/{$ticket->id}", ['status' => 'done'])
+            ->assertStatus(403);
+
+        // Manager moves ticket from in_review to done -> succeeds 200
+        Sanctum::actingAs($manager);
+        $this->putJson("/api/tickets/{$ticket->id}", ['status' => 'done'])
+            ->assertOk();
+
+        $this->assertSame('done', $ticket->fresh()->status);
+    }
 }

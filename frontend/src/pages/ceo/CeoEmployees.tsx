@@ -125,7 +125,7 @@ export default function CeoEmployees() {
               const gradients = [
                 'bg-gradient-to-br from-purple-50/50 to-white',
                 'bg-gradient-to-br from-blue-50/50 to-white',
-                'bg-gradient-to-br from-green-50/50 to-white',
+                'bg-gradient-to-br from-emerald-50/50 to-white',
                 'bg-gradient-to-br from-orange-50/50 to-white',
                 'bg-gradient-to-br from-pink-50/50 to-white',
                 'bg-gradient-to-br from-teal-50/50 to-white'
@@ -133,7 +133,7 @@ export default function CeoEmployees() {
               const avatarColors = [
                 'bg-purple-100 text-purple-700',
                 'bg-blue-100 text-blue-700',
-                'bg-green-100 text-green-700',
+                'bg-emerald-100 text-emerald-700',
                 'bg-orange-100 text-orange-700',
                 'bg-pink-100 text-pink-700',
                 'bg-teal-100 text-teal-700'
@@ -155,9 +155,39 @@ export default function CeoEmployees() {
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                    {u.status === 'active' ? 'Active' : u.status}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                      {u.status === 'active' ? 'Active' : u.status}
+                    </div>
+                    
+                    <div className="relative group">
+                      <button onClick={(e) => e.stopPropagation()} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+                      <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 py-1 hidden group-focus-within:block z-10">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/users/${u.id}/edit`); }}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteUser(u); }}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -196,33 +226,12 @@ export default function CeoEmployees() {
                   </div>
                 </div>
                 
-                <div className="mt-5 pt-4 border-t border-gray-100/80 flex items-center justify-between">
+                <div className="mt-5 pt-4 border-t border-gray-100/80">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Joined {u.join_date ? format(parseISO(u.join_date), 'MMM d, yyyy') : '—'}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/users/${u.id}/edit`); }}
-                      className="p-1.5 rounded-lg border border-emerald-100 bg-emerald-50/50 text-emerald-600 hover:bg-emerald-100 transition-colors"
-                      title="Edit"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDeleteUser(u); }}
-                      className="p-1.5 rounded-lg border border-red-100 bg-red-50/50 text-red-500 hover:bg-red-100 transition-colors"
-                      title="Delete"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               </div>
@@ -258,7 +267,7 @@ export default function CeoEmployees() {
         </p>
         <div className="flex gap-3 mt-5">
           <button onClick={() => setDeleteUser(null)} className="btn-secondary flex-1">Cancel</button>
-          <button onClick={handleDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">
+          <button onClick={handleDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white  transition-colors">
             Remove
           </button>
         </div>

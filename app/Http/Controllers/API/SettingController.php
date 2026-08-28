@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class SettingController extends Controller
 {
     private const CURRENCIES = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY'];
-    private const ACCENTS = ['emerald', 'teal', 'green', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber'];
+    private const ACCENTS = ['emerald', 'teal', 'green', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'lime', 'yellow', 'zinc', 'slate'];
 
     public function index(): JsonResponse
     {
@@ -25,7 +25,7 @@ class SettingController extends Controller
 
         $data = $request->validate([
             'currency' => ['sometimes', 'string', 'in:' . implode(',', self::CURRENCIES)],
-            'accent' => ['sometimes', 'string', 'in:' . implode(',', self::ACCENTS)],
+            'accent' => ['sometimes', 'string', 'max:50'],
         ]);
 
         foreach ($data as $key => $value) {

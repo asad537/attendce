@@ -441,7 +441,7 @@ export default function CeoDepartments() {
         </p>
         <div className="flex gap-3 mt-5">
           <button onClick={() => setDeptDel(null)} className="btn-secondary flex-1">Cancel</button>
-          <button onClick={handleDeptDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">
+          <button onClick={handleDeptDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white  transition-colors">
             Delete
           </button>
         </div>
@@ -505,7 +505,7 @@ export default function CeoDepartments() {
         </p>
         <div className="flex gap-3 mt-5">
           <button onClick={() => setDesigDel(null)} className="btn-secondary flex-1">Cancel</button>
-          <button onClick={handleDesigDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors">
+          <button onClick={handleDesigDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white  transition-colors">
             Remove
           </button>
         </div>

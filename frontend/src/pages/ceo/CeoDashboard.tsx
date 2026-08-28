@@ -77,8 +77,8 @@ export default function CeoDashboard() {
   const employment = dstats?.employment_status;
   const tasks = dstats?.tasks || [];
   const withSign = (n?: number) => `${(n ?? 0) >= 0 ? '' : ''}${n ?? 0}%`;
-  const legendColors = ['bg-[#115e59]', 'bg-[#34d399]', 'bg-[#a7f3d0]', 'bg-[#ecfdf5] border border-gray-200'];
-  const barColors = ['#115e59', '#34d399', '#a7f3d0', '#ecfdf5'];
+  const legendColors = ['bg-emerald-800', 'bg-emerald-500', 'bg-emerald-300', 'bg-emerald-100 border border-gray-200'];
+  const barColors = ['var(--color-emerald-800)', 'var(--color-emerald-500)', 'var(--color-emerald-300)', 'var(--color-emerald-100)'];
 
   if (loading) return <PageLoader />;
   
@@ -120,8 +120,8 @@ export default function CeoDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">{format(calendarDate, 'MMMM yyyy')}</h3>
               <div className="flex gap-2">
-                <button onClick={handlePrevMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg></button>
-                <button onClick={handleNextMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></button>
+                <button onClick={handlePrevMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 "><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg></button>
+                <button onClick={handleNextMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 "><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></button>
               </div>
             </div>
             <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
@@ -275,7 +275,7 @@ export default function CeoDashboard() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} ticks={[0, 25, 50, 75, 100]} tickFormatter={(val) => `${val}%`} />
                   <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Line type="monotone" dataKey="value" stroke="#34d399" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
+                  <Line type="monotone" dataKey="value" stroke="var(--color-emerald-400)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: 'var(--color-emerald-500)', stroke: '#fff', strokeWidth: 2 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -285,7 +285,6 @@ export default function CeoDashboard() {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Employment Status</h3>
-              <button className="text-gray-400">...</button>
             </div>
             
             <div className="flex items-end gap-2 mb-4">
@@ -347,13 +346,12 @@ function StatCard({ title, value, suffix, message }: { title: string, value: str
     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
       <div className="flex justify-between items-start mb-2">
         <h3 className="text-gray-500 font-medium text-sm">{title}</h3>
-        <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-50 text-gray-400">...</button>
       </div>
       <div className="flex items-baseline gap-2 mb-4">
         <span className="text-3xl font-bold text-gray-900">{value}</span>
         <span className="text-xs font-semibold text-gray-400">{suffix}</span>
       </div>
-      <div className="bg-[#eff8ef] text-[#4b7a4b] text-[11px] font-semibold px-4 py-2.5 rounded-xl text-center">
+      <div className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-4 py-2.5 rounded-xl text-center">
         {message}
       </div>
     </div>
@@ -383,10 +381,10 @@ function ScheduleCard({ category, title, room, time, color }: { category: string
 
 function HeatBar({ value }: { value: number }) {
   // Value 0 to 100
-  let bg = 'bg-[#f0fdf4]'; // very light
-  if (value > 80) bg = 'bg-[#115e59]'; // dark
-  else if (value > 50) bg = 'bg-[#34d399]'; // mid
-  else if (value > 20) bg = 'bg-[#a7f3d0]'; // light
+  let bg = 'bg-emerald-50'; // very light
+  if (value > 80) bg = 'bg-emerald-900'; // dark
+  else if (value > 50) bg = 'bg-emerald-400'; // mid
+  else if (value > 20) bg = 'bg-emerald-200'; // light
   
   return <div className={`flex-1 h-5 rounded-sm ${bg} transition-colors`}></div>;
 }

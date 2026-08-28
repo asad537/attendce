@@ -157,8 +157,8 @@ export default function WfhApprovals() {
                 type="submit"
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   review.action === 'approve'
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                    : 'bg-red-600 text-white hover:bg-red-700'
+                    ? 'bg-emerald-600 text-white '
+                    : 'bg-red-600 text-white '
                 }`}
                 disabled={submitting}
               >

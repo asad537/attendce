@@ -13,6 +13,8 @@ use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
@@ -141,12 +143,20 @@ class UserController extends Controller
             ['email' => $user->email, 'role' => $user->role]
         );
 
-        // $title = "New Employee Hired";
-        // $departmentName = $user->department ? $user->department->name : 'the company';
-        // $message = "New employee {$user->name} has been hired in {$departmentName}";
-        // \App\Models\User::active()->where('id', '!=', $user->id)->each(function ($u) use ($title, $message, $user) {
-        //     \App\Services\NotificationService::send($u, $title, $message, 'info', null, $user);
-        // });
+        // Fetch accent color from settings to theme the email dynamically
+        $accent = \App\Models\Setting::where('key', 'accent')->value('value') ?: 'emerald';
+        $themeColors = ['slate'=>'#475569','gray'=>'#4b5563','zinc'=>'#52525b','neutral'=>'#525252','stone'=>'#57534e','red'=>'#dc2626','orange'=>'#ea580c','amber'=>'#d97706','yellow'=>'#ca8a04','lime'=>'#65a30d','green'=>'#16a34a','emerald'=>'#059669','teal'=>'#0d9488','cyan'=>'#0891b2','sky'=>'#0284c7','blue'=>'#2563eb','indigo'=>'#4f46e5','violet'=>'#7c3aed','purple'=>'#9333ea','fuchsia'=>'#c026d3','pink'=>'#db2777','rose'=>'#e11d48'];
+        $themeColor = str_starts_with($accent, '#') ? $accent : ($themeColors[$accent] ?? '#059669');
+
+        // Send email invitation with temporary credentials to the user
+        try {
+            Mail::send('emails.welcome', ['user' => $user, 'password' => $plainPassword, 'themeColor' => $themeColor], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Welcome to ERP System - Account Registered');
+            });
+        } catch (\Throwable $e) {
+            Log::error('Failed to send registration email: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message'            => 'Employee created successfully.',
@@ -241,6 +251,21 @@ class UserController extends Controller
                 \App\Services\NotificationService::send($user->manager, $title, $message, 'warning', null, $user);
             }
             \App\Services\NotificationService::notifyCeo($title, $message, 'warning', $user);
+
+            // Fetch accent color from settings to theme the email dynamically
+            $accent = \App\Models\Setting::where('key', 'accent')->value('value') ?: 'emerald';
+            $themeColors = ['slate'=>'#475569','gray'=>'#4b5563','zinc'=>'#52525b','neutral'=>'#525252','stone'=>'#57534e','red'=>'#dc2626','orange'=>'#ea580c','amber'=>'#d97706','yellow'=>'#ca8a04','lime'=>'#65a30d','green'=>'#16a34a','emerald'=>'#059669','teal'=>'#0d9488','cyan'=>'#0891b2','sky'=>'#0284c7','blue'=>'#2563eb','indigo'=>'#4f46e5','violet'=>'#7c3aed','purple'=>'#9333ea','fuchsia'=>'#c026d3','pink'=>'#db2777','rose'=>'#e11d48'];
+            $themeColor = str_starts_with($accent, '#') ? $accent : ($themeColors[$accent] ?? '#059669');
+
+            // Send password reset email
+            try {
+                Mail::send('emails.password_reset', ['user' => $user, 'password' => $request->new_password, 'themeColor' => $themeColor], function ($msg) use ($user) {
+                    $msg->to($user->email)
+                        ->subject('ERP System - Password Reset');
+                });
+            } catch (\Throwable $e) {
+                Log::error('Failed to send password reset email: ' . $e->getMessage());
+            }
         }
 
         if (isset($data['role']) && $data['role'] !== $oldRole) {
@@ -260,8 +285,8 @@ class UserController extends Controller
     {
         $this->authorize('delete', $user);
         $name = $user->full_name;
-        $user->delete();
-        AuditService::log('user_deleted', 'user', "User {$name} deleted", $request->user()->id, User::class, $user->id);
+        $user->forceDelete();
+        AuditService::log('user_deleted', 'user', "User {$name} permanently deleted", $request->user()->id, User::class, $user->id);
         return response()->json(['message' => 'Employee deleted.']);
     }
 

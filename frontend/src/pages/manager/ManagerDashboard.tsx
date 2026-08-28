@@ -11,7 +11,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 
 const palette = {
   workforce: { text: 'text-indigo-600', icon: 'bg-indigo-50 text-indigo-600', badge: 'bg-indigo-50 text-indigo-600', line: '#6366f1' },
-  present:   { text: 'text-emerald-600', icon: 'bg-emerald-50 text-emerald-600', badge: 'bg-emerald-50 text-emerald-600', line: '#10b981' },
+  present:   { text: 'text-emerald-600', icon: 'bg-emerald-50 text-emerald-600', badge: 'bg-emerald-50 text-emerald-600', line: 'var(--color-emerald-500)' },
   absent:    { text: 'text-rose-500', icon: 'bg-rose-50 text-rose-500', badge: 'bg-rose-50 text-rose-500', line: '#fb7185' },
   leave:     { text: 'text-amber-500', icon: 'bg-amber-50 text-amber-600', badge: 'bg-amber-50 text-amber-600', line: '#f59e0b' },
 };
@@ -110,7 +110,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
 
   const liveStatuses = useMemo(() => {
     const defs = [
-      { key: 'working', label: 'Working', color: '#10b981' },
+      { key: 'working', label: 'Working', color: 'var(--color-emerald-500)' },
       { key: 'work_from_home', label: 'Work From Home', color: '#6366f1' },
       { key: 'checked_out', label: 'Checked Out', color: '#3b82f6' },
       { key: 'on_leave', label: 'On Leave', color: '#f59e0b' },
@@ -129,7 +129,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
   };
   if (loading) return <PageLoader />;
 
-  const donut = `conic-gradient(#10b981 0 ${percent(stats.present)}%, #fb7185 ${percent(stats.present)}% ${percent(stats.present + stats.absent)}%, #f59e0b ${percent(stats.present + stats.absent)}% ${percent(stats.present + stats.absent + stats.leave)}%, #e5e7eb 0)`;
+  const donut = `conic-gradient(var(--color-emerald-500, #10b981) 0 ${percent(stats.present)}%, #fb7185 ${percent(stats.present)}% ${percent(stats.present + stats.absent)}%, #f59e0b ${percent(stats.present + stats.absent)}% ${percent(stats.present + stats.absent + stats.leave)}%, #e5e7eb 0)`;
   const notMarked = Math.max(0, total - stats.present - stats.absent - stats.leave);
 
   return <div className="space-y-5 p-4 sm:p-6">
@@ -229,7 +229,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
             <div className="relative h-14 w-14">
               <svg className="h-14 w-14 -rotate-90" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                <circle cx="18" cy="18" r="15.5" fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(attendanceRate / 100) * 97.4} 97.4`} />
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-emerald-500)" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(attendanceRate / 100) * 97.4} 97.4`} />
               </svg>
               <span className="absolute inset-0 grid place-items-center text-xs font-bold text-emerald-600">{attendanceRate}%</span>
             </div>
@@ -278,7 +278,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
                 <td className="text-sm">{member.check_in ? <span className="inline-flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{format(new Date(member.check_in), 'hh:mm a')}</span> : '—'}</td>
                 <td className="text-sm">{member.check_out ? format(new Date(member.check_out), 'hh:mm a') : '—'}</td>
                 <td className="text-sm">{member.working_hours ? `${member.working_hours}h` : (member.check_in && !member.check_out ? <span className="font-medium text-emerald-600">Live</span> : '—')}</td>
-                <td className="text-right"><button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">{Icons.kebab}</button></td>
+                <td className="text-right"><button className="rounded-lg p-1.5 text-gray-400  hover:text-gray-600">{Icons.kebab}</button></td>
               </tr>
             ))}
           </tbody>
@@ -286,6 +286,6 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
       </div>
     </section>
 
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-gray-900">Quick Actions</h2><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{!executive && <button onClick={toggleAttendance} disabled={actionLoading || Boolean(attendance?.check_out)} className="flex items-center gap-3 rounded-xl border p-4 text-left hover:border-emerald-300 hover:bg-emerald-50 disabled:opacity-50"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">{Icons.present}</span><span><b className="block text-sm">{attendance?.check_in ? 'Mark Check Out' : 'Mark Attendance'}</b><small className="text-gray-500">Check in / out</small></span></button>}{!executive && <Link to={`${basePath}/my-leaves`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-indigo-300 hover:bg-indigo-50"><span className="rounded-lg bg-indigo-50 p-2 text-indigo-600">{Icons.leave}</span><span><b className="block text-sm">Apply Leave</b><small className="text-gray-500">Request time off</small></span></Link>}<Link to={`${basePath}/reports`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-blue-300 hover:bg-blue-50"><span className="rounded-lg bg-blue-50 p-2 text-blue-600">{Icons.trend}</span><span><b className="block text-sm">View Reports</b><small className="text-gray-500">Attendance reports</small></span></Link><Link to={executive ? '/ceo/employees' : `${basePath}/team`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-rose-300 hover:bg-rose-50"><span className="rounded-lg bg-rose-50 p-2 text-rose-500">{Icons.workforce}</span><span><b className="block text-sm">{executive ? 'Employees' : 'My Team'}</b><small className="text-gray-500">Manage team members</small></span></Link></div></section>
+    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"><h2 className="font-bold text-gray-900">Quick Actions</h2><div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">{!executive && <button onClick={toggleAttendance} disabled={actionLoading || Boolean(attendance?.check_out)} className="flex items-center gap-3 rounded-xl border p-4 text-left hover:border-emerald-300  disabled:opacity-50"><span className="rounded-lg bg-emerald-50 p-2 text-emerald-600">{Icons.present}</span><span><b className="block text-sm">{attendance?.check_in ? 'Mark Check Out' : 'Mark Attendance'}</b><small className="text-gray-500">Check in / out</small></span></button>}{!executive && <Link to={`${basePath}/my-leaves`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-indigo-300 "><span className="rounded-lg bg-indigo-50 p-2 text-indigo-600">{Icons.leave}</span><span><b className="block text-sm">Apply Leave</b><small className="text-gray-500">Request time off</small></span></Link>}<Link to={`${basePath}/reports`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-blue-300 "><span className="rounded-lg bg-blue-50 p-2 text-blue-600">{Icons.trend}</span><span><b className="block text-sm">View Reports</b><small className="text-gray-500">Attendance reports</small></span></Link><Link to={executive ? '/ceo/employees' : `${basePath}/team`} className="flex items-center gap-3 rounded-xl border p-4 hover:border-rose-300 "><span className="rounded-lg bg-rose-50 p-2 text-rose-500">{Icons.workforce}</span><span><b className="block text-sm">{executive ? 'Employees' : 'My Team'}</b><small className="text-gray-500">Manage team members</small></span></Link></div></section>
   </div>;
 }

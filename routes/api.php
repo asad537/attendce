@@ -23,6 +23,7 @@ use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\EmployeeProfileController;
 use App\Http\Controllers\API\ResignationController;
 use App\Http\Controllers\API\PayrollController;
+use App\Http\Controllers\API\SidebarController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,10 +41,11 @@ Route::get('/users/{user}/avatar', [UserController::class, 'avatar'])
 // ── Authenticated ────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
-    // Auth
+    // Auth & Sidebar Counts
     Route::post('/logout',         [AuthController::class, 'logout']);
     Route::get('/me',              [AuthController::class, 'me']);
     Route::post('/me',             [AuthController::class, 'updateProfile']);
+    Route::get('/sidebar/counts',  [SidebarController::class, 'counts']);
 
     // Internal inbox
     Route::get('/messages',                    [MessageController::class, 'index']);
@@ -116,6 +118,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Projects — employees cannot create or access projects.
     Route::get('/my-tickets', [UserTicketController::class, 'myTickets']);
+    Route::post('/my-tickets/mark-seen', [UserTicketController::class, 'markSeen']);
     
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);

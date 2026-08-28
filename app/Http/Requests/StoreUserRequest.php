@@ -32,7 +32,7 @@ class StoreUserRequest extends FormRequest
             'birth_date'      => 'required|date|before:today',
 
             // ── Contact ───────────────────────────────────────────
-            'email'           => 'required|email:rfc,dns|unique:users,email',
+            'email'           => 'required|email|unique:users,email',
             'phone'           => 'required|string|regex:/^\+?[0-9\s\-\(\)]{7,20}$/',
 
             // ── Role & Employment ─────────────────────────────────

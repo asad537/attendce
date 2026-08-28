@@ -130,6 +130,8 @@ export default function EmployeeDashboard() {
     const expected = Math.max(0, (shiftEnd.getTime() - shiftStart.getTime()) / 1000);
     const remaining = Math.max(0, expected - worked);
     const timelinePoint = checkOut || (checkedIn ? now : shiftStart);
+    const checkInPoint = checkIn || shiftStart;
+    const startProgress = Math.min(100, Math.max(0, ((checkInPoint.getTime() - shiftStart.getTime()) / (shiftEnd.getTime() - shiftStart.getTime())) * 100));
     const progress = Math.min(100, Math.max(0, ((timelinePoint.getTime() - shiftStart.getTime()) / (shiftEnd.getTime() - shiftStart.getTime())) * 100));
     const ticks: Date[] = [shiftStart];
     let tick = new Date(shiftStart);
@@ -140,14 +142,14 @@ export default function EmployeeDashboard() {
       tick = new Date(tick.getTime() + 3600000);
     }
     ticks.push(shiftEnd);
-    return { shiftStart, shiftEnd, worked, expected, remaining, progress, ticks, breakSeconds };
+    return { shiftStart, shiftEnd, worked, expected, remaining, progress, startProgress, ticks, breakSeconds };
   }, [attendance, activeBreak, checkedIn, now]);
 
   if (loading) return <PageLoader />;
 
   const status = onBreak ? 'On break' : checkedIn ? 'Working' : checkedOut ? 'Completed' : 'Not checked in';
-  const statusTone = onBreak ? 'bg-purple-50 text-purple-700' : checkedIn ? 'bg-green-50 text-green-700' : checkedOut ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600';
-  const statusDot = onBreak ? 'bg-purple-500' : checkedIn ? 'bg-green-500' : checkedOut ? 'bg-blue-500' : 'bg-gray-400';
+  const statusTone = onBreak ? 'bg-purple-50 text-purple-700' : checkedIn ? 'bg-emerald-50 text-emerald-700' : checkedOut ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-600';
+  const statusDot = onBreak ? 'bg-purple-500' : checkedIn ? 'bg-emerald-500' : checkedOut ? 'bg-blue-500' : 'bg-gray-400';
   const onTrack = workday.remaining > 0 && checkedIn;
 
   return (
@@ -157,7 +159,7 @@ export default function EmployeeDashboard() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-lg font-bold text-gray-900 sm:text-xl">Today's Attendance</h1>
-              {checkedIn && <span className="rounded-md bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">Live</span>}
+              {checkedIn && <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Live</span>}
             </div>
             <p className="mt-1 text-sm text-gray-500">{format(now, 'EEEE, MMMM d, yyyy')}</p>
           </div>
@@ -175,16 +177,16 @@ export default function EmployeeDashboard() {
         <div className="mt-5">
           {!attendance?.check_in ? (
             <div className="flex justify-start">
-              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-white px-4 py-2 font-semibold text-green-600 transition hover:bg-green-50 disabled:opacity-60">
+              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-white px-4 py-2 font-semibold text-emerald-600 transition  disabled:opacity-60">
                 <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Checking in…' : 'Check In'}
               </button>
             </div>
           ) : checkedIn ? (
             <div className="flex justify-start">
-              {/* <button onClick={handleBreak} disabled={breakLoading} className={`flex items-center justify-center gap-2 rounded-lg border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${onBreak ? 'border-purple-400 bg-purple-50 text-purple-700 hover:bg-purple-100' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}>
+              {/* <button onClick={handleBreak} disabled={breakLoading} className={`flex items-center justify-center gap-2 rounded-lg border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${onBreak ? 'border-purple-400 bg-purple-50 text-purple-700 ' : 'border-gray-300 bg-white text-gray-700 '}`}>
                 <Icon type="coffee" className="h-5 w-5" />{breakLoading ? '…' : onBreak ? 'End Break' : 'Start Break'}
               </button> */}
-              <button onClick={handleCheckOut} disabled={actionLoading || onBreak} className="flex items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-2 font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60">
+              <button onClick={handleCheckOut} disabled={actionLoading || onBreak} className="flex items-center justify-center gap-2 rounded-lg border border-red-400 bg-white px-4 py-2 font-semibold text-red-600 transition  disabled:opacity-60">
                 <Icon type="out" className="h-4 w-4" />{actionLoading ? 'Checking out…' : 'Check Out'}
               </button>
             </div>
@@ -193,7 +195,7 @@ export default function EmployeeDashboard() {
               <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700">
                 <Icon type="clock" className="h-4 w-4" />Workday completed
               </div>
-              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-green-500 bg-white px-4 py-2 font-semibold text-green-600 transition hover:bg-green-50 disabled:opacity-60">
+              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-white px-4 py-2 font-semibold text-emerald-600 transition  disabled:opacity-60">
                 <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Resuming…' : 'Resume Work'}
               </button>
             </div>
@@ -224,7 +226,7 @@ export default function EmployeeDashboard() {
                   style={{ left: `${position}%`, transform }}
                 >
                   <span className="whitespace-nowrap text-[11px] font-semibold text-gray-700 sm:text-xs">{format(tick, 'hh:mm a')}</span>
-                  {isFirst && <span className="mt-0.5 text-[10px] font-medium text-green-600 sm:text-xs">Start</span>}
+                  {isFirst && <span className="mt-0.5 text-[10px] font-medium text-gray-500 sm:text-xs">Start</span>}
                   {isLast && <span className="mt-0.5 text-[10px] font-medium text-gray-500 sm:text-xs">End</span>}
                 </div>
               );
@@ -258,10 +260,10 @@ export default function EmployeeDashboard() {
             <div
               style={{
                 position: 'absolute',
-                left: 0,
+                left: `${workday.startProgress}%`,
                 top: '50%',
                 height: 3,
-                width: `${workday.progress}%`,
+                width: `${Math.max(0, workday.progress - workday.startProgress)}%`,
                 transform: 'translateY(-50%)',
                 background: '#16a34a',
                 borderRadius: 9999,
@@ -276,7 +278,7 @@ export default function EmployeeDashboard() {
                 height: 16,
                 width: 16,
                 transform: 'translate(-50%, -50%)',
-                background: '#16a34a',
+                background: '#9ca3af',
                 border: '2px solid #ffffff',
                 borderRadius: 9999,
                 boxShadow: '0 1px 2px rgba(0,0,0,.08)',
@@ -380,7 +382,7 @@ export default function EmployeeDashboard() {
           ) : (
             <>
               <div className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                   <Icon type="in" className="h-4 w-4" />
                 </span>
                 <div>
@@ -404,20 +406,20 @@ export default function EmployeeDashboard() {
         </div>
       </section>
 
-      <div className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-sm font-medium ${onTrack ? 'border-green-100 bg-green-50 text-green-700' : checkedOut ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600'}`}>
+      <div className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-sm font-medium ${onTrack ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : checkedOut ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600'}`}>
         <span className="text-xl">💡</span>{onTrack ? 'You are on track! Keep up the great work.' : checkedOut ? 'Your workday is complete.' : 'Check in to start tracking your workday.'}
       </div>
     </div>
   );
 }
 
-const tones = { green: 'bg-green-50 text-green-600', red: 'bg-red-50 text-red-500', blue: 'bg-blue-50 text-blue-600', orange: 'bg-orange-50 text-orange-500', purple: 'bg-purple-50 text-purple-600' };
+const tones = { green: 'bg-emerald-50 text-emerald-600', red: 'bg-red-50 text-red-500', blue: 'bg-blue-50 text-blue-600', orange: 'bg-orange-50 text-orange-500', purple: 'bg-purple-50 text-purple-600' };
 
 function WorkdayValue({ icon, tone, label, value, note, highlight = false }: { icon: 'in' | 'out' | 'clock'; tone: keyof typeof tones; label: string; value: string; note: string; highlight?: boolean }) {
-  return <div className="flex min-w-0 items-start gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}><Icon type={icon} className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-medium text-gray-600 sm:text-sm">{label}</p><p className={`mt-0.5 truncate text-lg font-bold sm:text-xl ${highlight ? 'text-green-600' : 'text-gray-900'}`}>{value}</p><p className="mt-0.5 text-xs text-gray-500">{note}</p></div></div>;
+  return <div className="flex min-w-0 items-start gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}><Icon type={icon} className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs font-medium text-gray-600 sm:text-sm">{label}</p><p className={`mt-0.5 truncate text-lg font-bold sm:text-xl ${highlight ? 'text-emerald-600' : 'text-gray-900'}`}>{value}</p><p className="mt-0.5 text-xs text-gray-500">{note}</p></div></div>;
 }
 
 function SummaryCard({ icon, tone, label, value, note }: { icon: IconType; tone: keyof typeof tones; label: string; value: string; note: string }) {
-  const valueTone = tone === 'green' ? 'text-green-600' : 'text-gray-900';
+  const valueTone = tone === 'green' ? 'text-emerald-600' : 'text-gray-900';
   return <div className="flex min-w-0 items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${tones[tone]}`}><Icon type={icon} className="h-5 w-5" /></span><div className="min-w-0"><p className="text-xs text-gray-600 sm:text-sm">{label}</p><p className={`mt-0.5 truncate text-lg font-bold ${valueTone}`}>{value}</p><p className="mt-0.5 truncate text-xs text-gray-500">{note}</p></div></div>;
 }

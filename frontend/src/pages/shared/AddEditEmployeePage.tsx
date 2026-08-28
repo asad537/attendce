@@ -95,8 +95,8 @@ export default function AddEditEmployeePage() {
         const userRes = await userService.getById(Number(id));
         setEditUser(userRes);
         setForm({
-          first_name:      userRes.first_name || '',
-          last_name:       userRes.last_name || '',
+          first_name:      userRes.first_name || (userRes.name ? userRes.name.split(' ')[0] : ''),
+          last_name:       userRes.last_name || (userRes.name && userRes.name.includes(' ') ? userRes.name.split(' ').slice(1).join(' ') : ''),
           gender:          userRes.gender || 'male',
           birth_date:      userRes.birth_date || '',
           email:           userRes.email,
@@ -269,7 +269,7 @@ export default function AddEditEmployeePage() {
       
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
           </div>
           <div>
@@ -305,13 +305,13 @@ export default function AddEditEmployeePage() {
       <Modal open={!!tempPwd} onClose={() => { setTempPwd(null); navigate(-1); }} title="Employee Added Successfully" size="sm">
         {tempPwd && (
           <div className="space-y-4">
-            <div className="p-3 bg-green-50 text-green-700 rounded-lg text-sm flex items-start gap-2">
+            <div className="p-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm flex items-start gap-2">
               <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
                 <p className="font-semibold mb-1">Temporary credentials generated</p>
-                <p className="text-green-600/90 text-xs leading-relaxed">
+                <p className="text-emerald-600/90 text-xs leading-relaxed">
                   The employee can log in using these credentials. Please share the password securely.
                 </p>
               </div>

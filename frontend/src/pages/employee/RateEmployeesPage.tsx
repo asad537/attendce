@@ -67,7 +67,7 @@ export default function RateEmployeesPage() {
   };
 
   return (
-    <div className="p-4 lg:p-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
+    <div className="p-4 sm:p-6 lg:p-8 font-sans text-gray-900 w-full max-w-4xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Company Satisfaction Rating</h1>
         <p className="text-sm text-gray-500 mt-1">Provide anonymous feedback on the company to help improve our work environment.</p>
@@ -99,7 +99,7 @@ export default function RateEmployeesPage() {
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-50"
+            className="px-6 py-2.5 bg-emerald-600 text-white font-semibold rounded-xl  transition-colors shadow-sm disabled:opacity-50"
           >
             {isSubmitting ? 'Submitting...' : 'Submit Rating'}
           </button>

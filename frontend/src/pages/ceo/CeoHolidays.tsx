@@ -128,7 +128,7 @@ export default function CeoHolidays() {
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{new Date(holiday.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{holiday.name}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium \${holiday.type === 'public' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${holiday.type === 'public' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                         {holiday.type.toUpperCase()}
                       </span>
                     </td>

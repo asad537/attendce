@@ -11,7 +11,7 @@ interface RichTextComposerProps {
   onDriveLinkChange: (link: string) => void;
   isConfidential: boolean;
   onConfidentialChange: (isConfidential: boolean) => void;
-  signature: string;
+  signature?: string;
   onSignatureChange: (signature: string) => void;
 }
 
@@ -49,13 +49,13 @@ export default function RichTextComposer({
   };
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden flex flex-col bg-white">
+    <div className="border border-gray-300 rounded-lg flex flex-col bg-white relative">
       {/* Custom Toolbar */}
       <div className="flex items-center gap-2 p-2 border-b border-gray-200 bg-gray-50 flex-wrap">
         <button
           type="button"
           onClick={triggerFileUpload}
-          className="p-1.5 text-gray-600 hover:bg-gray-200 rounded tooltip"
+          className="p-1.5 text-gray-600  rounded tooltip"
           title="Attach File"
         >
           📎
@@ -63,7 +63,7 @@ export default function RichTextComposer({
         <button
           type="button"
           onClick={handleDrivePrompt}
-          className={`p-1.5 rounded tooltip ${driveLink ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
+          className={`p-1.5 rounded tooltip ${driveLink ? 'bg-blue-100 text-blue-600' : 'text-gray-600 '}`}
           title="Google Drive Link"
         >
           △
@@ -79,7 +79,7 @@ export default function RichTextComposer({
         <button
           type="button"
           onClick={() => setShowSignaturePad(true)}
-          className={`p-1.5 rounded tooltip ${signature ? 'bg-green-100 text-green-600' : 'text-gray-600 hover:bg-gray-200'}`}
+          className={`p-1.5 rounded tooltip ${signature ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-200'}`}
           title="Digital Signature"
         >
           ✍️
@@ -118,7 +118,7 @@ export default function RichTextComposer({
       <div className="px-3 py-2 bg-gray-50 text-xs text-gray-500 border-t border-gray-200 flex gap-4">
         {isConfidential && <span className="text-red-600 font-medium flex items-center">🔒 Confidential Mode Active</span>}
         {driveLink && <span className="text-blue-600 flex items-center">△ Drive Link Attached</span>}
-        {signature && <span className="text-green-600 flex items-center">✍️ Signature Captured</span>}
+        {signature && <span className="text-emerald-600 flex items-center">✍️ Signature Captured</span>}
       </div>
 
       <SignaturePad

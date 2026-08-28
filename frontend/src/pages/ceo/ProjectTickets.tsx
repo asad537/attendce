@@ -173,6 +173,11 @@ export default function ProjectTickets() {
     const moveTicket = async (ticketId: number, status: Ticket['status']) => {
         const ticket = tickets.find(item => item.id === ticketId);
         if (!ticket || ticket.status === status) return;
+        const isManagement = ['ceo', 'manager', 'tl'].includes(currentUser?.role || '');
+        if (ticket.status === 'in_review' && status === 'done' && !isManagement) {
+            toast.error("Only CEO, Manager, or Team Lead can move tickets from Review to Done.");
+            return;
+        }
         setTickets(current => current.map(item => item.id === ticketId ? { ...item, status } : item));
         try { await api.put(`/tickets/${ticketId}`, { status }); toast.success(`Moved to ${cols.find(col => col.key === status)?.name}`); }
         catch (err) { toast.error(getErrorMessage(err)); load(); }
@@ -370,7 +375,7 @@ export default function ProjectTickets() {
                             </span>
                             <span className="text-gray-400">•••</span>
                         </div>
-                        {canManage && <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors hover:bg-gray-50 ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
+                        {canManage && <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors  ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
                         {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
@@ -422,7 +427,7 @@ export default function ProjectTickets() {
                                                 </svg>
                                             </button>}
                                             <button
-                                                className="hover:bg-gray-100 p-1 rounded transition-colors"
+                                                className=" p-1 rounded transition-colors"
                                                 onClick={(e) =>
                                                     e.stopPropagation()
                                                 }
@@ -716,10 +721,20 @@ export default function ProjectTickets() {
                             <select 
                                 className="w-auto bg-emerald-50 text-emerald-700 font-medium text-[13px] border border-emerald-200 rounded px-3 py-1.5 cursor-pointer hover:bg-emerald-100 focus:ring-emerald-500"
                                 value={detail.status}
-                                onChange={(e) => {
-                                    api.put(`/tickets/${detail.id}`, { ...detail, status: e.target.value });
-                                    setDetail({...detail, status: e.target.value as any});
-                                    load();
+                                onChange={async (e) => {
+                                    const nextStatus = e.target.value as any;
+                                    const isManagement = ['ceo', 'manager', 'tl'].includes(currentUser?.role || '');
+                                    if (detail.status === 'in_review' && nextStatus === 'done' && !isManagement) {
+                                        toast.error("Only CEO, Manager, or Team Lead can move a ticket from Review to Done.");
+                                        return;
+                                    }
+                                    try {
+                                        await api.put(`/tickets/${detail.id}`, { status: nextStatus });
+                                        setDetail({...detail, status: nextStatus});
+                                        load();
+                                    } catch (err) {
+                                        toast.error(getErrorMessage(err));
+                                    }
                                 }}
                             >
                                 <option value="todo">To Do</option>

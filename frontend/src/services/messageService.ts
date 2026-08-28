@@ -1,4 +1,5 @@
 import api from './api';
+import { sidebarService } from './sidebarService';
 
 export interface MessageUser { id: number; name: string; email: string; avatar?: string | null; avatar_url?: string | null }
 export interface MessageAttachment { url: string; name: string; mime: string; size: number; is_image: boolean }
@@ -25,9 +26,12 @@ export const messageService = {
   },
   async thread(userId: number): Promise<{ user: MessageUser & { role?: string }; messages: InboxMessage[] }> {
     const response = await api.get(`/messages/thread/${userId}`);
+    // Immediately refresh sidebar badge counts as messages are marked as read
+    sidebarService.refresh();
     return response.data;
   },
   async send(payload: { recipient_id?: number; subject: string; body: string; label?: string; is_draft?: boolean; parent_id?: number; file?: File | null }): Promise<InboxMessage> {
+    let resultMessage: InboxMessage;
     if (payload.file) {
       const form = new FormData();
       if (payload.recipient_id != null) form.append('recipient_id', String(payload.recipient_id));
@@ -36,17 +40,22 @@ export const messageService = {
       if (payload.parent_id != null) form.append('parent_id', String(payload.parent_id));
       form.append('attachment', payload.file);
       const response = await api.post('/messages', form, { headers: { 'Content-Type': undefined } as never });
-      return response.data.message;
+      resultMessage = response.data.message;
+    } else {
+      const { file: _file, ...rest } = payload;
+      const response = await api.post('/messages', rest);
+      resultMessage = response.data.message;
     }
-    const { file: _file, ...rest } = payload;
-    const response = await api.post('/messages', rest);
-    return response.data.message;
+    sidebarService.refresh();
+    return resultMessage;
   },
   async action(id: number, action: string): Promise<InboxMessage> {
     const response = await api.patch(`/messages/${id}`, { action });
+    sidebarService.refresh();
     return response.data.message;
   },
   async remove(id: number, scope?: 'everyone'): Promise<void> {
     await api.delete(`/messages/${id}`, { params: scope ? { scope } : undefined });
+    sidebarService.refresh();
   },
 };

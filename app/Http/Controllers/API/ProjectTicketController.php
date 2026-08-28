@@ -123,9 +123,13 @@ class ProjectTicketController extends Controller
         if (!$this->canManageProject($request, $ticket->project)) {
             $data = array_intersect_key($data, array_flip(['status']));
         }
+        if (isset($data['status']) && $data['status'] === 'done' && $ticket->status === 'in_review') {
+            abort_unless(in_array($request->user()->role, ['ceo', 'manager', 'tl']), 403, 'Only CEO, Manager, or Team Lead can move a ticket from Review to Done.');
+        }
         if (!empty($data['assignee_id'])) {
             abort_unless($this->canAssignUser($request, (int) $data['assignee_id']), 403, 'You cannot assign this ticket to that user.');
         }
+        $ticket->load('project');
         $original = $ticket->getOriginal();
         $ticket->update($data);
 
@@ -142,10 +146,11 @@ class ProjectTicketController extends Controller
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>'assignee_changed', 'old_value'=>$oldValStr, 'new_value'=>$newValStr]);
                 // Notify the newly-assigned user (unless they reassigned it to themselves).
                 if ($newUser && (int) $newUser->id !== (int) $request->user()->id) {
+                    $projectName = $ticket->project ? $ticket->project->name : 'Project';
                     NotificationService::send(
                         $newUser,
                         'Ticket assigned to you',
-                        "You've been assigned \"{$ticket->title}\" in {$ticket->project->name}.",
+                        "You've been assigned \"{$ticket->title}\" in {$projectName}.",
                         'info',
                         "/projects/{$ticket->project_id}?ticket={$ticket->id}",
                         $ticket

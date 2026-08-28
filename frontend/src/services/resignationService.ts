@@ -1,4 +1,5 @@
 import api from './api';
+import { sidebarService } from './sidebarService';
 
 export interface Resignation {
   id: number;
@@ -19,11 +20,14 @@ export const resignationService = {
   },
   async submit(payload: { last_working_day: string; reason: string }): Promise<void> {
     await api.post('/resignations', payload);
+    sidebarService.refresh();
   },
   async review(id: number, action: 'approve' | 'reject', remarks?: string): Promise<void> {
     await api.post(`/resignations/${id}/review`, { action, remarks });
+    sidebarService.refresh();
   },
   async withdraw(id: number): Promise<void> {
     await api.post(`/resignations/${id}/withdraw`);
+    sidebarService.refresh();
   },
 };

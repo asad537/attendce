@@ -1,0 +1,19 @@
+{
+  "short_name": "ERP System",
+  "name": "Workforce Management ERP System",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "description": "Comprehensive Workforce Management & Attendance ERP Application"
+}

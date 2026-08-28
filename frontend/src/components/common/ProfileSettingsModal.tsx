@@ -164,7 +164,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
           <div className="absolute top-4 right-4">
             <button 
               onClick={onClose} 
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors focus:outline-none"
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-full  transition-colors focus:outline-none"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -418,7 +418,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                       type="button" 
                       onClick={handleDocumentUpload}
                       disabled={!uploadDocFile || docLoading}
-                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50"
+                      className="w-full xl:w-auto whitespace-nowrap px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold  disabled:opacity-50"
                     >
                       {docLoading ? 'Uploading...' : 'Upload'}
                     </button>
@@ -458,14 +458,14 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-100 rounded-xl hover:bg-gray-50 hover:border-gray-200 focus:outline-none transition-all active:scale-[0.98]"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-100 rounded-xl  hover:border-gray-200 focus:outline-none transition-all active:scale-[0.98]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || (!avatar && !newPassword && activeTab === 'security' && educationList.length === 0)}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 rounded-xl  focus:outline-none focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

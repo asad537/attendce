@@ -107,15 +107,15 @@ export default function LoginPage() {
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-3">Demo accounts</p>
             <div className="grid grid-cols-1 gap-2">
               {[
-                { label: 'CEO', email: 'ceo@jmdsol.com', badge: 'badge-purple' },
-                { label: 'Manager', email: 'manager.eng@attendance.com', badge: 'badge-blue' },
-                { label: 'Team Lead', email: 'jane@jmdsol.com', badge: 'badge-cyan' },
-                { label: 'Employee', email: 'carol@attendance.com', badge: 'badge-green' },
+                { label: 'CEO', email: 'ceo@jmdsol.com', password: 'password', badge: 'badge-purple' },
+                { label: 'Manager', email: 'manager.eng@attendance.com', password: 'password', badge: 'badge-blue' },
+                { label: 'Team Lead', email: 'mark@jmdsol.com', password: '12345678', badge: 'badge-cyan' },
+                { label: 'Employee', email: 'carol@attendance.com', password: 'password', badge: 'badge-green' },
               ].map((d) => (
                 <button
                   key={d.email}
                   type="button"
-                  onClick={() => { setEmail(d.email); setPassword('password'); }}
+                  onClick={() => { setEmail(d.email); setPassword(d.password); }}
                   className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:bg-gray-50 text-left transition-colors"
                 >
                   <span className={d.badge}>{d.label}</span>

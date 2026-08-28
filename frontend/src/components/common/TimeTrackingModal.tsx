@@ -47,7 +47,7 @@ export default function TimeTrackingModal({ open, onClose, ticketId, onSuccess }
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md border border-gray-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="text-[20px] font-semibold text-gray-900">Time tracking</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 rounded hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 rounded  transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -91,10 +91,10 @@ export default function TimeTrackingModal({ open, onClose, ticketId, onSuccess }
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors">
+                <button type="button" onClick={onClose} className="px-4 py-2 text-[14px] font-medium text-gray-700 hover:text-gray-900  rounded transition-colors">
                     Cancel
                 </button>
-                <button type="button" onClick={handleSave} disabled={loading} className="px-4 py-2 text-[14px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded transition-colors disabled:opacity-50 shadow-sm">
+                <button type="button" onClick={handleSave} disabled={loading} className="px-4 py-2 text-[14px] font-medium text-white bg-emerald-600  rounded transition-colors disabled:opacity-50 shadow-sm">
                     {loading ? 'Saving...' : 'Save'}
                 </button>
             </div>

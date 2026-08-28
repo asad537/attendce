@@ -25,7 +25,11 @@ class ReportController extends Controller
         if (!$user->isCeo()) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
-        return response()->json($this->service->dailySnapshot());
+        $cacheKey = 'daily_snapshot_' . date('Y-m-d');
+        $snapshot = \Illuminate\Support\Facades\Cache::remember($cacheKey, 30, function() {
+            return $this->service->dailySnapshot();
+        });
+        return response()->json($snapshot);
     }
 
     /** GET /api/reports/attendance-summary */
@@ -40,7 +44,11 @@ class ReportController extends Controller
 
         // Team Lead → only their direct reports
         if ($auth->isTl()) {
-            return response()->json(['team' => $this->service->teamAttendanceSummary($auth, $start, $end)]);
+            $cacheKey = "att_summary_tl_{$auth->id}_{$start}_{$end}";
+            $res = \Illuminate\Support\Facades\Cache::remember($cacheKey, 45, function() use ($auth, $start, $end) {
+                return ['team' => $this->service->teamAttendanceSummary($auth, $start, $end)];
+            });
+            return response()->json($res);
         }
 
         // Manager and CEO → whole company
@@ -50,7 +58,11 @@ class ReportController extends Controller
             return response()->json($this->service->userAttendanceSummary($user, $start, $end));
         }
 
-        return response()->json(['company' => $this->service->companyAttendanceSummary($start, $end)]);
+        $cacheKey = "att_summary_company_{$start}_{$end}";
+        $res = \Illuminate\Support\Facades\Cache::remember($cacheKey, 45, function() use ($start, $end) {
+            return ['company' => $this->service->companyAttendanceSummary($start, $end)];
+        });
+        return response()->json($res);
     }
 
     /** POST /api/reports/attendance-sheet/cell — set one employee's status for a day */
