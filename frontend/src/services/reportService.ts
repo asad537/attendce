@@ -39,8 +39,8 @@ export const reportService = {
     return res.data;
   },
 
-  async getDashboardStats(): Promise<DashboardStats> {
-    const res = await api.get('/reports/dashboard-stats');
+  async getDashboardStats(params?: { months?: number; period?: 'this_month' | 'last_month' | 'this_week' }): Promise<DashboardStats> {
+    const res = await api.get('/reports/dashboard-stats', { params });
     return res.data;
   },
 
