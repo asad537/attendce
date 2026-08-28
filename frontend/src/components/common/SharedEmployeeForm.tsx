@@ -316,42 +316,46 @@ export function SharedEmployeeForm({
             <p className="text-xs text-gray-500">Select department and designation.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="label">Department <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  <Icons.Building />
+            {form.role !== 'ceo' && (
+              <>
+                <div>
+                  <label className="label">Department <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <Icons.Building />
+                    </div>
+                    <select 
+                      className={`input pl-10 ${errors.department_id ? 'border-red-400' : ''} ${departments.length === 1 ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} 
+                      value={form.department_id || ''} 
+                      onChange={onDeptChange}
+                      disabled={departments.length === 1}
+                    >
+                      <option value="">Select department…</option>
+                      {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    </select>
+                  </div>
+                  <Err field="department_id" />
                 </div>
-                <select 
-                  className={`input pl-10 ${errors.department_id ? 'border-red-400' : ''} ${departments.length === 1 ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} 
-                  value={form.department_id || ''} 
-                  onChange={onDeptChange}
-                  disabled={departments.length === 1}
-                >
-                  <option value="">Select department…</option>
-                  {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
-              <Err field="department_id" />
-            </div>
-            <div>
-              <label className="label">Designation / Job Title <span className="text-red-500">*</span></label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  <Icons.Badge />
+                <div>
+                  <label className="label">Designation / Job Title <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <Icons.Badge />
+                    </div>
+                    <select
+                      className={`input pl-10 ${errors.designation_id ? 'border-red-400' : ''}`}
+                      value={form.designation_id || ''}
+                      onChange={e => onField('designation_id')({ target: { value: e.target.value } } as any)}
+                      disabled={!form.department_id}
+                    >
+                      <option value="">{form.department_id ? 'Select designation…' : 'Select department first…'}</option>
+                      {filteredDesigs.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
+                    </select>
+                  </div>
+                  <Err field="designation_id" />
                 </div>
-                <select
-                  className={`input pl-10 ${errors.designation_id ? 'border-red-400' : ''}`}
-                  value={form.designation_id || ''}
-                  onChange={e => onField('designation_id')({ target: { value: e.target.value } } as any)}
-                  disabled={!form.department_id}
-                >
-                  <option value="">{form.department_id ? 'Select designation…' : 'Select department first…'}</option>
-                  {filteredDesigs.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
-                </select>
-              </div>
-              <Err field="designation_id" />
-            </div>
+              </>
+            )}
             
             {showManagerSelection && (
               <div className="md:col-span-2">

@@ -107,7 +107,7 @@ export default function LoginPage() {
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-3">Demo accounts</p>
             <div className="grid grid-cols-1 gap-2">
               {[
-                { label: 'CEO', email: 'ceo@jmdsol.com', password: 'password', badge: 'badge-purple' },
+                { label: 'Chief Executive Officer', email: 'ceo@jmdsol.com', password: 'password', badge: 'badge-purple' },
                 { label: 'Manager', email: 'manager.eng@attendance.com', password: 'password', badge: 'badge-blue' },
                 { label: 'Team Lead', email: 'mark@jmdsol.com', password: '12345678', badge: 'badge-cyan' },
                 { label: 'Employee', email: 'carol@attendance.com', password: 'password', badge: 'badge-green' },

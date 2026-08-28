@@ -70,7 +70,7 @@ export default function CeoEmployees() {
     employee: 'Employee',
     tl:       'Team Lead',
     manager:  'Manager',
-    ceo:      'CEO',
+    ceo:      'Chief Executive Officer',
   };
 
   return (
@@ -199,12 +199,14 @@ export default function CeoEmployees() {
                 </div>
                 
                 <div className="mt-4 space-y-2 flex-grow text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <span className="truncate">{u.department?.name || '—'}</span>
-                  </div>
+                  {u.role !== 'ceo' && (
+                    <div className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span className="truncate">{u.department?.name || '—'}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

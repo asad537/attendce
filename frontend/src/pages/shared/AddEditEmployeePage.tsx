@@ -101,9 +101,9 @@ export default function AddEditEmployeePage() {
           birth_date:      userRes.birth_date || '',
           email:           userRes.email,
           phone:           userRes.phone || '',
-          // This form only manages employee / tl / manager — a CEO record
+          // This form only manages employee / tl / manager / ceo
           // (not editable here) falls back to a valid value.
-          role:            (['employee', 'tl', 'manager'].includes(userRes.role) ? userRes.role : 'employee') as 'employee' | 'tl' | 'manager',
+          role:            (['employee', 'tl', 'manager', 'ceo'].includes(userRes.role) ? userRes.role : 'employee') as any,
           employment_type: userRes.employment_type,
           department_id:   userRes.department?.id || 0,
           designation_id:  userRes.designation?.id || 0,
@@ -164,8 +164,10 @@ export default function AddEditEmployeePage() {
     else if (phoneDigits.length < 7 || phoneDigits.length > 15) e.phone = 'Enter 7 to 15 digits.';
     if (!f.role)                    e.role = 'Role is required.';
     if (!f.employment_type)         e.employment_type = 'Employment type is required.';
-    if (!f.department_id)           e.department_id = 'Department is required.';
-    if (!f.designation_id)          e.designation_id = 'Designation is required.';
+    if (f.role !== 'ceo') {
+      if (!f.department_id)           e.department_id = 'Department is required.';
+      if (!f.designation_id)          e.designation_id = 'Designation is required.';
+    }
     // New password (edit only): min 8 chars, at least one letter and one capital.
     if (f.new_password) {
       if (f.new_password.length < 8) e.new_password = 'At least 8 characters.';
@@ -250,6 +252,7 @@ export default function AddEditEmployeePage() {
         { value: 'employee', label: 'Employee' },
         { value: 'tl',       label: 'Team Lead (TL)' },
         { value: 'manager',  label: 'Manager' },
+        { value: 'ceo',      label: 'Chief Executive Officer' },
       ];
     }
     if (authRole === 'manager') {
