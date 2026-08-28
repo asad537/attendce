@@ -231,11 +231,7 @@ export default function AddEditEmployeePage() {
           new_password:   form.new_password || undefined,
         });
         toast.success('Employee updated.');
-        if (res.temporary_password && res.user) {
-          setTempPwd({ name: res.user.name, password: res.temporary_password, email: res.user.email });
-        } else {
-          navigate(-1);
-        }
+        navigate(-1);
       } else {
         const res = await userService.createEmployee(form);
         toast.success(`${res.user.name} added successfully!`);

@@ -100,7 +100,7 @@ export interface CreateEmployeePayload {
   birth_date: string;           // YYYY-MM-DD
   email: string;
   phone: string;
-  role: 'employee' | 'tl' | 'manager';
+  role: Role;
   employment_type: EmploymentType;
   work_mode: WorkMode;
   department_id: number;
