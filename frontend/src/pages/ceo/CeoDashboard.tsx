@@ -58,7 +58,7 @@ export default function CeoDashboard() {
   const total = team.length;
   const percent = (n: number) => total ? Math.round(n / total * 100) : 0;
   
-  const { events } = useCalendarEvents();
+  const { events, categories } = useCalendarEvents();
   const [calendarDate, setCalendarDate] = useState(new Date());
   const handlePrevMonth = () => setCalendarDate(subMonths(calendarDate, 1));
   const handleNextMonth = () => setCalendarDate(addMonths(calendarDate, 1));
@@ -160,25 +160,44 @@ export default function CeoDashboard() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Schedules</h3>
-              <span className="text-xs font-medium bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                {format(calendarDate, 'MMM yyyy')} v
-              </span>
+              <div className="relative">
+                <select 
+                  className="appearance-none cursor-pointer flex items-center gap-1 text-xs font-medium bg-emerald-50 text-emerald-700 pl-3 pr-8 py-1.5 rounded-full hover:bg-emerald-100 transition-colors outline-none"
+                  value={format(calendarDate, 'yyyy-MM')}
+                  onChange={(e) => {
+                    setCalendarDate(parseISO(`${e.target.value}-01`));
+                  }}
+                >
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - 12 + i);
+                    const val = format(d, 'yyyy-MM');
+                    const label = format(d, 'MMM yyyy');
+                    return <option key={val} value={val}>{label}</option>;
+                  })}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                  <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 overflow-x-hidden custom-scrollbar">
               {(() => {
-                 const monthEvents = events.filter(e => e.date.startsWith(format(calendarDate, 'yyyy-MM'))).slice(0, 3);
+                 const monthEvents = events.filter(e => e.date.startsWith(format(calendarDate, 'yyyy-MM'))).sort((a, b) => a.date.localeCompare(b.date));
                  if (monthEvents.length === 0) return <p className="text-sm text-gray-500 italic">No schedules this month.</p>;
-                 return monthEvents.map(ev => (
-                   <ScheduleCard 
-                     key={ev.id} 
-                     category={ev.type === 'talent' ? 'Talent Acquisition' : ev.type === 'dev' ? 'Employee Development' : 'Workplace Engagement'}
-                     title={ev.title} 
-                     room={ev.location || 'Online'} 
-                     time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`} 
-                     color={ev.type === 'talent' ? 'text-emerald-500' : ev.type === 'dev' ? 'text-blue-500' : 'text-purple-500'} 
-                   />
-                 ));
+                 return monthEvents.map(ev => {
+                   const cat = categories.find(c => c.key === ev.type);
+                   return (
+                     <ScheduleCard 
+                       key={ev.id} 
+                       category={cat?.label || ev.type}
+                       title={ev.title} 
+                       room={ev.location || 'Online'} 
+                       time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`} 
+                       color={cat?.color || 'text-gray-500'} 
+                     />
+                   );
+                 });
               })()}
             </div>
           </div>
@@ -342,9 +361,10 @@ function StatCard({ title, value, suffix, message }: { title: string, value: str
 }
 
 function ScheduleCard({ category, title, room, time, color }: { category: string, title: string, room: string, time: string, color: string }) {
+  const isHex = color?.startsWith('#');
   return (
     <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-2">
-      <span className={`text-[10px] font-bold ${color}`}>{category}</span>
+      <span className={`text-[10px] font-bold ${!isHex ? color : ''}`} style={isHex ? { color } : undefined}>{category}</span>
       <h4 className="font-bold text-sm text-gray-800">{title}</h4>
       <div className="flex justify-between items-center mt-1">
         <div className="flex items-center gap-2">
