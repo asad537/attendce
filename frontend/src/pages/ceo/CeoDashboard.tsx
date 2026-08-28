@@ -33,13 +33,17 @@ export default function CeoDashboard() {
   const [perfMonths, setPerfMonths] = useState<number>(6);
 
   const load = useCallback(async () => {
-    // Settle each request independently so one transient failure (a rate-limit
-    // hiccup or an aborted request on a fast reload) doesn't blank the whole
-    // dashboard or fire a scary error toast.
+    // Give each request a second chance so a transient failure (a rate-limit
+    // hiccup or a request aborted on a fast reload) self-heals, and settle them
+    // independently so one failure never blanks the dashboard or fires a toast.
+    const withRetry = async <T,>(fn: () => Promise<T>): Promise<T> => {
+      try { return await fn(); }
+      catch { await new Promise(r => setTimeout(r, 700)); return fn(); }
+    };
     const [todayRes, teamRes, leavesRes] = await Promise.allSettled([
-      attendanceService.getToday(),
-      attendanceService.getTeamStatus(),
-      leaveService.getList({ status: 'pending', per_page: 5 }),
+      withRetry(() => attendanceService.getToday()),
+      withRetry(() => attendanceService.getTeamStatus()),
+      withRetry(() => leaveService.getList({ status: 'pending', per_page: 5 })),
     ]);
     if (todayRes.status === 'fulfilled') setAttendance(todayRes.value.attendance);
     if (teamRes.status === 'fulfilled') setTeam(teamRes.value);
@@ -53,11 +57,12 @@ export default function CeoDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Re-fetch the report stats whenever a range dropdown changes.
+  // Re-fetch the report stats whenever a range dropdown changes (retry once).
   useEffect(() => {
     let active = true;
     reportService.getDashboardStats({ months: perfMonths, period: attPeriod })
-      .then(stats => { if (active) setDstats(stats); })
+      .catch(() => new Promise(r => setTimeout(r, 700)).then(() => reportService.getDashboardStats({ months: perfMonths, period: attPeriod })))
+      .then(stats => { if (active && stats) setDstats(stats); })
       .catch(() => {});
     return () => { active = false; };
   }, [perfMonths, attPeriod]);
