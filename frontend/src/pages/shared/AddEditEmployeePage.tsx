@@ -206,7 +206,7 @@ export default function AddEditEmployeePage() {
     try {
       if (isEdit) {
         if (!editUser) return;
-        await userService.update(editUser.id, {
+        const res = await userService.update(editUser.id, {
           first_name:     form.first_name,
           last_name:      form.last_name,
           gender:         form.gender,
@@ -226,7 +226,11 @@ export default function AddEditEmployeePage() {
           new_password:   form.new_password || undefined,
         });
         toast.success('Employee updated.');
-        navigate(-1);
+        if (res.temporary_password && res.user) {
+          setTempPwd({ name: res.user.name, password: res.temporary_password, email: res.user.email });
+        } else {
+          navigate(-1);
+        }
       } else {
         const res = await userService.createEmployee(form);
         toast.success(`${res.user.name} added successfully!`);
