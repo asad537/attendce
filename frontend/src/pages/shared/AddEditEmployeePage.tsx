@@ -33,6 +33,7 @@ const emptyForm = (): CreateEmployeePayload => ({
   phone: '',
   role: 'employee',
   employment_type: 'full_time',
+  work_mode: 'office',
   department_id: 0,
   designation_id: 0,
   shift_id: null,
@@ -105,6 +106,7 @@ export default function AddEditEmployeePage() {
           // (not editable here) falls back to a valid value.
           role:            (['employee', 'tl', 'manager', 'ceo'].includes(userRes.role) ? userRes.role : 'employee') as any,
           employment_type: userRes.employment_type,
+          work_mode:       userRes.work_mode || 'office',
           department_id:   userRes.department?.id || 0,
           designation_id:  userRes.designation?.id || 0,
           shift_id:        userRes.shift?.id || null,
@@ -217,6 +219,7 @@ export default function AddEditEmployeePage() {
           phone:          form.phone,
           role:           form.role,
           employment_type: form.employment_type,
+          work_mode:      form.work_mode,
           status:         form.status,
           department_id:  form.department_id,
           designation_id: form.designation_id,

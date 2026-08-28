@@ -60,6 +60,7 @@ export interface User {
   allowed_ip?: string;
   role: Role;
   employment_type: EmploymentType;
+  work_mode?: WorkMode;
   status: UserStatus;
   current_status: CurrentStatus;
   department?: Department;
@@ -101,6 +102,7 @@ export interface CreateEmployeePayload {
   phone: string;
   role: 'employee' | 'tl' | 'manager';
   employment_type: EmploymentType;
+  work_mode: WorkMode;
   department_id: number;
   designation_id: number;
   shift_id?: number | null;

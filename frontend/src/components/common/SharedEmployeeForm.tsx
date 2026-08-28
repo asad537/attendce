@@ -259,6 +259,20 @@ export function SharedEmployeeForm({
               <Err field="employment_type" />
             </div>
             <div>
+              <label className="label">Work Mode <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Icons.Building />
+                </div>
+                <select className={`input pl-10 ${errors.work_mode ? 'border-red-400' : ''}`} value={form.work_mode} onChange={onField('work_mode')}>
+                  <option value="office">Onsite</option>
+                  <option value="remote">Remote</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+              <Err field="work_mode" />
+            </div>
+            <div>
               <label className="label">Allowed IP Address (Optional)</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">

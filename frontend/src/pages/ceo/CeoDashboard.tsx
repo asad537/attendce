@@ -28,26 +28,44 @@ export default function CeoDashboard() {
   const [dstats, setDstats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Dropdown-driven ranges for the Attendance Report + Team Performance cards.
+  const [attPeriod, setAttPeriod] = useState<'this_month' | 'last_month' | 'this_week'>('this_month');
+  const [perfMonths, setPerfMonths] = useState<number>(6);
+
   const load = useCallback(async () => {
-    try {
-      const [today, teamStatus, leaves, stats] = await Promise.all([
-        attendanceService.getToday(),
-        attendanceService.getTeamStatus(),
-        leaveService.getList({ status: 'pending', per_page: 5 }),
-        reportService.getDashboardStats(),
-      ]);
-      setAttendance(today.attendance);
-      setTeam(teamStatus);
-      setPending(leaves.data);
-      setDstats(stats);
-    } catch {
+    // Give each request a second chance so a transient failure (a rate-limit
+    // hiccup or a request aborted on a fast reload) self-heals, and settle them
+    // independently so one failure never blanks the dashboard or fires a toast.
+    const withRetry = async <T,>(fn: () => Promise<T>): Promise<T> => {
+      try { return await fn(); }
+      catch { await new Promise(r => setTimeout(r, 700)); return fn(); }
+    };
+    const [todayRes, teamRes, leavesRes] = await Promise.allSettled([
+      withRetry(() => attendanceService.getToday()),
+      withRetry(() => attendanceService.getTeamStatus()),
+      withRetry(() => leaveService.getList({ status: 'pending', per_page: 5 })),
+    ]);
+    if (todayRes.status === 'fulfilled') setAttendance(todayRes.value.attendance);
+    if (teamRes.status === 'fulfilled') setTeam(teamRes.value);
+    if (leavesRes.status === 'fulfilled') setPending(leavesRes.value.data);
+    // Only surface an error if everything failed (e.g. offline / auth lost).
+    if (todayRes.status === 'rejected' && teamRes.status === 'rejected' && leavesRes.status === 'rejected') {
       toast.error('Failed to load dashboard');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Re-fetch the report stats whenever a range dropdown changes (retry once).
+  useEffect(() => {
+    let active = true;
+    reportService.getDashboardStats({ months: perfMonths, period: attPeriod })
+      .catch(() => new Promise(r => setTimeout(r, 700)).then(() => reportService.getDashboardStats({ months: perfMonths, period: attPeriod })))
+      .then(stats => { if (active && stats) setDstats(stats); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [perfMonths, attPeriod]);
 
   const PRESENT_SET = ['working', 'on_break', 'checked_out', 'work_from_home'];
   const stats = useMemo(() => ({
@@ -219,9 +237,22 @@ export default function CeoDashboard() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Attendance Rate</p>
               </div>
-              <button className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg flex items-center gap-1">This Month v</button>
+              <div className="relative shrink-0">
+                <select
+                  className="appearance-none cursor-pointer text-xs font-semibold bg-emerald-50 text-emerald-700 pl-3 pr-8 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors outline-none"
+                  value={attPeriod}
+                  onChange={(e) => setAttPeriod(e.target.value as 'this_month' | 'last_month' | 'this_week')}
+                >
+                  <option value="this_month">This Month</option>
+                  <option value="last_month">Last Month</option>
+                  <option value="this_week">This Week</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                  <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
             </div>
-            
+
             {/* Heatmap simulation */}
             <div className="relative pt-4">
               <div className="flex mb-2">
@@ -265,9 +296,22 @@ export default function CeoDashboard() {
                    <span className="text-xs text-gray-400">vs last month · attendance</span>
                 </div>
               </div>
-              <button className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg flex items-center gap-1">Last 6 Months v</button>
+              <div className="relative shrink-0">
+                <select
+                  className="appearance-none cursor-pointer text-xs font-semibold bg-emerald-50 text-emerald-700 pl-3 pr-8 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors outline-none"
+                  value={perfMonths}
+                  onChange={(e) => setPerfMonths(Number(e.target.value))}
+                >
+                  <option value={3}>Last 3 Months</option>
+                  <option value={6}>Last 6 Months</option>
+                  <option value={12}>Last 12 Months</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                  <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
             </div>
-            
+
             <div className="h-48 w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={performanceData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>

@@ -76,10 +76,24 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
   const [actionLoading, setActionLoading] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const [today, teamStatus, leaves] = await Promise.all([attendanceService.getToday(), attendanceService.getTeamStatus(), leaveService.getList({ status: 'pending', per_page: 5 })]);
-      setAttendance(today.attendance); setTeam(teamStatus); setPending(leaves.data);
-    } catch { toast.error('Failed to load dashboard'); } finally { setLoading(false); }
+    // Retry each request once and settle independently so a transient failure
+    // self-heals and never blanks the dashboard or fires a spurious toast.
+    const withRetry = async <T,>(fn: () => Promise<T>): Promise<T> => {
+      try { return await fn(); }
+      catch { await new Promise(r => setTimeout(r, 700)); return fn(); }
+    };
+    const [todayRes, teamRes, leavesRes] = await Promise.allSettled([
+      withRetry(() => attendanceService.getToday()),
+      withRetry(() => attendanceService.getTeamStatus()),
+      withRetry(() => leaveService.getList({ status: 'pending', per_page: 5 })),
+    ]);
+    if (todayRes.status === 'fulfilled') setAttendance(todayRes.value.attendance);
+    if (teamRes.status === 'fulfilled') setTeam(teamRes.value);
+    if (leavesRes.status === 'fulfilled') setPending(leavesRes.value.data);
+    if (todayRes.status === 'rejected' && teamRes.status === 'rejected' && leavesRes.status === 'rejected') {
+      toast.error('Failed to load dashboard');
+    }
+    setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
 

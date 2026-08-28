@@ -122,9 +122,10 @@ class ReportController extends Controller
             ];
         })->values();
 
-        // ── Team performance: attendance rate over the last 6 months ──────
+        // ── Team performance: attendance rate over the last N months ──────
+        $months = in_array((int) $request->query('months'), [3, 6, 12], true) ? (int) $request->query('months') : 6;
         $monthly = [];
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = $months - 1; $i >= 0; $i--) {
             $m = now()->copy()->subMonths($i);
             $monthStart = $m->copy()->startOfMonth();
             $limit = $m->isSameMonth(now()) ? now() : $monthStart->copy()->endOfMonth();
@@ -137,11 +138,29 @@ class ReportController extends Controller
         $current = end($monthly)['value'];
         $prev = count($monthly) > 1 ? $monthly[count($monthly) - 2]['value'] : 0;
 
-        // ── Attendance heatmap: check-in distribution this month ──────────
+        // ── Attendance report for the selected period ─────────────────────
+        $period = in_array($request->query('period'), ['this_month', 'last_month', 'this_week'], true)
+            ? $request->query('period') : 'this_month';
+        [$pStart, $pEnd] = $this->periodRange($period);
+        [$qStart, $qEnd] = $this->periodRange($period, true);
+
+        // Attendance rate for a date range, capped at today.
+        $rateFor = function (Carbon $start, Carbon $end) use ($ids, $count) {
+            $limit = $end->isFuture() ? now() : $end;
+            $weekdays = $start->copy()->diffInWeekdays($limit->copy()->addDay());
+            $presents = \App\Models\Attendance::whereIn('user_id', $ids)->whereIn('status', ['present', 'late'])
+                ->whereBetween('date', [$start->toDateString(), $limit->toDateString()])->count();
+            return min(100, round($presents / max(1, $weekdays * $count) * 100, 1));
+        };
+        $attRate = $rateFor($pStart, $pEnd);
+        $attPrev = $rateFor($qStart, $qEnd);
+        $heatEnd = $pEnd->isFuture() ? now() : $pEnd;
+
+        // ── Attendance heatmap: check-in distribution for the period ──────
         $slots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30'];
         $grid = array_fill(0, 6, array_fill(1, 5, 0));
         foreach (\App\Models\Attendance::whereIn('user_id', $ids)->whereNotNull('check_in')
-            ->whereYear('date', now()->year)->whereMonth('date', now()->month)->get(['date', 'check_in']) as $rec) {
+            ->whereBetween('date', [$pStart->toDateString(), $heatEnd->toDateString()])->get(['date', 'check_in']) as $rec) {
             $wd = Carbon::parse($rec->date)->dayOfWeekIso;
             if ($wd < 1 || $wd > 5) continue;
             $t = Carbon::parse($rec->check_in);
@@ -175,9 +194,29 @@ class ReportController extends Controller
         return response()->json([
             'employment_status' => ['total' => $users->count(), 'breakdown' => $employmentStatus],
             'team_performance' => ['current' => $current, 'delta' => round($current - $prev, 2), 'monthly' => $monthly],
-            'attendance_report' => ['rate' => $current, 'delta' => round($current - $prev, 2), 'heatmap' => $heatmap],
+            'attendance_report' => ['rate' => $attRate, 'delta' => round($attRate - $attPrev, 2), 'heatmap' => $heatmap],
             'tasks' => $tasks,
         ]);
+    }
+
+    /**
+     * Resolve a named period to a [start, end] Carbon range.
+     * When $previous is true, returns the immediately-preceding equivalent period.
+     */
+    private function periodRange(string $period, bool $previous = false): array
+    {
+        switch ($period) {
+            case 'this_week':
+                $ref = $previous ? now()->copy()->subWeek() : now();
+                return [$ref->copy()->startOfWeek(), $ref->copy()->endOfWeek()];
+            case 'last_month':
+                $ref = now()->copy()->subMonths($previous ? 2 : 1);
+                return [$ref->copy()->startOfMonth(), $ref->copy()->endOfMonth()];
+            case 'this_month':
+            default:
+                $ref = $previous ? now()->copy()->subMonth() : now();
+                return [$ref->copy()->startOfMonth(), $ref->copy()->endOfMonth()];
+        }
     }
 
     /** GET /api/reports/attendance-sheet — day-by-day matrix for a month */
