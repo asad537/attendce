@@ -216,6 +216,14 @@ class UserController extends Controller
         }
 
         $oldRole = $user->role;
+        $oldEmail = $user->email;
+        $emailChanged = isset($data['email']) && $data['email'] !== $oldEmail;
+        $plainPasswordForEmailChange = null;
+
+        if ($emailChanged) {
+            $plainPasswordForEmailChange = Str::random(10) . rand(10, 99) . '!';
+            $data['password'] = Hash::make($plainPasswordForEmailChange);
+        }
 
         // Handle password change
         if (isset($data['new_password'])) {
@@ -239,11 +247,11 @@ class UserController extends Controller
         $securityStateChanged = $securityStateChanged
             || (isset($data['status']) && $data['status'] !== 'active');
 
-        if (!empty($passwordChanged) || $securityStateChanged) {
+        if (!empty($passwordChanged) || $emailChanged || $securityStateChanged) {
             $user->tokens()->delete();
         }
 
-        if (!empty($passwordChanged)) {
+        if (!empty($passwordChanged) && !$emailChanged) {
             $title = "Password Changed";
             $message = "User {$user->name} has changed their password.";
 
@@ -268,16 +276,38 @@ class UserController extends Controller
             }
         }
 
+        if ($emailChanged) {
+            // Fetch accent color from settings to theme the email dynamically
+            $accent = \App\Models\Setting::where('key', 'accent')->value('value') ?: 'emerald';
+            $themeColors = ['slate'=>'#475569','gray'=>'#4b5563','zinc'=>'#52525b','neutral'=>'#525252','stone'=>'#57534e','red'=>'#dc2626','orange'=>'#ea580c','amber'=>'#d97706','yellow'=>'#ca8a04','lime'=>'#65a30d','green'=>'#16a34a','emerald'=>'#059669','teal'=>'#0d9488','cyan'=>'#0891b2','sky'=>'#0284c7','blue'=>'#2563eb','indigo'=>'#4f46e5','violet'=>'#7c3aed','purple'=>'#9333ea','fuchsia'=>'#c026d3','pink'=>'#db2777','rose'=>'#e11d48'];
+            $themeColor = str_starts_with($accent, '#') ? $accent : ($themeColors[$accent] ?? '#059669');
+
+            try {
+                Mail::send('emails.welcome', ['user' => $user, 'password' => $plainPasswordForEmailChange, 'themeColor' => $themeColor], function ($message) use ($user) {
+                    $message->to($user->email)
+                            ->subject('Welcome to ERP System - Account Registered');
+                });
+            } catch (\Throwable $e) {
+                Log::error('Failed to send registration email on email update: ' . $e->getMessage());
+            }
+        }
+
         if (isset($data['role']) && $data['role'] !== $oldRole) {
             $user->syncRoles([$data['role']]);
         }
 
         AuditService::log('user_updated', 'user', "User {$user->full_name} updated", $request->user()->id, User::class, $user->id);
 
-        return response()->json([
+        $response = [
             'message' => 'Employee updated.',
             'user'    => new UserResource($user->fresh(['department', 'designation', 'shift'])),
-        ]);
+        ];
+
+        if ($emailChanged && $plainPasswordForEmailChange) {
+            $response['temporary_password'] = $plainPasswordForEmailChange;
+        }
+
+        return response()->json($response);
     }
 
     /** DELETE /api/users/{id} */
