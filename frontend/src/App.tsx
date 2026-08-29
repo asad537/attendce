@@ -43,6 +43,7 @@ import SettingsPage from './pages/shared/SettingsPage';
 import AttendanceSheetPage from './pages/shared/AttendanceSheetPage';
 import ResignationPage from './pages/shared/ResignationPage';
 import CeoPayroll from './pages/ceo/CeoPayroll';
+import NotificationsPage from './pages/shared/NotificationsPage';
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -183,6 +184,12 @@ function App() {
       </Route>
 
       {/* Shared routes for user management */}
+      <Route path="/notifications" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl', 'employee']} />}>
+        <Route element={<DashboardLayout />}>
+          <Route index element={<NotificationsPage />} />
+        </Route>
+      </Route>
+
       <Route path="/users" element={<ProtectedRoute allowedRoles={['ceo', 'manager', 'tl']} />}>
         <Route element={<DashboardLayout />}>
           <Route path="new" element={<AddEditEmployeePage />} />
