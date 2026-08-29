@@ -194,8 +194,10 @@ export default function CeoDashboard() {
                   }}
                 >
                   {Array.from({ length: 24 }).map((_, i) => {
-                    const d = new Date();
-                    d.setMonth(d.getMonth() - 12 + i);
+                    // Build from the 1st so day-of-month never rolls a short
+                    // month over (e.g. Feb 30 → Mar), which duplicated months.
+                    const now = new Date();
+                    const d = new Date(now.getFullYear(), now.getMonth() - 12 + i, 1);
                     const val = format(d, 'yyyy-MM');
                     const label = format(d, 'MMM yyyy');
                     return <option key={val} value={val}>{label}</option>;
