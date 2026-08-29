@@ -139,6 +139,7 @@ class AttendanceController extends Controller
                 'working_hours'  => $u->todayAttendance ? $u->todayAttendance->working_hours : 0,
                 'is_late'        => $u->todayAttendance ? $u->todayAttendance->is_late : false,
                 'late_minutes'   => $u->todayAttendance ? $u->todayAttendance->late_minutes : 0,
+                'work_mode'      => $u->todayAttendance ? $u->todayAttendance->work_mode : null,
             ];
         });
 

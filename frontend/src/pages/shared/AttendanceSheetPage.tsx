@@ -15,10 +15,11 @@ const CODE_STYLE: Record<string, string> = {
   W: 'bg-blue-100 text-blue-700',
   H: 'bg-purple-100 text-purple-700',
   WE: 'bg-gray-100 text-gray-300',
+  WOD: 'bg-indigo-100 text-indigo-700',
   '': 'text-gray-300',
 };
 const LEGEND: [string, string][] = [
-  ['P', 'Present'], ['A', 'Absent'], ['L', 'Leave'], ['W', 'Work from home'], ['H', 'Holiday'], ['WE', 'Weekend'],
+  ['P', 'Present'], ['A', 'Absent'], ['L', 'Leave'], ['W', 'Work from home'], ['H', 'Holiday'], ['WE', 'Weekend'], ['WOD', 'Weekend Work'],
 ];
 const STATUS_OPTIONS: { status: 'present' | 'late' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday'; label: string }[] = [
   { status: 'present', label: 'Present' },
@@ -81,7 +82,7 @@ export default function AttendanceSheetPage() {
 
     <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-gray-600 print:mb-2">
       {LEGEND.map(([code, label]) => <span key={code} className="flex items-center gap-1.5">
-        <span className={`grid h-5 w-5 place-items-center rounded text-[10px] font-bold ${CODE_STYLE[code]}`}>{code === 'WE' ? '·' : code}</span>{label}
+        <span className={`grid h-5 min-w-[20px] place-items-center rounded px-1 text-[10px] font-bold ${CODE_STYLE[code]}`}>{code === 'WE' ? '·' : code}</span>{label}
       </span>)}
       {canEdit && <span className="ml-auto text-[11px] font-medium text-emerald-600 print:hidden">Tip: click any day cell to change it.</span>}
     </div>
@@ -110,7 +111,7 @@ export default function AttendanceSheetPage() {
               return <td key={c.day} className="px-0 py-1.5">
                 <span
                   onClick={e => { if (clickable) { const rect = e.currentTarget.getBoundingClientRect(); setEditing({ userId: r.user.id, day: c.day, x: rect.left, y: rect.bottom }); } }}
-                  className={`relative mx-auto grid h-6 w-6 place-items-center rounded text-[10px] font-bold ${CODE_STYLE[c.code]} ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-emerald-300' : ''}`}>
+                  className={`relative mx-auto grid h-6 min-w-[24px] w-fit place-items-center rounded px-1 text-[10px] font-bold ${CODE_STYLE[c.code]} ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-emerald-300' : ''}`}>
                   {cellText(c)}{c.late && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-amber-500" title="Late" />}
                 </span>
               </td>;

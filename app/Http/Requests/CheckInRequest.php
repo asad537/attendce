@@ -11,7 +11,7 @@ class CheckInRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'work_mode'    => 'sometimes|in:office,remote,hybrid',
+            'work_mode'    => 'sometimes|in:office,remote,hybrid,weekend',
             'note'         => 'nullable|string|max:500',
             'check_in_lat' => 'nullable|numeric|between:-90,90',
             'check_in_lng' => 'nullable|numeric|between:-180,180',

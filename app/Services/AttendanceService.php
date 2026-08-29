@@ -21,8 +21,10 @@ class AttendanceService
         $today = today()->toDateString();
         $now = now();
         
+        $isWeekendWork = ($data['work_mode'] ?? '') === 'weekend';
+
         // Prevent check in after working hours
-        if ($user->shift) {
+        if ($user->shift && !$isWeekendWork) {
             $shiftEnd = \Carbon\Carbon::parse($today . ' ' . $user->shift->end_time);
             if ($now->greaterThanOrEqualTo($shiftEnd)) {
                 throw new \Exception('You cannot check in after your working hours have ended.');
@@ -78,7 +80,7 @@ class AttendanceService
             }
         }
 
-        if ($shift) {
+        if ($shift && !$isWeekendWork) {
             $shiftStart  = Carbon::parse($today . ' ' . $shift->start_time);
             $graceEnd    = $shiftStart->copy()->addMinutes($shift->grace_minutes);
             if ($now->gt($graceEnd)) {

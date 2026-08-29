@@ -125,7 +125,7 @@ export interface CreateEmployeeResponse {
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export type AttendanceStatus = 'present' | 'absent' | 'late' | 'half_day' | 'on_leave' | 'holiday' | 'work_from_home' | 'weekend';
-export type WorkMode = 'office' | 'remote' | 'hybrid';
+export type WorkMode = 'office' | 'remote' | 'hybrid' | 'weekend';
 export type BreakType = 'lunch' | 'short' | 'prayer' | 'other';
 
 export interface BreakRecord {
@@ -285,6 +285,7 @@ export interface TeamMemberStatus {
   working_hours: number;
   is_late: boolean;
   late_minutes: number;
+  work_mode?: WorkMode | null;
 }
 
 export interface DailySnapshot {

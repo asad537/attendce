@@ -179,12 +179,13 @@ class ReportService
                 $rec = $byUserDay[$user->id][$n] ?? null;
                 $late = false;
                 if (isset($holidays[$n])) { $code = 'H'; $totals['holiday']++; }
-                elseif ($date->isWeekend()) { $code = 'WE'; }
                 elseif (isset($leaveDays[$user->id][$n])) { $code = 'L'; $totals['leave']++; }
                 elseif (isset($wfhDays[$user->id][$n])) { $code = 'W'; $totals['wfh']++; }
+                elseif ($rec && $rec->work_mode === 'weekend') { $code = 'WOD'; $totals['present']++; }
                 elseif ($rec && $rec->work_mode === 'remote') { $code = 'W'; $totals['wfh']++; }
                 elseif ($rec && in_array($rec->status, ['present', 'late'])) { $code = 'P'; $totals['present']++; $late = (bool) $rec->is_late; if ($late) $totals['late']++; }
                 elseif ($rec && $rec->status === 'on_leave') { $code = 'L'; $totals['leave']++; }
+                elseif ($date->isWeekend()) { $code = 'WE'; }
                 elseif ($date->toDateString() > $todayStr) { $code = ''; }
                 else { $code = 'A'; $totals['absent']++; }
                 $days[] = ['day' => $n, 'code' => $code, 'late' => $late];

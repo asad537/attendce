@@ -288,7 +288,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
                   </div>
                 </td>
                 <td className="text-sm text-gray-600">{member.department || 'N/A'}</td>
-                <td><StatusBadge status={member.current_status} /></td>
+                <td><StatusBadge status={member.current_status} />{member.work_mode === 'weekend' && <span className="ml-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">WOD</span>}</td>
                 <td className="text-sm">{member.check_in ? <span className="inline-flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{format(new Date(member.check_in), 'hh:mm a')}</span> : '—'}</td>
                 <td className="text-sm">{member.check_out ? format(new Date(member.check_out), 'hh:mm a') : '—'}</td>
                 <td className="text-sm">{member.working_hours ? `${member.working_hours}h` : (member.check_in && !member.check_out ? <span className="font-medium text-emerald-600">Live</span> : '—')}</td>

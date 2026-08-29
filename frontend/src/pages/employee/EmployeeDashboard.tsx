@@ -53,6 +53,16 @@ export default function EmployeeDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [breakLoading, setBreakLoading] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [activeTab, setActiveTab] = useState<'regular' | 'weekend'>(() => {
+    const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
+    return isWeekend ? 'weekend' : 'regular';
+  });
+
+  useEffect(() => {
+    if (attendance?.work_mode === 'weekend') {
+      setActiveTab('weekend');
+    }
+  }, [attendance?.work_mode]);
 
   const load = useCallback(async () => {
     try {
@@ -79,7 +89,7 @@ export default function EmployeeDashboard() {
   const handleCheckIn = async () => {
     setActionLoading(true);
     try {
-      const result = await attendanceService.checkIn({ work_mode: 'office' });
+      const result = await attendanceService.checkIn({ work_mode: activeTab === 'weekend' ? 'weekend' : 'office' });
       await Promise.all([load(), refreshUser()]);
       toast.success(result.is_late ? `Checked in — ${result.late_minutes} min late` : 'Checked in successfully');
     } catch (error: any) {
@@ -155,6 +165,18 @@ export default function EmployeeDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-4 p-3 sm:p-4 lg:p-5">
       <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="mb-6 flex gap-4 border-b border-gray-200">
+          <button onClick={() => setActiveTab('regular')} className={`pb-3 font-semibold transition outline-none ${activeTab === 'regular' ? 'border-b-2 border-emerald-500 text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}>Regular Workday</button>
+          <button 
+            onClick={() => setActiveTab('weekend')} 
+            disabled={!(new Date().getDay() === 0 || new Date().getDay() === 6) && attendance?.work_mode !== 'weekend'}
+            title={!(new Date().getDay() === 0 || new Date().getDay() === 6) && attendance?.work_mode !== 'weekend' ? "Only available on weekends" : ""}
+            className={`pb-3 font-semibold transition outline-none ${activeTab === 'weekend' ? 'border-b-2 border-emerald-500 text-emerald-600' : ((new Date().getDay() === 0 || new Date().getDay() === 6) || attendance?.work_mode === 'weekend') ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
+          >
+            Work On Weekend (WOD)
+          </button>
+        </div>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-3">
@@ -203,6 +225,7 @@ export default function EmployeeDashboard() {
         </div>
       </section>
 
+      {activeTab === 'regular' && (
       <section className="overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold text-gray-900">Workday Timeline</h2>
@@ -364,11 +387,21 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </section>
+      )}
 
       <section className="grid gap-4 md:grid-cols-3">
         <SummaryCard icon="clock" tone="green" label="Worked Time" value={duration(workday.worked)} note={checkedIn ? 'Live' : checkedOut ? 'Completed' : 'Today'} />
-        <SummaryCard icon="calendar" tone="blue" label="Expected Work Time" value={duration(workday.expected, false)} note={`${format(workday.shiftStart, 'hh:mm a')} – ${format(workday.shiftEnd, 'hh:mm a')}`} />
-        <SummaryCard icon="timer" tone="orange" label="Remaining Time" value={duration(workday.remaining)} note={`Until ${format(workday.shiftEnd, 'hh:mm a')}`} />
+        {activeTab === 'regular' ? (
+          <>
+            <SummaryCard icon="calendar" tone="blue" label="Expected Work Time" value={duration(workday.expected, false)} note={`${format(workday.shiftStart, 'hh:mm a')} – ${format(workday.shiftEnd, 'hh:mm a')}`} />
+            <SummaryCard icon="timer" tone="orange" label="Remaining Time" value={duration(workday.remaining)} note={`Until ${format(workday.shiftEnd, 'hh:mm a')}`} />
+          </>
+        ) : (
+          <>
+            <SummaryCard icon="calendar" tone="blue" label="Expected Work Time" value="Flexible" note="Weekend Work" />
+            <SummaryCard icon="timer" tone="orange" label="Remaining Time" value="–" note="No strict limit" />
+          </>
+        )}
       </section>
 
       <section className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
