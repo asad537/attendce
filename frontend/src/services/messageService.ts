@@ -1,7 +1,7 @@
 import api from './api';
 import { sidebarService } from './sidebarService';
 
-export interface MessageUser { id: number; name: string; email: string; avatar?: string | null; avatar_url?: string | null }
+export interface MessageUser { id: number; name: string; email: string; role?: string; designation?: string | null; avatar?: string | null; avatar_url?: string | null }
 export interface MessageAttachment { url: string; name: string; mime: string; size: number; is_image: boolean }
 export interface InboxMessage {
   id: number; subject: string; body: string; label?: string | null; is_draft: boolean; is_read: boolean;

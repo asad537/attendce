@@ -51,7 +51,7 @@ class MessageController extends Controller
 
     public function recipients(Request $request): JsonResponse
     {
-        $users = User::active()->whereKeyNot($request->user()->id)->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role']);
+        $users = User::active()->with('designation:id,title')->whereKeyNot($request->user()->id)->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role', 'designation_id']);
         return response()->json(['users' => $users->map(fn ($user) => $this->userPayload($user))]);
     }
 
@@ -59,9 +59,9 @@ class MessageController extends Controller
     {
         $current = $request->user();
         $search = trim((string) $request->get('search', ''));
-        $users = User::active()->whereKeyNot($current->id)
+        $users = User::active()->with('designation:id,title')->whereKeyNot($current->id)
             ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
-            ->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role']);
+            ->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role', 'designation_id']);
 
         $conversations = $users->map(function ($user) use ($current) {
             $base = Message::where('is_draft', false)->where(function ($query) use ($current, $user) {
@@ -97,7 +97,7 @@ class MessageController extends Controller
             })->oldest()->limit(500)->get();
 
         return response()->json([
-            'user' => $this->userPayload($user),
+            'user' => $this->userPayload($user->loadMissing('designation:id,title')),
             'messages' => $messages->map(fn ($message) => $this->format($message, $current->id)),
         ]);
     }
@@ -200,7 +200,8 @@ class MessageController extends Controller
         if (! $user) return null;
         return [
             'id' => $user->id, 'name' => $user->name, 'email' => $user->email,
-            'role' => $user->role, 'avatar' => $user->avatar_url, 'avatar_url' => $user->avatar_url,
+            'role' => $user->role, 'designation' => optional($user->designation)->title,
+            'avatar' => $user->avatar_url, 'avatar_url' => $user->avatar_url,
         ];
     }
 
