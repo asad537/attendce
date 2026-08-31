@@ -57,10 +57,10 @@ class NotificationService
         });
     }
 
-    public static function notifyCeo(string $title, string $message, string $type = 'info', ?object $notifiable = null): void
+    public static function notifyCeo(string $title, string $message, string $type = 'info', ?object $notifiable = null, ?string $actionUrl = null): void
     {
         User::byRole('ceo')->active()->each(function (User $ceo) use ($title, $message, $type, $notifiable) {
-            self::send($ceo, $title, $message, $type, null, $notifiable);
+            self::send($ceo, $title, $message, $type, $actionUrl, $notifiable);
         });
     }
 

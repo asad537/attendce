@@ -17,7 +17,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   checked_out:    { label: 'Checked Out',    className: 'badge-gray' },
   // Leave
   pending:           { label: 'Pending',            className: 'badge-yellow' },
-  manager_approved:  { label: 'Mgr Approved',       className: 'badge-blue' },
+  manager_approved:  { label: 'Manager Approved',   className: 'badge-blue' },
   manager_rejected:  { label: 'Mgr Rejected',       className: 'badge-red' },
   approved:          { label: 'Approved',            className: 'badge-green' },
   rejected:          { label: 'Rejected',            className: 'badge-red' },

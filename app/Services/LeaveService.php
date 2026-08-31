@@ -85,7 +85,7 @@ class LeaveService
                 'New Leave Request',
                 "{$user->name} has requested {$days} day(s) of {$leaveType->name}.",
                 'info',
-                null,
+                '/ceo/leave-approvals',
                 $leave
             );
         }
@@ -95,7 +95,8 @@ class LeaveService
             'New Leave Request',
             "{$user->name} has requested {$days} day(s) of {$leaveType->name}.",
             'info',
-            $leave
+            $leave,
+            '/ceo/leave-approvals'
         );
 
         return $leave->load(['leaveType', 'user']);

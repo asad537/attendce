@@ -76,7 +76,7 @@ export default function ManagerLeaveApprovals() {
 
   const statusLabel: Record<string, string> = {
     pending:           'Pending',
-    manager_approved:  'Mgr Approved',
+    manager_approved:  'Manager Approved',
     manager_rejected:  'Mgr Rejected',
     approved:          'Approved',
     rejected:          'Rejected',
