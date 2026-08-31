@@ -373,7 +373,6 @@ export default function ProjectTickets() {
                                     }
                                 </span>
                             </span>
-                            <span className="text-gray-400">•••</span>
                         </div>
                         {canManage && <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors  ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
                         {visibleTickets
@@ -422,30 +421,9 @@ export default function ProjectTickets() {
                                                         strokeLinecap="round"
                                                         strokeLinejoin="round"
                                                         strokeWidth={2}
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                     />
                                                 </svg>
                                             </button>}
-                                            <button
-                                                className=" p-1 rounded transition-colors"
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                        d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
-                                                    />
-                                                </svg>
-                                            </button>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between">
