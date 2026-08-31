@@ -9,6 +9,7 @@ import { getErrorMessage } from '../../services/api';
 import { format, parseISO } from 'date-fns';
 
 type FilterStatus = '' | 'pending' | 'manager_approved' | 'manager_rejected' | 'approved' | 'rejected';
+const plainReason = (value = '') => { const element = document.createElement('div'); element.innerHTML = value; return (element.textContent || element.innerText || '').replace(/\s+/g, ' ').trim(); };
 
 interface ReviewState {
   leave: Leave;
@@ -182,7 +183,7 @@ export default function CeoLeaveApprovals() {
                     </td>
                     <td className="text-sm text-gray-700 font-medium">{l.days_requested}d</td>
                     <td className="max-w-[180px]">
-                      <p className="text-sm text-gray-500 truncate">{l.reason}</p>
+                      <p className="text-sm text-gray-500 truncate">{plainReason(l.reason)}</p>
                     </td>
                     <td>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeColor[l.status] || ''}`}>
@@ -285,7 +286,7 @@ export default function CeoLeaveApprovals() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Reason</span>
-                <span className="text-gray-700 text-right max-w-[200px]">{review.leave.reason}</span>
+                <span className="text-gray-700 text-right max-w-[200px]">{plainReason(review.leave.reason)}</span>
               </div>
             </div>
 
