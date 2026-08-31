@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Resignation;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -49,6 +50,9 @@ class ResignationController extends Controller
             'last_working_day' => $data['last_working_day'],
             'reason' => $data['reason'],
         ]);
+        $message = $auth->name . ' has submitted a resignation request.';
+        if ($auth->manager) NotificationService::send($auth->manager, 'New resignation request', $message, 'warning', '/resignation', $resignation);
+        NotificationService::notifyCeo('New resignation request', $message, 'warning', $resignation, '/resignation');
 
         return response()->json(['resignation' => $this->format($resignation->load('user'))], 201);
     }
@@ -71,6 +75,7 @@ class ResignationController extends Controller
             'reviewed_at' => now(),
             'remarks' => $data['remarks'] ?? null,
         ]);
+        NotificationService::send($resignation->user, 'Resignation request ' . $data['action'] . 'd', 'Your resignation request has been ' . $data['action'] . 'd.', $data['action'] === 'approve' ? 'success' : 'warning', '/resignation', $resignation);
 
         return response()->json(['resignation' => $this->format($resignation->load(['user', 'reviewer']))]);
     }
