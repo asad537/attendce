@@ -15,10 +15,17 @@ export interface CallState {
   error?: string | null;
 }
 
+const turnUrl = import.meta.env.VITE_TURN_URL;
+const turnUsername = import.meta.env.VITE_TURN_USERNAME;
+const turnCredential = import.meta.env.VITE_TURN_CREDENTIAL;
+
 const ICE: RTCConfiguration = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    ...(turnUrl && turnUsername && turnCredential
+      ? [{ urls: [turnUrl, turnUrl.replace('?transport=udp', '?transport=tcp')], username: turnUsername, credential: turnCredential }]
+      : []),
   ],
 };
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
