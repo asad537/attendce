@@ -6,6 +6,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import api, { getErrorMessage } from '../../services/api';
 import { CreateProjectPayload, projectService } from '../../services/projectService';
 import { userService } from '../../services/userService';
+import { useAuth } from '../../contexts/AuthContext';
 import { Project, ProjectStatus, User } from '../../types';
 
 const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', status, start_date: '', due_date: '' });
@@ -37,6 +38,8 @@ function fmtDateShort(value?: string | null) {
 
 export default function CeoProjects() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canCreateProjects = ['ceo', 'manager', 'tl'].includes(user?.role || '');
   const [projects, setProjects] = useState<Project[]>([]);
   const [leads, setLeads] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -202,13 +205,14 @@ export default function CeoProjects() {
             </svg>
           </button>
 
-          {/* New Project button */}
-          <button 
-            className="btn-primary h-10 px-5 text-sm font-semibold rounded-xl" 
-            onClick={() => { setEditing(null); setForm(blank()); setOpen(true); }}
-          >
-            + New project
-          </button>
+          {canCreateProjects && (
+            <button 
+              className="btn-primary h-10 px-5 text-sm font-semibold rounded-xl" 
+              onClick={() => { setEditing(null); setForm(blank()); setOpen(true); }}
+            >
+              + New project
+            </button>
+          )}
         </div>
       </div>
 
