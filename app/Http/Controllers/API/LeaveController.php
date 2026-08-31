@@ -11,6 +11,7 @@ use App\Models\Leave;
 use App\Models\LeaveBalance;
 use App\Models\User;
 use App\Services\LeaveService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -108,6 +109,7 @@ class LeaveController extends Controller
             $request->action,
             $request->remarks
         );
+        NotificationService::send($leave->user, 'Leave request ' . $request->action . 'd', 'Your leave request has been ' . $request->action . 'd by your manager.', $request->action === 'approve' ? 'success' : 'warning', '/leave-management', $leave);
 
         return response()->json([
             'message' => "Leave {$request->action}d by manager.",
@@ -126,6 +128,7 @@ class LeaveController extends Controller
             $request->action,
             $request->remarks
         );
+        NotificationService::send($leave->user, 'Leave request ' . $request->action . 'd', 'Your leave request has been ' . $request->action . 'd by the CEO.', $request->action === 'approve' ? 'success' : 'warning', '/leave-management', $leave);
 
         return response()->json([
             'message' => "Leave {$request->action}d by CEO.",

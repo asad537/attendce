@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WfhRequestResource;
 use App\Models\User;
 use App\Models\WfhRequest;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -89,6 +90,7 @@ class WfhRequestController extends Controller
             'remarks' => $request->remarks,
             'reviewed_at' => now(),
         ]);
+        NotificationService::send($wfhRequest->user, 'WFH request ' . $request->action . 'd', 'Your work from home request has been ' . $request->action . 'd.', $request->action === 'approve' ? 'success' : 'warning', '/wfh-management', $wfhRequest);
 
         return response()->json([
             'message' => "WFH request {$request->action}d.",
