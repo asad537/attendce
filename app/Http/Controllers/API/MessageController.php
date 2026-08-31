@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
@@ -101,6 +102,26 @@ class MessageController extends Controller
         ]);
     }
 
+    public function typing(Request $request): JsonResponse
+    {
+        $data = $request->validate(['recipient_id' => 'required|exists:users,id']);
+        $sender = $request->user();
+        $recipient = User::active()->findOrFail($data['recipient_id']);
+        abort_if($sender->id === $recipient->id, 422, 'You cannot message yourself.');
+
+        Cache::put($this->typingKey($sender->id, $recipient->id), true, now()->addSeconds(4));
+
+        return response()->json(['typing' => true]);
+    }
+
+    public function typingStatus(Request $request, User $user): JsonResponse
+    {
+        $recipient = $request->user();
+        abort_if($user->id === $recipient->id || $user->status !== 'active', 404);
+
+        return response()->json(['typing' => Cache::has($this->typingKey($user->id, $recipient->id))]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -130,6 +151,7 @@ class MessageController extends Controller
             'label' => $data['label'] ?? null, 'is_draft' => (bool) ($data['is_draft'] ?? false),
             'parent_id' => $data['parent_id'] ?? null,
         ] + $attachment);
+        Cache::forget($this->typingKey($request->user()->id, $message->recipient_id));
         return response()->json(['message' => $this->format($message->load(['sender', 'recipient']), $request->user()->id)], 201);
     }
 
@@ -180,6 +202,11 @@ class MessageController extends Controller
             'id' => $user->id, 'name' => $user->name, 'email' => $user->email,
             'role' => $user->role, 'avatar' => $user->avatar_url, 'avatar_url' => $user->avatar_url,
         ];
+    }
+
+    private function typingKey(int $senderId, int $recipientId): string
+    {
+        return "chat-typing:{$senderId}:{$recipientId}";
     }
 
     private function preview(Message $message): string

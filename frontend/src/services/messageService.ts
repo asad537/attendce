@@ -30,6 +30,13 @@ export const messageService = {
     sidebarService.refresh();
     return response.data;
   },
+  async typing(recipientId: number): Promise<void> {
+    await api.post('/messages/typing', { recipient_id: recipientId });
+  },
+  async typingStatus(userId: number): Promise<{ typing: boolean }> {
+    const response = await api.get(`/messages/typing/${userId}`);
+    return response.data;
+  },
   async send(payload: { recipient_id?: number; subject: string; body: string; label?: string; is_draft?: boolean; parent_id?: number; file?: File | null }): Promise<InboxMessage> {
     let resultMessage: InboxMessage;
     if (payload.file) {

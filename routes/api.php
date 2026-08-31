@@ -52,6 +52,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/messages/recipients',         [MessageController::class, 'recipients']);
     Route::get('/messages/conversations',      [MessageController::class, 'conversations']);
     Route::get('/messages/thread/{user}',      [MessageController::class, 'thread']);
+    Route::post('/messages/typing',            [MessageController::class, 'typing']);
+    Route::get('/messages/typing/{user}',      [MessageController::class, 'typingStatus']);
     Route::post('/messages',                   [MessageController::class, 'store']);
     Route::patch('/messages/{message}',        [MessageController::class, 'update']);
     Route::delete('/messages/{message}',       [MessageController::class, 'destroy']);
