@@ -12,7 +12,9 @@ class TrustProxies extends Middleware
      *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    // Laravel only receives requests from the local Caddy reverse proxy; trust
+    // its forwarded client IP so attendance restrictions use the real visitor IP.
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.
