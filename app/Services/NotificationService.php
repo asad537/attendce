@@ -59,7 +59,7 @@ class NotificationService
 
     public static function notifyCeo(string $title, string $message, string $type = 'info', ?object $notifiable = null, ?string $actionUrl = null): void
     {
-        User::byRole('ceo')->active()->each(function (User $ceo) use ($title, $message, $type, $notifiable) {
+        User::byRole('ceo')->active()->each(function (User $ceo) use ($title, $message, $type, $notifiable, $actionUrl) {
             self::send($ceo, $title, $message, $type, $actionUrl, $notifiable);
         });
     }
