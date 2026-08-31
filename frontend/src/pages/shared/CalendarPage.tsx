@@ -345,6 +345,7 @@ export default function CalendarPage() {
                   location={ev.location}
                   note={ev.note}
                   color={catOf(ev.type).color}
+                  canEdit={ev.created_by === user?.id}
                   onEdit={() => handleEditEvent(ev.id)}
                   onDelete={() => handleDeleteEvent(ev.id)}
                 />
@@ -405,14 +406,14 @@ export default function CalendarPage() {
   );
 }
 
-function DetailCard({ category, title, time, location, note, color, onEdit, onDelete }: any) {
+function DetailCard({ category, title, time, location, note, color, onEdit, onDelete, canEdit }: any) {
   const [showMenu, setShowMenu] = React.useState(false);
 
   return (
     <div className="p-4 rounded-2xl flex flex-col gap-3 group relative" style={{ backgroundColor: `${color}1a` }}>
       <div className="flex justify-between items-start">
         <span className="text-[10px] font-bold px-2 py-1 bg-white/60 rounded w-fit" style={{ color }}>{category}</span>
-        <div className="relative">
+        {canEdit && <div className="relative">
           <button onClick={() => setShowMenu(!showMenu)} className="p-1 text-gray-500 hover:text-gray-700 rounded focus:outline-none" title="Options">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
           </button>
@@ -442,7 +443,7 @@ function DetailCard({ category, title, time, location, note, color, onEdit, onDe
               </div>
             </>
           )}
-        </div>
+        </div>}
       </div>
       <h4 className="font-bold text-sm text-gray-900 leading-snug">{title}</h4>
       <div className="grid grid-cols-[60px_1fr] gap-x-2 gap-y-2 text-xs font-medium">

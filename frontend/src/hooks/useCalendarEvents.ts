@@ -4,6 +4,7 @@ import api from '../services/api';
 
 export interface CalendarEvent {
   id: number;
+  created_by: number;
   date: string;
   type: string;
   title: string;
@@ -33,9 +34,12 @@ export function useCalendarEvents() {
   const [categories, setCategoriesState] = useState<CalendarCategory[]>(defaultCategories);
 
   useEffect(() => {
-    api.get('/calendar-events').then(response => setEventsState(response.data.events || [])).catch(() => setEventsState(defaultEvents()));
+    const load = () => api.get('/calendar-events').then(response => setEventsState(response.data.events || [])).catch(() => setEventsState(defaultEvents()));
+    void load();
+    const interval = window.setInterval(load, 3000);
     const storedCats = localStorage.getItem('calendar_categories');
     if (storedCats) setCategoriesState(JSON.parse(storedCats));
+    return () => window.clearInterval(interval);
   }, []);
 
   const setEvents = (newEvents: CalendarEvent[]) => setEventsState(newEvents);
@@ -60,12 +64,12 @@ export function useCalendarEvents() {
     localStorage.setItem('calendar_categories', JSON.stringify(next));
   };
 
-  const addEvent = async (event: Omit<CalendarEvent, 'id'>) => {
+  const addEvent = async (event: Omit<CalendarEvent, 'id' | 'created_by'>) => {
     const response = await api.post('/calendar-events', event);
     setEvents([...events, response.data.event]);
   };
 
-  const editEvent = async (id: number, updatedEvent: Omit<CalendarEvent, 'id'>) => {
+  const editEvent = async (id: number, updatedEvent: Omit<CalendarEvent, 'id' | 'created_by'>) => {
     const response = await api.put(`/calendar-events/${id}`, updatedEvent);
     setEvents(events.map(ev => ev.id === id ? response.data.event : ev));
   };
