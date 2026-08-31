@@ -124,7 +124,7 @@ export default function InboxPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentAt = useRef(0);
   const { data: conversations = [], isLoading } = useQuery({
-    queryKey: ['chat-conversations', search], queryFn: () => messageService.conversations(search), refetchInterval: 5000,
+    queryKey: ['chat-conversations', search], queryFn: () => messageService.conversations(search), refetchInterval: 1000,
   });
   const visibleConversations = useMemo(() => conversations.filter(conversation => {
     if (filter === 'unread') return conversation.unread_count > 0;
@@ -135,11 +135,11 @@ export default function InboxPage() {
   const selectedUserId = activeUserId ?? conversations[0]?.user.id ?? null;
   const { data: thread, isLoading: threadLoading } = useQuery({
     queryKey: ['chat-thread', selectedUserId], queryFn: () => messageService.thread(selectedUserId as number),
-    enabled: selectedUserId !== null, refetchInterval: 3000,
+    enabled: selectedUserId !== null, refetchInterval: 500,
   });
   const { data: typingStatus } = useQuery({
     queryKey: ['chat-typing', selectedUserId], queryFn: () => messageService.typingStatus(selectedUserId as number),
-    enabled: selectedUserId !== null, refetchInterval: 1000,
+    enabled: selectedUserId !== null, refetchInterval: 250,
   });
 
   const threadMessages = useMemo(() => thread?.messages || [], [thread?.messages]);
@@ -198,7 +198,7 @@ export default function InboxPage() {
   const submit = () => { if ((message.trim() || pendingFile) && selectedUserId && !send.isPending) send.mutate(); };
   const updateMessage = (value: string) => {
     setMessage(value);
-    if (!selectedUserId || !value.trim() || Date.now() - lastTypingSentAt.current < 1500) return;
+    if (!selectedUserId || !value.trim() || Date.now() - lastTypingSentAt.current < 750) return;
     lastTypingSentAt.current = Date.now();
     void messageService.typing(selectedUserId);
   };
