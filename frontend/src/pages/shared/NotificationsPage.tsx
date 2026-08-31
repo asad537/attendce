@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/reportService';
 import { AppNotification } from '../../types';
 import { formatDistanceToNow, format } from 'date-fns';
@@ -30,6 +31,7 @@ const ClockIcon = ({ className }: { className?: string }) => (
 export default function NotificationsPage() {
   const [notifications, setNotifs] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const load = async () => {
     setLoading(true);
@@ -114,7 +116,7 @@ export default function NotificationsPage() {
                     </div>
                   )}
                   <div
-                    onClick={() => !n.is_read && markRead(n.id)}
+                    onClick={() => { if (!n.is_read) void markRead(n.id); if (n.action_url) navigate(n.action_url); }}
                     className={`flex gap-5 px-6 py-5 bg-white transition-colors hover:bg-gray-50 cursor-pointer ${n.is_read ? 'opacity-70' : ''}`}
                   >
                     <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">

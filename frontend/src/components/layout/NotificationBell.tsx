@@ -191,7 +191,7 @@ export default function NotificationBell() {
                       </div>
                     )}
                     <div
-                      onClick={() => !n.is_read && markRead(n.id)}
+                      onClick={() => { if (!n.is_read) void markRead(n.id); if (n.action_url) { setOpen(false); navigate(n.action_url); } }}
                       className="flex gap-4 px-5 py-4 border-b border-gray-100 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
                     >
                       <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
