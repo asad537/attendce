@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreHolidayRequest;
 use App\Http\Resources\HolidayResource;
 use App\Models\Holiday;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -27,6 +28,7 @@ class HolidayController extends Controller
     public function store(StoreHolidayRequest $request): JsonResponse
     {
         $holiday = Holiday::create($request->validated());
+        NotificationService::notifyAll('New holiday announced', $holiday->name . ' has been added to the holiday calendar.', 'info', $holiday);
         return response()->json(['message' => 'Holiday created.', 'holiday' => new HolidayResource($holiday)], 201);
     }
 
@@ -41,12 +43,15 @@ class HolidayController extends Controller
             'is_recurring' => 'boolean',
         ]);
         $holiday->update($validated);
+        NotificationService::notifyAll('Holiday updated', $holiday->name . ' has been updated in the holiday calendar.', 'info', $holiday);
         return response()->json(['message' => 'Holiday updated.', 'holiday' => new HolidayResource($holiday)]);
     }
 
     public function destroy(Holiday $holiday): JsonResponse
     {
+        $name = $holiday->name;
         $holiday->delete();
+        NotificationService::notifyAll('Holiday removed', $name . ' has been removed from the holiday calendar.', 'warning');
         return response()->json(['message' => 'Holiday deleted.']);
     }
 }
