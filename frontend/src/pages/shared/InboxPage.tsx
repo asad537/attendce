@@ -157,8 +157,28 @@ export default function InboxPage() {
   const invalidate = () => { queryClient.invalidateQueries({ queryKey: ['chat-thread', selectedUserId] }); queryClient.invalidateQueries({ queryKey: ['chat-conversations'] }); };
   const send = useMutation({
     mutationFn: () => messageService.send({ recipient_id: selectedUserId as number, subject: 'Chat message', body: message, file: pendingFile }),
+    onMutate: async () => {
+      if (!selectedUserId || pendingFile) return undefined;
+
+      const queryKey = ['chat-thread', selectedUserId] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previousThread = queryClient.getQueryData<{ user: MessageUser & { role?: string }; messages: InboxMessage[] }>(queryKey);
+      const optimisticMessage: InboxMessage = {
+        id: -Date.now(), subject: 'Chat message', body: message, is_draft: false, is_read: true, is_starred: false,
+        sender: { id: me?.id || 0, name: me?.name || '', email: me?.email || '' }, created_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(queryKey, (current: typeof previousThread) => current
+        ? { ...current, messages: [...current.messages, optimisticMessage] }
+        : current,
+      );
+      return { previousThread, queryKey };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousThread) queryClient.setQueryData(context.queryKey, context.previousThread);
+      toast.error(getErrorMessage(error));
+    },
     onSuccess: () => { setMessage(''); setPendingFile(null); invalidate(); },
-    onError: error => toast.error(getErrorMessage(error)),
   });
   const remove = useMutation({
     mutationFn: ({ id, scope }: { id: number; scope?: 'everyone' }) => messageService.remove(id, scope),
