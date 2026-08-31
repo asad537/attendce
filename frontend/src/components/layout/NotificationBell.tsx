@@ -93,6 +93,14 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, []);
 
+  // Browsers require one user gesture before they allow audio. Any normal click
+  // on the app enables future notification sounds; opening the bell is not needed.
+  useEffect(() => {
+    const enableSound = () => prepareSound();
+    window.addEventListener('pointerdown', enableSound, { once: true });
+    return () => window.removeEventListener('pointerdown', enableSound);
+  }, []);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
