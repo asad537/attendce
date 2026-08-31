@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MessageController extends Controller
 {
@@ -157,7 +158,7 @@ class MessageController extends Controller
             NotificationService::send(
                 $message->recipient,
                 'New message',
-                $request->user()->name . ' sent you a message' . (trim((string) $message->body) !== '' ? ': ' . str_limit(trim((string) $message->body), 90) : ' with an attachment.'),
+                $request->user()->name . ' sent you a message' . (trim((string) $message->body) !== '' ? ': ' . Str::limit(trim((string) $message->body), 90) : ' with an attachment.'),
                 'info',
                 '/inbox',
                 $message
