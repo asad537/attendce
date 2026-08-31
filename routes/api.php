@@ -24,6 +24,7 @@ use App\Http\Controllers\API\EmployeeProfileController;
 use App\Http\Controllers\API\ResignationController;
 use App\Http\Controllers\API\PayrollController;
 use App\Http\Controllers\API\SidebarController;
+use App\Http\Controllers\API\CalendarEventController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +47,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/me',              [AuthController::class, 'me']);
     Route::post('/me',             [AuthController::class, 'updateProfile']);
     Route::get('/sidebar/counts',  [SidebarController::class, 'counts']);
+    Route::get('/calendar-events', [CalendarEventController::class, 'index']);
+    Route::post('/calendar-events', [CalendarEventController::class, 'store']);
+    Route::put('/calendar-events/{calendarEvent}', [CalendarEventController::class, 'update']);
+    Route::delete('/calendar-events/{calendarEvent}', [CalendarEventController::class, 'destroy']);
 
     // Internal inbox
     Route::get('/messages',                    [MessageController::class, 'index']);

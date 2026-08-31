@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import api from '../services/api';
 
 export interface CalendarEvent {
   id: number;
@@ -32,16 +33,12 @@ export function useCalendarEvents() {
   const [categories, setCategoriesState] = useState<CalendarCategory[]>(defaultCategories);
 
   useEffect(() => {
-    const stored = localStorage.getItem('calendar_events');
-    setEventsState(stored ? JSON.parse(stored) : defaultEvents());
+    api.get('/calendar-events').then(response => setEventsState(response.data.events || [])).catch(() => setEventsState(defaultEvents()));
     const storedCats = localStorage.getItem('calendar_categories');
     if (storedCats) setCategoriesState(JSON.parse(storedCats));
   }, []);
 
-  const setEvents = (newEvents: CalendarEvent[]) => {
-    setEventsState(newEvents);
-    localStorage.setItem('calendar_events', JSON.stringify(newEvents));
-  };
+  const setEvents = (newEvents: CalendarEvent[]) => setEventsState(newEvents);
 
   const addCategory = (label: string, color: string): CalendarCategory => {
     const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36);
@@ -63,15 +60,18 @@ export function useCalendarEvents() {
     localStorage.setItem('calendar_categories', JSON.stringify(next));
   };
 
-  const addEvent = (event: Omit<CalendarEvent, 'id'>) => {
-    setEvents([...events, { ...event, id: Date.now() }]);
+  const addEvent = async (event: Omit<CalendarEvent, 'id'>) => {
+    const response = await api.post('/calendar-events', event);
+    setEvents([...events, response.data.event]);
   };
 
-  const editEvent = (id: number, updatedEvent: Omit<CalendarEvent, 'id'>) => {
-    setEvents(events.map(ev => ev.id === id ? { ...updatedEvent, id } : ev));
+  const editEvent = async (id: number, updatedEvent: Omit<CalendarEvent, 'id'>) => {
+    const response = await api.put(`/calendar-events/${id}`, updatedEvent);
+    setEvents(events.map(ev => ev.id === id ? response.data.event : ev));
   };
 
-  const deleteEvent = (id: number) => {
+  const deleteEvent = async (id: number) => {
+    await api.delete(`/calendar-events/${id}`);
     setEvents(events.filter(ev => ev.id !== id));
   };
 
