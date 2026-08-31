@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -152,6 +153,16 @@ class MessageController extends Controller
             'parent_id' => $data['parent_id'] ?? null,
         ] + $attachment);
         Cache::forget($this->typingKey($request->user()->id, $message->recipient_id));
+        if (! $message->is_draft && $message->recipient_id) {
+            NotificationService::send(
+                $message->recipient,
+                'New message',
+                $request->user()->name . ' sent you a message' . (trim((string) $message->body) !== '' ? ': ' . str_limit(trim((string) $message->body), 90) : ' with an attachment.'),
+                'info',
+                '/inbox',
+                $message
+            );
+        }
         return response()->json(['message' => $this->format($message->load(['sender', 'recipient']), $request->user()->id)], 201);
     }
 
