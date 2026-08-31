@@ -220,6 +220,7 @@ export default function AddEditEmployeePage() {
           role:           form.role,
           employment_type: form.employment_type,
           work_mode:      form.work_mode,
+          allowed_ip:     form.allowed_ip || null,
           status:         form.status,
           department_id:  form.department_id,
           designation_id: form.designation_id,
