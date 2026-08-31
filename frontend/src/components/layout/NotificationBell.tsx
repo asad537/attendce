@@ -45,6 +45,9 @@ export default function NotificationBell() {
   const [notifications, setNotifs]    = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const knownNotificationIds = useRef<Set<number>>(new Set());
+  const didLoadNotifications = useRef(false);
+  const audioContext = useRef<AudioContext | null>(null);
   const navigate = useNavigate();
 
   const [page, setPage] = useState(0);
@@ -53,9 +56,32 @@ export default function NotificationBell() {
   const totalPages = Math.ceil(notifications.length / pageSize);
   const currentNotifications = notifications.slice(page * pageSize, (page + 1) * pageSize);
 
+  const prepareSound = () => {
+    if (!audioContext.current) audioContext.current = new AudioContext();
+    if (audioContext.current.state === 'suspended') void audioContext.current.resume();
+  };
+
+  const playNotificationSound = () => {
+    const context = audioContext.current;
+    if (!context || context.state !== 'running') return;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, context.currentTime);
+    oscillator.frequency.setValueAtTime(1175, context.currentTime + .13);
+    gain.gain.setValueAtTime(.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.12, context.currentTime + .02);
+    gain.gain.exponentialRampToValueAtTime(.0001, context.currentTime + .32);
+    oscillator.connect(gain); gain.connect(context.destination);
+    oscillator.start(); oscillator.stop(context.currentTime + .34);
+  };
+
   const load = async () => {
     try {
       const res = await notificationService.getList();
+      const unread = res.data.filter(notification => !notification.is_read);
+      if (didLoadNotifications.current && unread.some(notification => !knownNotificationIds.current.has(notification.id))) playNotificationSound();
+      knownNotificationIds.current = new Set(res.data.map(notification => notification.id));
+      didLoadNotifications.current = true;
       setNotifs(res.data);
       setUnreadCount(res.unread_count);
     } catch {}
@@ -63,7 +89,7 @@ export default function NotificationBell() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 30_000);
+    const interval = setInterval(load, 5_000);
     return () => clearInterval(interval);
   }, []);
 
@@ -104,7 +130,7 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => { prepareSound(); setOpen(!open); }}
         className="relative p-2 text-gray-500 hover:text-gray-800 transition-colors outline-none focus:outline-none"
         aria-label="Notifications"
       >
