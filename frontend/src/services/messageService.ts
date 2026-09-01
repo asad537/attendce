@@ -5,7 +5,9 @@ export interface MessageUser { id: number; name: string; email: string; role?: s
 export interface MessageAttachment { url: string; name: string; mime: string; size: number; is_image: boolean }
 export interface InboxMessage {
   id: number; subject: string; body: string; label?: string | null; is_draft: boolean; is_read: boolean;
-  is_starred: boolean; is_deleted?: boolean; attachment?: MessageAttachment | null;
+  is_starred: boolean; is_deleted?: boolean; is_edited?: boolean; is_forwarded?: boolean; attachment?: MessageAttachment | null;
+  parent?: { id: number; body: string; sender: MessageUser } | null;
+  reactions?: Record<string, string> | null;
   sender: MessageUser; recipient?: MessageUser | null; created_at: string;
 }
 export interface MessageCounts { inbox: number; unread: number; starred: number; sent: number; drafts: number; spam: number; trash: number }
@@ -37,7 +39,7 @@ export const messageService = {
     const response = await api.get(`/messages/typing/${userId}`);
     return response.data;
   },
-  async send(payload: { recipient_id?: number; subject: string; body: string; label?: string; is_draft?: boolean; parent_id?: number; file?: File | null }): Promise<InboxMessage> {
+  async send(payload: { recipient_id?: number; subject: string; body: string; label?: string; is_draft?: boolean; parent_id?: number; is_forwarded?: boolean; file?: File | null }): Promise<InboxMessage> {
     let resultMessage: InboxMessage;
     if (payload.file) {
       const form = new FormData();
@@ -59,6 +61,14 @@ export const messageService = {
   async action(id: number, action: string): Promise<InboxMessage> {
     const response = await api.patch(`/messages/${id}`, { action });
     sidebarService.refresh();
+    return response.data.message;
+  },
+  async edit(id: number, body: string): Promise<InboxMessage> {
+    const response = await api.patch(`/messages/${id}`, { action: 'edit', body });
+    return response.data.message;
+  },
+  async react(id: number, reaction: string | null): Promise<InboxMessage> {
+    const response = await api.patch(`/messages/${id}`, { action: 'react', reaction });
     return response.data.message;
   },
   async remove(id: number, scope?: 'everyone'): Promise<void> {

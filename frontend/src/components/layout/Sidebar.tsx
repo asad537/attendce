@@ -330,7 +330,7 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-gray-900 text-sm leading-tight">ERP System</p>
+          <p className="font-bold text-gray-900 text-sm leading-tight">HR System</p>
           <p className="text-xs text-gray-400">Workforce Management</p>
         </div>
         {onClose && (

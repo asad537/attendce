@@ -18,7 +18,7 @@ class MessageController extends Controller
     {
         $user = $request->user();
         $folder = $request->get('folder', 'inbox');
-        $query = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar'])->latest();
+        $query = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar', 'parent.sender:id,name,email,avatar'])->latest();
 
         if ($folder === 'sent') {
             $query->where('sender_id', $user->id)->where('is_draft', false)->whereNull('deleted_by_sender_at');
@@ -91,7 +91,7 @@ class MessageController extends Controller
         abort_if($user->id === $current->id || $user->status !== 'active', 404);
 
         Message::where('sender_id', $user->id)->where('recipient_id', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
-        $messages = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar'])
+        $messages = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar', 'parent.sender:id,name,email,avatar'])
             ->where('is_draft', false)
             ->where(function ($query) use ($current, $user) {
                 $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $user->id)->whereNull('deleted_by_sender_at'))
@@ -130,7 +130,7 @@ class MessageController extends Controller
             'recipient_id' => 'nullable|required_unless:is_draft,true|exists:users,id',
             'subject' => 'nullable|string|max:200', 'body' => 'nullable|string|max:20000',
             'label' => 'nullable|in:hr,leave,interview,admin', 'is_draft' => 'sometimes|boolean',
-            'parent_id' => 'nullable|exists:messages,id',
+            'parent_id' => 'nullable|exists:messages,id', 'is_forwarded' => 'sometimes|boolean',
             'attachment' => 'nullable|file|max:10240',
         ]);
         abort_if(isset($data['recipient_id']) && (int) $data['recipient_id'] === (int) $request->user()->id, 422, 'You cannot message yourself.');
@@ -151,7 +151,7 @@ class MessageController extends Controller
             'sender_id' => $request->user()->id, 'recipient_id' => $data['recipient_id'] ?? null,
             'subject' => trim($data['subject'] ?? '') ?: '(No subject)', 'body' => $data['body'] ?? '',
             'label' => $data['label'] ?? null, 'is_draft' => (bool) ($data['is_draft'] ?? false),
-            'parent_id' => $data['parent_id'] ?? null,
+            'parent_id' => $data['parent_id'] ?? null, 'is_forwarded' => (bool) ($data['is_forwarded'] ?? false),
         ] + $attachment);
         Cache::forget($this->typingKey($request->user()->id, $message->recipient_id));
         if (! $message->is_draft && $message->recipient_id) {
@@ -171,17 +171,37 @@ class MessageController extends Controller
     {
         $userId = $request->user()->id;
         abort_unless($message->sender_id === $userId || $message->recipient_id === $userId, 403);
-        $data = $request->validate(['action' => 'required|in:read,unread,star,unstar,archive,unarchive,spam,not_spam']);
-        if ($data['action'] === 'read' && $message->recipient_id === $userId) $message->read_at = now();
-        if ($data['action'] === 'unread' && $message->recipient_id === $userId) $message->read_at = null;
-        if (in_array($data['action'], ['star', 'unstar'])) {
-            $field = $message->sender_id === $userId ? 'starred_by_sender_at' : 'starred_by_recipient_at';
-            $message->{$field} = $data['action'] === 'star' ? now() : null;
+        $data = $request->validate([
+            'action' => 'required|in:read,unread,star,unstar,archive,unarchive,spam,not_spam,edit,react',
+            'body' => 'nullable|string|max:20000',
+            'reaction' => 'nullable|string|max:20',
+        ]);
+        
+        if ($data['action'] === 'edit') {
+            abort_unless($message->sender_id === $userId, 403, 'You can only edit your own messages.');
+            abort_if($message->deleted_for_everyone_at, 403, 'Cannot edit a deleted message.');
+            $message->body = $data['body'] ?? '';
+            $message->edited_at = now();
+        } elseif ($data['action'] === 'react') {
+            $reactions = $message->reactions ?: [];
+            if (isset($data['reaction']) && $data['reaction']) {
+                $reactions[$userId] = $data['reaction'];
+            } else {
+                unset($reactions[$userId]);
+            }
+            $message->reactions = empty($reactions) ? null : $reactions;
+        } else {
+            if ($data['action'] === 'read' && $message->recipient_id === $userId) $message->read_at = now();
+            if ($data['action'] === 'unread' && $message->recipient_id === $userId) $message->read_at = null;
+            if (in_array($data['action'], ['star', 'unstar'])) {
+                $field = $message->sender_id === $userId ? 'starred_by_sender_at' : 'starred_by_recipient_at';
+                $message->{$field} = $data['action'] === 'star' ? now() : null;
+            }
+            if (in_array($data['action'], ['archive', 'unarchive']) && $message->recipient_id === $userId) $message->archived_at = $data['action'] === 'archive' ? now() : null;
+            if (in_array($data['action'], ['spam', 'not_spam']) && $message->recipient_id === $userId) $message->spam_at = $data['action'] === 'spam' ? now() : null;
         }
-        if (in_array($data['action'], ['archive', 'unarchive']) && $message->recipient_id === $userId) $message->archived_at = $data['action'] === 'archive' ? now() : null;
-        if (in_array($data['action'], ['spam', 'not_spam']) && $message->recipient_id === $userId) $message->spam_at = $data['action'] === 'spam' ? now() : null;
         $message->save();
-        return response()->json(['message' => $this->format($message->load(['sender', 'recipient']), $userId)]);
+        return response()->json(['message' => $this->format($message->load(['sender', 'recipient', 'parent.sender']), $userId)]);
     }
 
     public function destroy(Request $request, Message $message): JsonResponse
@@ -259,12 +279,23 @@ class MessageController extends Controller
                 'is_image' => str_starts_with((string) $message->attachment_mime, 'image/'),
             ];
         }
+        $parent = null;
+        if ($message->parent) {
+            $parent = [
+                'id' => $message->parent->id,
+                'body' => $message->parent->deleted_for_everyone_at ? 'This message was deleted' : $message->parent->body,
+                'sender' => $this->userPayload($message->parent->sender),
+            ];
+        }
+
         return [
             'id' => $message->id, 'subject' => $message->subject,
             'body' => $deleted ? '' : $message->body, 'label' => $message->label,
             'is_draft' => $message->is_draft, 'is_read' => $sent || (bool) $message->read_at,
             'is_starred' => (bool) ($sent ? $message->starred_by_sender_at : $message->starred_by_recipient_at),
-            'is_deleted' => $deleted, 'attachment' => $attachment,
+            'is_deleted' => $deleted, 'is_edited' => (bool) $message->edited_at,
+            'is_forwarded' => (bool) $message->is_forwarded, 'reactions' => $message->reactions ?: null,
+            'attachment' => $attachment, 'parent' => $parent,
             'sender' => $this->userPayload($message->sender), 'recipient' => $this->userPayload($message->recipient), 'created_at' => $message->created_at,
         ];
     }

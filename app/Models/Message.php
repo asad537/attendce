@@ -9,10 +9,12 @@ class Message extends Model
     protected $fillable = [
         'sender_id', 'recipient_id', 'parent_id', 'subject', 'body', 'label', 'is_draft',
         'attachment_path', 'attachment_name', 'attachment_mime', 'attachment_size',
+        'reactions', 'is_forwarded',
     ];
 
     protected $casts = [
-        'is_draft' => 'boolean', 'read_at' => 'datetime', 'starred_by_sender_at' => 'datetime',
+        'is_draft' => 'boolean', 'is_forwarded' => 'boolean', 'reactions' => 'array',
+        'read_at' => 'datetime', 'starred_by_sender_at' => 'datetime',
         'starred_by_recipient_at' => 'datetime', 'archived_at' => 'datetime', 'spam_at' => 'datetime',
         'deleted_by_sender_at' => 'datetime', 'deleted_by_recipient_at' => 'datetime',
         'deleted_for_everyone_at' => 'datetime',

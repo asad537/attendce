@@ -12,7 +12,7 @@ class CalendarEventController extends Controller
 {
     public function index(): JsonResponse { return response()->json(['events' => CalendarEvent::orderBy('event_date')->orderBy('event_time')->get()->map(fn ($event) => $this->format($event))]); }
     public function store(Request $request): JsonResponse {
-        abort_unless(in_array($request->user()->role, ['ceo','manager','tl']) && $calendarEvent->created_by === $request->user()->id, 403);
+        abort_unless(in_array($request->user()->role, ['ceo','manager','tl']), 403);
         $event = CalendarEvent::create($this->payload($request) + ['created_by' => $request->user()->id]);
         NotificationService::notifyAll('New calendar agenda', $event->title . ' is scheduled for ' . $event->event_date . '.', 'info', $event);
         return response()->json(['event' => $this->format($event)], 201);
