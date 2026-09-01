@@ -143,19 +143,86 @@ function callLogText(body: string) {
     return { text, isVideo, bad };
 }
 
-function CallLogLine({ body, mine }: { body: string; mine: boolean }) {
-    const { text, isVideo, bad } = callLogText(body);
+function CallLogLine({
+    body,
+    mine,
+    onCallBack,
+}: {
+    body: string;
+    mine: boolean;
+    onCallBack?: (kind: "voice" | "video") => void;
+}) {
+    let info: { kind?: "voice" | "video"; outcome?: string; duration?: number } = {};
+    try {
+        info = JSON.parse(body);
+    } catch {
+        /* not JSON */
+    }
+    const isVideo = info.kind === "video";
+    const dur = info.duration || 0;
+    const mmss = `${Math.floor(dur / 60)}:${(dur % 60).toString().padStart(2, "0")}`;
+    const isMissed = info.outcome === "missed" || info.outcome === "declined";
+
+    let label = isVideo ? "Video call" : "Voice call";
+    if (info.outcome === "missed") label = `Missed ${isVideo ? "video" : "voice"} call`;
+    else if (info.outcome === "declined") label = `Declined ${isVideo ? "video" : "voice"} call`;
+    else if (info.outcome === "cancelled") label = `Cancelled ${isVideo ? "video" : "voice"} call`;
+
+    let detail = "";
+    if (info.outcome === "ended" && dur > 0) {
+        detail = `${Math.floor(dur / 60) > 0 ? `${Math.floor(dur / 60)}m ` : ""}${dur % 60}s`;
+    } else if (isMissed) {
+        detail = "Tap to call back";
+    }
+
     return (
-        <span
-            className={`flex items-center gap-2 px-0.5 text-[13px] ${mine ? "text-white" : bad ? "text-red-500" : "text-slate-700"}`}
-        >
+        <div className="flex items-center gap-2.5 py-1 px-1 min-w-[200px]">
             <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${mine ? "bg-emerald-700/50 text-white" : bad ? "bg-red-50 text-red-500" : "bg-slate-100 text-slate-600"}`}
+                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+                    mine
+                        ? "bg-white/20 text-white"
+                        : isMissed
+                          ? "bg-red-100 text-red-500"
+                          : "bg-emerald-100 text-emerald-700"
+                }`}
             >
                 {isVideo ? <VideoIcon /> : <PhoneIcon />}
             </span>
-            {text}
-        </span>
+            <div className="flex-1 min-w-0">
+                <p
+                    className={`text-[13px] font-medium leading-tight truncate ${
+                        mine
+                            ? "text-white"
+                            : isMissed
+                              ? "text-red-500 font-semibold"
+                              : "text-slate-800"
+                    }`}
+                >
+                    {label}
+                </p>
+                {detail && (
+                    <p
+                        className={`text-[11px] leading-tight ${
+                            mine ? "text-emerald-100/90" : "text-slate-500"
+                        }`}
+                    >
+                        {detail}
+                    </p>
+                )}
+            </div>
+            {onCallBack && (
+                <button
+                    onClick={() => onCallBack(info.kind || "voice")}
+                    className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-medium transition ${
+                        mine
+                            ? "bg-white/20 text-white hover:bg-white/30"
+                            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                    }`}
+                >
+                    Call back
+                </button>
+            )}
+        </div>
     );
 }
 function SearchIcon() {
@@ -1207,6 +1274,9 @@ export default function InboxPage() {
                                                                                 mine={
                                                                                     mine
                                                                                 }
+                                                                                onCallBack={(kind) => {
+                                                                                    if (thread?.user) call.start(thread.user, kind);
+                                                                                }}
                                                                             />
                                                                         ) : (
                                                                             <p
