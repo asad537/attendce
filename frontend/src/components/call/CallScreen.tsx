@@ -63,6 +63,46 @@ function Video({ stream, muted, className }: { stream: MediaStream | null; muted
     return <video ref={ref} autoPlay playsInline muted={muted} className={className} />;
 }
 
+// Compact incoming-call popup (shown while ringing, before the call is picked
+// up) — a small card rather than a full-screen takeover.
+export function IncomingCallCard({ call }: { call: ReturnType<typeof useCall> }) {
+    const { state, accept, reject } = call;
+    const { peer, kind } = state;
+    if (!peer || state.status !== "incoming") return null;
+    const isVideo = kind === "video";
+    return (
+        <div className="fixed left-1/2 top-6 z-[70] w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-slate-100 bg-white p-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blue-50 text-blue-600">
+                    <PhoneIcon />
+                </span>
+                <div className="min-w-0">
+                    <p className="text-lg font-bold text-slate-900">
+                        Incoming {isVideo ? "video" : "audio"} call
+                    </p>
+                    <p className="truncate text-sm text-slate-500">
+                        {peer.name} is calling you
+                    </p>
+                </div>
+            </div>
+            <div className="mt-3 flex gap-3">
+                <button
+                    onClick={reject}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#e94141] px-4 py-3 font-semibold text-white transition hover:bg-[#d12f2f]"
+                >
+                    <span className="rotate-[135deg]"><PhoneIcon /></span> Decline
+                </button>
+                <button
+                    onClick={accept}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+                >
+                    {isVideo ? <VideoIcon /> : <PhoneIcon />} Accept
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export default function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
     const {
         state,
