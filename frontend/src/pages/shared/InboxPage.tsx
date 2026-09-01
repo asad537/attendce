@@ -251,19 +251,33 @@ function Video({
     );
 }
 
-function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
+function CallScreen({
+    call,
+    people = [],
+}: {
+    call: ReturnType<typeof useCall>;
+    people?: MessageUser[];
+}) {
     const {
         state,
         localStream,
         remoteStream,
+        participants,
         accept,
         reject,
         hangup,
         toggleMute,
         toggleCam,
+        addToCall,
     } = call;
     const { peer, kind, status, muted, camOff, error } = state;
     const [seconds, setSeconds] = useState(0);
+    const [showAdd, setShowAdd] = useState(false);
+    const inCall = participants.map((p) => p.id);
+    const addable = people.filter(
+        (p) => p.id !== peer?.id && !inCall.includes(p.id),
+    );
+    const isGroup = state.isGroup || participants.length > 1;
     useEffect(() => {
         if (status !== "connected") {
             setSeconds(0);
@@ -289,7 +303,8 @@ function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
     const avatar = peer.avatar_url || peer.avatar;
     return (
         <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-[#0c241b] to-[#04120d] text-white">
-            {remoteStream &&
+            {!isGroup &&
+                remoteStream &&
                 (hasRemoteVideo ? (
                     <Video
                         stream={remoteStream}
@@ -298,6 +313,42 @@ function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
                 ) : (
                     <Video stream={remoteStream} className="hidden" />
                 ))}
+
+            {isGroup && (
+                <div className="absolute inset-0 grid gap-1 bg-black p-1 pb-28 sm:grid-cols-2">
+                    {participants.map((p) => (
+                        <div
+                            key={p.id}
+                            className="relative flex items-center justify-center overflow-hidden rounded-xl bg-[#0c241b]"
+                        >
+                            {isVideo ? (
+                                <Video
+                                    stream={p.stream}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : p.avatar_url ? (
+                                <img
+                                    src={p.avatar_url}
+                                    alt=""
+                                    className="h-20 w-20 rounded-full object-cover ring-2 ring-white/20"
+                                />
+                            ) : (
+                                <span className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[#34d399] to-[#047857] text-2xl font-bold ring-2 ring-white/20">
+                                    {initials(p.name)}
+                                </span>
+                            )}
+                            <span className="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-0.5 text-xs">
+                                {p.name}
+                            </span>
+                        </div>
+                    ))}
+                    {participants.length === 0 && (
+                        <div className="col-span-full grid place-items-center text-sm text-white/60">
+                            Waiting for others to join…
+                        </div>
+                    )}
+                </div>
+            )}
             {isVideo && localStream && status !== "incoming" && (
                 <Video
                     stream={localStream}
@@ -381,6 +432,43 @@ function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
                                 <VideoIcon />
                             </button>
                         )}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowAdd((v) => !v)}
+                                className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-2xl transition"
+                                title="Add someone"
+                            >
+                                +
+                            </button>
+                            {showAdd && (
+                                <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-60 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c241b] p-1 shadow-xl">
+                                    <p className="px-3 py-2 text-xs font-semibold text-white/50">
+                                        Add to call
+                                    </p>
+                                    {addable.length === 0 ? (
+                                        <p className="px-3 py-2 text-xs text-white/40">
+                                            No one else to add.
+                                        </p>
+                                    ) : (
+                                        addable.map((p) => (
+                                            <button
+                                                key={p.id}
+                                                onClick={() => {
+                                                    addToCall(p);
+                                                    setShowAdd(false);
+                                                }}
+                                                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-white/10"
+                                            >
+                                                <Avatar user={p} />
+                                                <span className="truncate">
+                                                    {p.name}
+                                                </span>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <button
                             onClick={hangup}
                             className="grid h-16 w-16 place-items-center rounded-full bg-[#e94141] shadow-lg transition "
@@ -1595,7 +1683,12 @@ export default function InboxPage() {
                     )}
                 </main>
             </div>
-            {call.state.status !== "idle" && <CallScreen call={call} />}
+            {call.state.status !== "idle" && (
+                <CallScreen
+                    call={call}
+                    people={conversations.map((c) => c.user)}
+                />
+            )}
 
             {forwardModalOpen && forwardingMessage && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">

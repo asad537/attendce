@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\CallParticipant;
 use App\Models\CallSignal;
 use App\Models\Message;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +43,53 @@ class CallController extends Controller
     }
 
     /**
+     * Join / heartbeat a group-call room and return its live roster. Called
+     * every few seconds while in a group call; participants whose heartbeat
+     * is older than 12s are treated as gone.
+     */
+    public function join(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'call_id' => 'required|string|max:40',
+            'kind' => 'required|in:voice,video',
+        ]);
+
+        CallParticipant::updateOrCreate(
+            ['call_id' => $data['call_id'], 'user_id' => $request->user()->id],
+            ['kind' => $data['kind'], 'last_seen_at' => now()]
+        );
+
+        return response()->json(['participants' => $this->roster($data['call_id'], $request->user()->id)]);
+    }
+
+    /** Leave a group-call room. */
+    public function leave(Request $request): JsonResponse
+    {
+        $data = $request->validate(['call_id' => 'required|string|max:40']);
+        CallParticipant::where('call_id', $data['call_id'])->where('user_id', $request->user()->id)->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Active participants of a room (heartbeat within 12s), excluding $exceptId. */
+    private function roster(string $callId, int $exceptId): array
+    {
+        return CallParticipant::with('user:id,name,avatar,role')
+            ->where('call_id', $callId)
+            ->where('user_id', '!=', $exceptId)
+            ->where('last_seen_at', '>=', now()->subSeconds(12))
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->user_id,
+                'name' => optional($p->user)->name,
+                'avatar_url' => optional($p->user)->avatar_url,
+                'kind' => $p->kind,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Post a signalling message (offer / answer / ice / hangup / reject / cancel)
      * to the other participant. Signalling rides on top of normal polling so no
      * WebSocket server is required.
@@ -51,7 +99,7 @@ class CallController extends Controller
         $data = $request->validate([
             'call_id' => 'required|string|max:40',
             'to_user_id' => 'required|exists:users,id',
-            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel',
+            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave',
             'data' => 'nullable',
         ]);
 

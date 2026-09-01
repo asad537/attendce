@@ -73,6 +73,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/calls/signal',               [CallController::class, 'signal']);
     Route::get('/calls/poll',                  [CallController::class, 'poll']);
     Route::post('/calls/log',                  [CallController::class, 'log']);
+    Route::post('/calls/join',                 [CallController::class, 'join']);
+    Route::post('/calls/leave',                [CallController::class, 'leave']);
 
     // Organisation settings (currency + theme accent)
     Route::get('/settings',                    [SettingController::class, 'index']);

@@ -23,4 +23,18 @@ export const callService = {
   async log(payload: { to_user_id: number; kind: 'voice' | 'video'; outcome: 'ended' | 'missed' | 'declined' | 'cancelled'; duration?: number }): Promise<void> {
     await api.post('/calls/log', payload).catch(() => { /* logging is best-effort */ });
   },
+  async join(payload: { call_id: string; kind: 'voice' | 'video' }): Promise<RosterParticipant[]> {
+    const response = await api.post('/calls/join', payload);
+    return response.data.participants as RosterParticipant[];
+  },
+  async leave(call_id: string): Promise<void> {
+    await api.post('/calls/leave', { call_id }).catch(() => { /* best-effort */ });
+  },
 };
+
+export interface RosterParticipant {
+  id: number;
+  name: string;
+  avatar_url?: string | null;
+  kind: 'voice' | 'video';
+}

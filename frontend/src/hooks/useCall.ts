@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { callService, CallSignal, SignalType } from '../services/callService';
+import { callService, CallSignal, RosterParticipant, SignalType } from '../services/callService';
 import { MessageUser } from '../services/messageService';
 
 export type CallStatus = 'idle' | 'calling' | 'incoming' | 'connecting' | 'connected' | 'ended';
 type Peer = MessageUser & { role?: string };
+
+export interface RemoteParticipant {
+  id: number;
+  name: string;
+  avatar_url?: string | null;
+  stream: MediaStream;
+}
 
 export interface CallState {
   status: CallStatus;
@@ -12,6 +19,7 @@ export interface CallState {
   kind: 'voice' | 'video';
   muted: boolean;
   camOff: boolean;
+  isGroup: boolean;
   error?: string | null;
 }
 
@@ -29,7 +37,7 @@ const ICE: RTCConfiguration = {
   ],
 };
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, error: null };
+const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, isGroup: false, error: null };
 
 const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   if (sdpInit instanceof RTCSessionDescription) return sdpInit;
@@ -43,56 +51,77 @@ const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   }
   // WebRTC RFC 4566 requires strict CRLF \r\n line endings in SDP strings.
   sdp = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
-  // The transport (Laravel's TrimStrings middleware) strips the SDP's trailing
+  // The transport (Laravel's TrimStrings middleware) can strip the trailing
   // newline; without it Chrome rejects the final line ("Invalid SDP line").
   if (sdp && !sdp.endsWith('\r\n')) sdp += '\r\n';
   return new RTCSessionDescription({ type, sdp });
 };
 
+interface PeerConn {
+  pc: RTCPeerConnection;
+  stream: MediaStream;
+  remoteSet: boolean;
+  pendingIce: RTCIceCandidateInit[];
+  meta: { name: string; avatar_url?: string | null };
+}
+
 export function useCall(meId?: number) {
   const [state, setState] = useState<CallState>(idleState);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const callIdRef = useRef('');
-  const peerRef = useRef<Peer | null>(null);
+  const peersRef = useRef<Map<number, PeerConn>>(new Map());
+  const roomRef = useRef('');
+  const primaryPeerRef = useRef<Peer | null>(null);      // first invited peer (state.peer + 1:1 call-log)
   const kindRef = useRef<'voice' | 'video'>('voice');
   const roleRef = useRef<'caller' | 'callee' | null>(null);
   const localRef = useRef<MediaStream | null>(null);
-  const pendingIce = useRef<RTCIceCandidateInit[]>([]);
-  const pendingOffer = useRef<RTCSessionDescriptionInit | null>(null);
-  const remoteSet = useRef(false);
+  const pendingInvite = useRef<{ room: string; kind: 'voice' | 'video'; from: Peer } | null>(null);
   const statusRef = useRef<CallStatus>('idle');
   const timerRef = useRef<number | undefined>(undefined);
+  const heartbeatRef = useRef<number | undefined>(undefined);
   const connectedAtRef = useRef(0);
   const loggedRef = useRef(false);
+  const groupRef = useRef(false);
+  const meIdRef = useRef<number | undefined>(meId);
 
+  useEffect(() => { meIdRef.current = meId; }, [meId]);
   useEffect(() => { statusRef.current = state.status; }, [state.status]);
 
   const clearTimer = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = undefined; } };
+  const stopHeartbeat = () => { if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = undefined; } };
+
+  const bumpParticipants = useCallback(() => {
+    const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
+      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream,
+    }));
+    setParticipants(list);
+    setRemoteStream(list[0]?.stream || null);
+  }, []);
 
   const cleanup = useCallback(() => {
     clearTimer();
-    try { pcRef.current?.getSenders().forEach(s => s.track?.stop()); } catch { /* noop */ }
-    try { pcRef.current?.close(); } catch { /* noop */ }
-    pcRef.current = null;
+    stopHeartbeat();
+    if (roomRef.current) callService.leave(roomRef.current);
+    peersRef.current.forEach(e => { try { e.pc.close(); } catch { /* noop */ } });
+    peersRef.current.clear();
     localRef.current?.getTracks().forEach(t => t.stop());
     localRef.current = null;
-    pendingIce.current = [];
-    pendingOffer.current = null;
-    remoteSet.current = false;
-    roleRef.current = null;
+    roomRef.current = '';
     connectedAtRef.current = 0;
     loggedRef.current = false;
+    groupRef.current = false;
+    roleRef.current = null;
+    pendingInvite.current = null;
+    setParticipants([]);
     setLocalStream(null);
     setRemoteStream(null);
   }, []);
 
   const reset = useCallback((error: string | null = null) => {
     cleanup();
-    peerRef.current = null;
-    callIdRef.current = '';
+    primaryPeerRef.current = null;
     setState({ ...idleState, error });
   }, [cleanup]);
 
@@ -100,42 +129,79 @@ export function useCall(meId?: number) {
   const finish = useCallback(() => {
     cleanup();
     setState(s => ({ ...s, status: 'ended' }));
-    window.setTimeout(() => { peerRef.current = null; callIdRef.current = ''; setState(idleState); }, 1200);
+    window.setTimeout(() => { primaryPeerRef.current = null; setState(idleState); }, 1200);
   }, [cleanup]);
 
-  const sendSignal = useCallback((type: SignalType, data?: unknown, toId?: number) => {
-    const to = toId ?? peerRef.current?.id;
-    if (!to || !callIdRef.current) return;
-    callService.signal({ call_id: callIdRef.current, to_user_id: to, type, data }).catch(() => { /* noop */ });
+  const sendSignal = useCallback((type: SignalType, data: unknown, toId: number) => {
+    if (!toId || !roomRef.current) return;
+    callService.signal({ call_id: roomRef.current, to_user_id: toId, type, data }).catch(() => { /* noop */ });
   }, []);
 
-  // Only the caller writes the call-log message, so it is never duplicated.
+  // Only the caller writes the 1:1 call-log message, so it is never duplicated.
   const logCall = useCallback((outcome: 'ended' | 'missed' | 'declined' | 'cancelled') => {
-    if (roleRef.current !== 'caller' || loggedRef.current || !peerRef.current) return;
+    if (roleRef.current !== 'caller' || loggedRef.current || groupRef.current || !primaryPeerRef.current) return;
     loggedRef.current = true;
     const duration = connectedAtRef.current ? Math.floor((Date.now() - connectedAtRef.current) / 1000) : 0;
-    callService.log({ to_user_id: peerRef.current.id, kind: kindRef.current, outcome, duration });
+    callService.log({ to_user_id: primaryPeerRef.current.id, kind: kindRef.current, outcome, duration });
   }, []);
 
-  const buildPc = useCallback(() => {
+  const removePeer = useCallback((id: number) => {
+    const entry = peersRef.current.get(id);
+    if (!entry) return;
+    try { entry.pc.close(); } catch { /* noop */ }
+    peersRef.current.delete(id);
+    bumpParticipants();
+    // A 1:1 call collapses to idle once its only peer leaves.
+    if (peersRef.current.size === 0 && !groupRef.current && statusRef.current !== 'idle') {
+      finish();
+    }
+  }, [bumpParticipants, finish]);
+
+  const createPeer = useCallback((id: number, meta?: { name?: string; avatar_url?: string | null }): PeerConn => {
+    const existing = peersRef.current.get(id);
+    if (existing) return existing;
     const pc = new RTCPeerConnection(ICE);
-    pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON()); };
-    const remote = new MediaStream();
-    setRemoteStream(remote);
-    pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => remote.addTrack(t)); };
+    const stream = new MediaStream();
+    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url } };
+    localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
+    pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
+    pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => stream.addTrack(t)); bumpParticipants(); };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
-      if (st === 'connected') { clearTimer(); connectedAtRef.current = connectedAtRef.current || Date.now(); setState(s => ({ ...s, status: 'connected' })); }
-      if (st === 'failed') { logCall('ended'); finish(); }
+      if (st === 'connected') {
+        clearTimer();
+        connectedAtRef.current = connectedAtRef.current || Date.now();
+        setState(s => (s.status === 'connected' ? s : { ...s, status: 'connected' }));
+      }
+      if (st === 'failed' || st === 'closed') removePeer(id);
     };
-    pcRef.current = pc;
-    return pc;
-  }, [sendSignal, finish, logCall]);
+    peersRef.current.set(id, entry);
+    bumpParticipants();
+    return entry;
+  }, [sendSignal, bumpParticipants, removePeer]);
+
+  // Deterministic offerer avoids glare: the lower userId offers, the other answers.
+  const iAmOfferer = (otherId: number) => (meIdRef.current ?? 0) < otherId;
+
+  const connectTo = useCallback(async (r: RosterParticipant) => {
+    if (peersRef.current.has(r.id)) {
+      const e = peersRef.current.get(r.id)!;
+      e.meta = { name: r.name, avatar_url: r.avatar_url };
+      return;
+    }
+    const entry = createPeer(r.id, r);
+    if (iAmOfferer(r.id)) {
+      try {
+        const offer = await entry.pc.createOffer();
+        await entry.pc.setLocalDescription(offer);
+        sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: kindRef.current }, r.id);
+      } catch { /* noop */ }
+    }
+  }, [createPeer, sendSignal]);
 
   const formatMediaError = (err: any, kind: 'voice' | 'video') => {
     const name = err?.name || '';
     const msg = err?.message || '';
-
     if (msg === 'SECURE_CONTEXT_REQUIRED' || name === 'SecurityError') {
       return 'Calls require an HTTPS connection or localhost to access your microphone.';
     }
@@ -156,61 +222,57 @@ export function useCall(meId?: number) {
     if (!nav.mediaDevices?.getUserMedia && !nav.getUserMedia && !nav.webkitGetUserMedia && !nav.mozGetUserMedia) {
       throw new Error('SECURE_CONTEXT_REQUIRED');
     }
-
     const getUserMediaPromised = (constraints: MediaStreamConstraints): Promise<MediaStream> => {
-      if (nav.mediaDevices?.getUserMedia) {
-        return nav.mediaDevices.getUserMedia(constraints);
-      }
+      if (nav.mediaDevices?.getUserMedia) return nav.mediaDevices.getUserMedia(constraints);
       return new Promise((resolve, reject) => {
         const legacy = nav.getUserMedia || nav.webkitGetUserMedia || nav.mozGetUserMedia;
         legacy.call(nav, constraints, resolve, reject);
       });
     };
-
     let stream: MediaStream | null = null;
     let lastError: any = null;
-
     try {
-      if (kind === 'video') {
-        stream = await getUserMediaPromised({ audio: true, video: true });
-      } else {
-        stream = await getUserMediaPromised({ audio: true, video: false });
-      }
+      stream = await getUserMediaPromised(kind === 'video' ? { audio: true, video: true } : { audio: true, video: false });
     } catch (err1) {
       lastError = err1;
-      try {
-        stream = await getUserMediaPromised({ audio: true });
-      } catch (err2) {
-        lastError = err2 || err1;
-      }
+      try { stream = await getUserMediaPromised({ audio: true }); } catch (err2) { lastError = err2 || err1; }
     }
-
-    if (!stream) {
-      throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
-    }
-
+    if (!stream) throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
     localRef.current = stream;
     setLocalStream(stream);
     return stream;
   }, []);
 
+  const heartbeat = useCallback(async () => {
+    if (!roomRef.current) return;
+    try {
+      const roster = await callService.join({ call_id: roomRef.current, kind: kindRef.current });
+      // Roster only ADDs members; departures come via 'leave'/'hangup' or pc-close
+      // (avoids racing a peer we just connected to but who hasn't heartbeat yet).
+      for (const r of roster) { if (!peersRef.current.has(r.id)) await connectTo(r); }
+    } catch { /* noop */ }
+  }, [connectTo]);
+
+  const startHeartbeat = useCallback(() => {
+    stopHeartbeat();
+    void heartbeat();
+    heartbeatRef.current = window.setInterval(() => void heartbeat(), 3000);
+  }, [heartbeat]);
+
   const start = useCallback(async (peer: Peer, kind: 'voice' | 'video') => {
     if (statusRef.current !== 'idle') return;
-    callIdRef.current = randomId();
-    peerRef.current = peer;
+    roomRef.current = randomId();
+    primaryPeerRef.current = peer;
     kindRef.current = kind;
     roleRef.current = 'caller';
-    setState({ status: 'calling', peer, kind, muted: false, camOff: false, error: null });
+    groupRef.current = false;
+    setState({ status: 'calling', peer, kind, muted: false, camOff: false, isGroup: false, error: null });
     try {
-      const stream = await getMedia(kind);
-      const pc = buildPc();
-      stream.getTracks().forEach(t => pc.addTrack(t, stream));
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      const localDesc = pc.localDescription;
-      sendSignal('offer', { sdp: { type: localDesc?.type || 'offer', sdp: localDesc?.sdp }, kind }, peer.id);
+      await getMedia(kind);
+      startHeartbeat();
+      sendSignal('invite', { call_id: roomRef.current, kind }, peer.id);
       timerRef.current = window.setTimeout(() => {
-        if (statusRef.current === 'calling') { logCall('missed'); sendSignal('cancel'); finish(); }
+        if (statusRef.current === 'calling') { logCall('missed'); sendSignal('cancel', null, peer.id); finish(); }
       }, 45000);
     } catch (err: any) {
       console.error('Start call error:', err);
@@ -218,46 +280,53 @@ export function useCall(meId?: number) {
       toast.error(msg);
       reset(msg);
     }
-  }, [getMedia, buildPc, sendSignal, finish, reset, logCall]);
+  }, [getMedia, startHeartbeat, sendSignal, finish, reset, logCall]);
 
   const accept = useCallback(async () => {
-    if (statusRef.current !== 'incoming') return;
-    const currentKind = kindRef.current || 'voice';
+    if (statusRef.current !== 'incoming' || !pendingInvite.current) return;
+    const invite = pendingInvite.current;
+    roomRef.current = invite.room;
+    kindRef.current = invite.kind;
     roleRef.current = 'callee';
     setState(s => ({ ...s, status: 'connecting' }));
     try {
-      const stream = await getMedia(currentKind);
-      const pc = buildPc();
-      stream.getTracks().forEach(t => pc.addTrack(t, stream));
-      if (pendingOffer.current) {
-        const offerSdp = cleanSdp(pendingOffer.current);
-        await pc.setRemoteDescription(offerSdp);
-        remoteSet.current = true;
-        for (const c of pendingIce.current) {
-          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ }
-        }
-        pendingIce.current = [];
-      }
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      const localDesc = pc.localDescription;
-      sendSignal('answer', { sdp: { type: localDesc?.type || 'answer', sdp: localDesc?.sdp } });
+      await getMedia(invite.kind);
+      startHeartbeat(); // roster sync connects us to everyone already in the room
+      // Fast-path: tell the caller we joined so they connect without waiting.
+      if (primaryPeerRef.current) sendSignal('join', null, primaryPeerRef.current.id);
     } catch (err: any) {
-      sendSignal('reject');
       console.error('Accept call error:', err);
-      const msg = formatMediaError(err, currentKind);
+      if (primaryPeerRef.current) sendSignal('reject', null, primaryPeerRef.current.id);
+      const msg = formatMediaError(err, invite.kind);
       toast.error(msg);
       reset(msg);
     }
-  }, [getMedia, buildPc, sendSignal, reset]);
+  }, [getMedia, startHeartbeat, sendSignal, reset]);
 
-  const reject = useCallback(() => { sendSignal('reject'); reset(); }, [sendSignal, reset]);
+  const reject = useCallback(() => {
+    if (primaryPeerRef.current && pendingInvite.current) {
+      roomRef.current = pendingInvite.current.room;
+      sendSignal('reject', null, primaryPeerRef.current.id);
+    }
+    reset();
+  }, [sendSignal, reset]);
+
   const hangup = useCallback(() => {
     const calling = statusRef.current === 'calling';
-    sendSignal(calling ? 'cancel' : 'hangup');
+    peersRef.current.forEach((_e, id) => sendSignal(calling ? 'cancel' : 'hangup', null, id));
+    if (calling && primaryPeerRef.current) sendSignal('cancel', null, primaryPeerRef.current.id);
     logCall(calling ? 'cancelled' : 'ended');
     finish();
   }, [sendSignal, finish, logCall]);
+
+  // Invite another user into the current call — turns it into a group call.
+  const addToCall = useCallback((peer: Peer) => {
+    if (statusRef.current === 'idle' || !roomRef.current) return;
+    groupRef.current = true;
+    setState(s => ({ ...s, isGroup: true }));
+    sendSignal('invite', { call_id: roomRef.current, kind: kindRef.current }, peer.id);
+    toast.success(`Inviting ${peer.name}…`);
+  }, [sendSignal]);
 
   const toggleMute = useCallback(() => {
     const track = localRef.current?.getAudioTracks()[0];
@@ -269,49 +338,61 @@ export function useCall(meId?: number) {
   }, []);
 
   const handleSignal = useCallback(async (sig: CallSignal) => {
-    const pc = pcRef.current;
-    if (sig.type === 'offer') {
+    if (sig.type === 'invite') {
       if (statusRef.current !== 'idle') {
         // Busy — politely decline the new caller without disturbing the active call.
         callService.signal({ call_id: sig.call_id, to_user_id: sig.from.id, type: 'reject' }).catch(() => { /* noop */ });
         return;
       }
-      const payload = sig.data as { sdp: RTCSessionDescriptionInit; kind?: 'voice' | 'video' };
+      const payload = sig.data as { call_id: string; kind?: 'voice' | 'video' };
       const callKind = payload?.kind === 'video' ? 'video' : 'voice';
-      callIdRef.current = sig.call_id;
-      peerRef.current = sig.from;
+      pendingInvite.current = { room: payload.call_id, kind: callKind, from: sig.from };
+      primaryPeerRef.current = sig.from;
       kindRef.current = callKind;
-      pendingOffer.current = payload.sdp;
-      remoteSet.current = false;
-      pendingIce.current = [];
-      setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, error: null });
+      setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, isGroup: false, error: null });
+      return;
+    }
+    if (statusRef.current === 'idle') return;
+
+    if (sig.type === 'offer') {
+      const raw = (sig.data as { sdp: RTCSessionDescriptionInit }).sdp || sig.data;
+      const entry = createPeer(sig.from.id, sig.from as any);
+      await entry.pc.setRemoteDescription(cleanSdp(raw));
+      entry.remoteSet = true;
+      for (const c of entry.pendingIce) { try { await entry.pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ } }
+      entry.pendingIce = [];
+      const answer = await entry.pc.createAnswer();
+      await entry.pc.setLocalDescription(answer);
+      sendSignal('answer', { sdp: { type: entry.pc.localDescription?.type || 'answer', sdp: entry.pc.localDescription?.sdp } }, sig.from.id);
     } else if (sig.type === 'answer') {
-      if (pc && sig.data) {
-        const rawAnswer = (sig.data as { sdp: RTCSessionDescriptionInit }).sdp || sig.data;
-        const answerSdp = cleanSdp(rawAnswer);
-        await pc.setRemoteDescription(answerSdp);
-        remoteSet.current = true;
-        for (const c of pendingIce.current) {
-          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ }
-        }
-        pendingIce.current = [];
-        setState(s => (s.status === 'calling' ? { ...s, status: 'connecting' } : s));
+      const entry = peersRef.current.get(sig.from.id);
+      if (entry) {
+        const raw = (sig.data as { sdp: RTCSessionDescriptionInit }).sdp || sig.data;
+        await entry.pc.setRemoteDescription(cleanSdp(raw));
+        entry.remoteSet = true;
+        for (const c of entry.pendingIce) { try { await entry.pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ } }
+        entry.pendingIce = [];
       }
     } else if (sig.type === 'ice') {
       const candidate = sig.data as RTCIceCandidateInit;
-      if (pc && remoteSet.current) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* noop */ }
-      } else {
-        pendingIce.current.push(candidate);
+      const entry = peersRef.current.get(sig.from.id);
+      if (entry && entry.remoteSet) {
+        try { await entry.pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* noop */ }
+      } else if (entry) {
+        entry.pendingIce.push(candidate);
       }
-    } else if (sig.type === 'hangup' || sig.type === 'cancel' || sig.type === 'reject') {
-      if (statusRef.current !== 'idle') {
-        if (sig.type === 'reject') logCall('declined');
-        else if (sig.type === 'hangup') logCall('ended');
-        finish();
-      }
+    } else if (sig.type === 'join') {
+      // A peer just joined our room — connect immediately instead of waiting
+      // for the next roster heartbeat.
+      await connectTo({ id: sig.from.id, name: sig.from.name, avatar_url: (sig.from as any).avatar_url, kind: kindRef.current });
+    } else if (sig.type === 'reject') {
+      logCall('declined');
+      removePeer(sig.from.id);
+    } else if (sig.type === 'hangup' || sig.type === 'cancel' || sig.type === 'leave') {
+      if (sig.type === 'hangup') logCall('ended');
+      removePeer(sig.from.id);
     }
-  }, [finish, logCall]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer]);
 
   useEffect(() => {
     if (!meId) return;
@@ -328,5 +409,5 @@ export function useCall(meId?: number) {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  return { state, localStream, remoteStream, start, accept, reject, hangup, toggleMute, toggleCam };
+  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, addToCall };
 }
