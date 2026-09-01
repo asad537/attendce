@@ -5,6 +5,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import { useAuth } from '../../contexts/AuthContext';
 import { attendanceService, breakService } from '../../services/attendanceService';
 import { Attendance } from '../../types';
+import UpcomingHolidaysWidget from '../../components/common/UpcomingHolidaysWidget';
 
 const FALLBACK_START = '10:00:00';
 const FALLBACK_END = '19:00:00';
@@ -404,40 +405,44 @@ export default function EmployeeDashboard() {
         )}
       </section>
 
-      <section className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-          <Icon type="clock" className="h-4 w-4 text-gray-400" />
-        </div>
-        <div className="space-y-4">
-          {!attendance?.check_in ? (
-            <p className="text-sm text-gray-500">No activity yet today.</p>
-          ) : (
-            <>
-              <div className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                  <Icon type="in" className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Checked In</p>
-                  <p className="text-xs text-gray-500">{clock(attendance.check_in)}</p>
-                </div>
-              </div>
-              {attendance?.check_out && (
-                <div className="relative flex items-start gap-3 before:absolute before:-top-4 before:left-4 before:h-4 before:w-0.5 before:bg-gray-200">
-                  <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
-                    <Icon type="out" className="h-4 w-4" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <section className="w-full rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+            <Icon type="clock" className="h-4 w-4 text-gray-400" />
+          </div>
+          <div className="space-y-4">
+            {!attendance?.check_in ? (
+              <p className="text-sm text-gray-500">No activity yet today.</p>
+            ) : (
+              <>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <Icon type="in" className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">Checked Out</p>
-                    <p className="text-xs text-gray-500">{clock(attendance.check_out)}</p>
+                    <p className="text-sm font-semibold text-gray-900">Checked In</p>
+                    <p className="text-xs text-gray-500">{clock(attendance.check_in)}</p>
                   </div>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+                {attendance?.check_out && (
+                  <div className="relative flex items-start gap-3 before:absolute before:-top-4 before:left-4 before:h-4 before:w-0.5 before:bg-gray-200">
+                    <span className="z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
+                      <Icon type="out" className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Checked Out</p>
+                      <p className="text-xs text-gray-500">{clock(attendance.check_out)}</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        <UpcomingHolidaysWidget />
+      </div>
 
       <div className={`flex items-center gap-3 rounded-xl border px-5 py-4 text-sm font-medium ${onTrack ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : checkedOut ? 'border-blue-100 bg-blue-50 text-blue-700' : 'border-gray-200 bg-white text-gray-600'}`}>
         <span className="text-xl">💡</span>{onTrack ? 'You are on track! Keep up the great work.' : checkedOut ? 'Your workday is complete.' : 'Check in to start tracking your workday.'}

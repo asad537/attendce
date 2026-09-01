@@ -8,6 +8,7 @@ import { Attendance, Leave, TeamMemberStatus } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import EmployeeSatisfactionCard from '../../components/employee/EmployeeSatisfactionCard';
 import toast from 'react-hot-toast';
+import UpcomingHolidaysWidget from '../../components/common/UpcomingHolidaysWidget';
 import {
   LineChart,
   Line,
@@ -387,6 +388,9 @@ export default function CeoDashboard() {
               {!tasks.length && <p className="text-sm text-gray-400 italic">No pending tasks.</p>}
             </div>
           </div>
+
+          {/* Upcoming Holidays */}
+          <UpcomingHolidaysWidget />
         </div>
 
       </div>
