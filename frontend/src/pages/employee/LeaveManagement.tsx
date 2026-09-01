@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import RichTextComposer from '../../components/common/RichTextComposer';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
+import { plainText } from '../../lib/text';
 
 export default function LeaveManagement() {
   const { user } = useAuth();
@@ -133,8 +134,8 @@ export default function LeaveManagement() {
                   <td>{format(parseISO(l.start_date), 'MMM d')} – {format(parseISO(l.end_date), 'MMM d, yyyy')}</td>
                   <td>{l.days_requested}</td>
                   <td className="max-w-xs truncate text-gray-500">
-                    <div dangerouslySetInnerHTML={{ __html: l.reason }} />
-                    {l.attachment && <a href={`/api/leaves/${l.id}/attachment`} target="_blank" className="text-xs text-indigo-600 block mt-1">📎 Attachment</a>}
+                    <div className="whitespace-pre-wrap">{plainText(l.reason)}</div>
+                    {l.attachment && <a href={`/api/leaves/${l.id}/attachment`} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 block mt-1">📎 Attachment</a>}
                   </td>
                   <td><StatusBadge status={l.status} /></td>
                   <td>

@@ -198,6 +198,9 @@ class UserController extends Controller
         $privilegedFields = [
             'role', 'employment_type', 'status', 'department_id',
             'designation_id', 'shift_id', 'manager_id', 'join_date',
+            // allowed_ip enforces the office-network attendance geofence, so a
+            // user must not be able to change their own to defeat it.
+            'allowed_ip',
         ];
 
         // Self-service profile updates cannot change authorization or employment state.

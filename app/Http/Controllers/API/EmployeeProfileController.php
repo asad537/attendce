@@ -20,14 +20,22 @@ class EmployeeProfileController extends Controller
     /** GET /api/users/{user}/profile-stats?month=YYYY-MM */
     public function stats(Request $request, User $user): JsonResponse
     {
+        // Only people allowed to view this employee (self, CEO, or the manager
+        // they report to) may read their profile stats.
+        $this->authorize('view', $user);
         $month = $request->validate(['month' => 'nullable|date_format:Y-m'])['month'] ?? now()->format('Y-m');
+
+        $auth = $request->user();
+        // Compensation is sensitive: expose it only to the employee themselves,
+        // the CEO, or their direct manager — never to peers.
+        $canSeePayroll = $auth->isCeo() || $auth->id === $user->id || (int) $user->manager_id === (int) $auth->id;
 
         return response()->json([
             'work_model'  => $this->workModel($user),
             'performance' => $this->performance($user),
             'hours_week'  => $this->hoursThisWeek($user),
             'calendar'    => $this->calendar($user, $month),
-            'payroll'     => $this->payroll($user),
+            'payroll'     => $canSeePayroll ? $this->payroll($user) : null,
         ]);
     }
 
@@ -144,8 +152,13 @@ class EmployeeProfileController extends Controller
     // ── Internal notes ──────────────────────────────────────────────────────
 
     /** GET /api/users/{user}/notes */
-    public function notes(User $user): JsonResponse
+    public function notes(Request $request, User $user): JsonResponse
     {
+        // Internal HR/disciplinary notes are confidential — never visible to the
+        // employee themselves or to peers. Managers/TLs only see their reports.
+        abort_unless(in_array($request->user()->role, ['ceo', 'manager', 'tl'], true), 403);
+        $this->authorize('view', $user);
+
         $notes = InternalNote::with('author:id,name')->where('user_id', $user->id)->latest()->get()
             ->map(fn ($n) => [
                 'id' => $n->id, 'title' => $n->title, 'body' => $n->body,

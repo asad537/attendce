@@ -9,6 +9,7 @@ import Modal from '../../components/common/Modal';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import RichTextComposer from '../../components/common/RichTextComposer';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
+import { plainText } from '../../lib/text';
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 border border-amber-200/60',
@@ -183,7 +184,7 @@ export default function ResignationPage() {
                           </td>
                           <td className="px-3 py-3.5 font-medium text-xs text-gray-900">{fmtDate(r.last_working_day)}</td>
                           <td className="max-w-[280px] px-3 py-3.5 text-xs text-gray-600">
-                            <div className="prose prose-sm max-w-none text-xs text-gray-600 line-clamp-3" dangerouslySetInnerHTML={{ __html: r.reason }} />
+                            <div className="max-w-none text-xs text-gray-600 line-clamp-3 whitespace-pre-wrap">{plainText(r.reason)}</div>
                             {r.remarks && <p className="mt-1 text-[11px] text-gray-400"><b>Remarks:</b> {r.remarks}{r.reviewer ? ` — ${r.reviewer}` : ''}</p>}
                           </td>
                           <td className="px-3 py-3.5 text-xs text-gray-500">{fmtDate(r.created_at)}</td>

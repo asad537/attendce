@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { PaginatedResponse } from '../../types';
 import RichTextComposer from '../../components/common/RichTextComposer';
+import { plainText } from '../../lib/text';
 
 export default function WfhManagement() {
   const { user } = useAuth();
@@ -118,8 +119,8 @@ export default function WfhManagement() {
                     )}
                   </td>
                   <td className="max-w-xs truncate text-gray-500">
-                    <div dangerouslySetInnerHTML={{ __html: r.reason }} />
-                    {r.attachment && <a href={`/api/wfh/${r.id}/attachment`} target="_blank" className="text-xs text-indigo-600 block mt-1">📎 Attachment</a>}
+                    <div className="whitespace-pre-wrap">{plainText(r.reason)}</div>
+                    {r.attachment && <a href={`/api/wfh/${r.id}/attachment`} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 block mt-1">📎 Attachment</a>}
                   </td>
                   <td><StatusBadge status={r.status} /></td>
                   <td>

@@ -38,6 +38,9 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:lo
 Route::get('/users/{user}/avatar', [UserController::class, 'avatar'])
     ->middleware(['signed:relative', 'throttle:60,1'])
     ->name('users.avatar');
+Route::get('/messages/{message}/attachment', [MessageController::class, 'downloadAttachment'])
+    ->middleware(['signed:relative', 'throttle:120,1'])
+    ->name('messages.attachment');
 
 // ── Authenticated ────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'active'])->group(function () {

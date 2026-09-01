@@ -70,6 +70,17 @@ class CallController extends Controller
             'kind' => 'required|in:voice,video',
         ]);
 
+        $userId = $request->user()->id;
+        // Only someone who is a party to this call's signalling (they sent or
+        // received an invite/offer/etc. for this call_id) may join its room —
+        // otherwise anyone could join an arbitrary room and eavesdrop.
+        $isParty = CallParticipant::where('call_id', $data['call_id'])->where('user_id', $userId)->exists()
+            || CallSignal::where('call_id', $data['call_id'])
+                ->where(function ($q) use ($userId) {
+                    $q->where('from_user_id', $userId)->orWhere('to_user_id', $userId);
+                })->exists();
+        abort_unless($isParty, 403, 'You were not invited to this call.');
+
         CallParticipant::updateOrCreate(
             ['call_id' => $data['call_id'], 'user_id' => $request->user()->id],
             ['kind' => $data['kind'], 'last_seen_at' => now()]

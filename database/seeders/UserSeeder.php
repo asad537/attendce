@@ -13,6 +13,13 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
+        // These demo accounts share the password "password" — never create them
+        // in production, even if the seeder is invoked directly.
+        if (app()->environment('production')) {
+            $this->command->warn('UserSeeder skipped: refusing to seed demo accounts in production.');
+            return;
+        }
+
         $generalShift = Shift::where('name', 'General Shift')->first();
         $morningShift = Shift::where('name', 'Morning Shift')->first();
         $engDept      = Department::where('code', 'DEV')->first();

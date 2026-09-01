@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class MessageController extends Controller
@@ -131,16 +132,26 @@ class MessageController extends Controller
             'subject' => 'nullable|string|max:200', 'body' => 'nullable|string|max:20000',
             'label' => 'nullable|in:hr,leave,interview,admin', 'is_draft' => 'sometimes|boolean',
             'parent_id' => 'nullable|exists:messages,id', 'is_forwarded' => 'sometimes|boolean',
-            'attachment' => 'nullable|file|max:10240',
+            // Restrict types (no html/svg/executables that could be served as
+            // active content) and keep attachments on the private disk.
+            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp3,mp4,wav,m4a,ogg',
         ]);
         abort_if(isset($data['recipient_id']) && (int) $data['recipient_id'] === (int) $request->user()->id, 422, 'You cannot message yourself.');
         abort_if(trim($data['body'] ?? '') === '' && ! $request->hasFile('attachment'), 422, 'Message cannot be empty.');
+
+        // A reply may only quote a message the sender is actually a party to —
+        // otherwise the quoted body would leak other users' private messages.
+        if (! empty($data['parent_id'])) {
+            $uid = $request->user()->id;
+            $parent = Message::find($data['parent_id']);
+            abort_if(! $parent || ((int) $parent->sender_id !== (int) $uid && (int) $parent->recipient_id !== (int) $uid), 403, 'Invalid reply target.');
+        }
 
         $attachment = [];
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $attachment = [
-                'attachment_path' => $file->store('chat-attachments', 'public'),
+                'attachment_path' => $file->store('chat-attachments', 'local'),
                 'attachment_name' => $file->getClientOriginalName(),
                 'attachment_mime' => $file->getMimeType(),
                 'attachment_size' => $file->getSize(),
@@ -165,6 +176,24 @@ class MessageController extends Controller
             );
         }
         return response()->json(['message' => $this->format($message->load(['sender', 'recipient']), $request->user()->id)], 201);
+    }
+
+    /**
+     * GET /api/messages/{message}/attachment — serve a chat attachment.
+     * Protected by a relative signed URL (like avatars): the time-limited link
+     * is only ever handed out by format() through the authorized thread/index
+     * endpoints, so only conversation parties receive it. Served from the
+     * private disk with nosniff so it can't be abused as active content.
+     */
+    public function downloadAttachment(Message $message)
+    {
+        abort_if($message->deleted_for_everyone_at || ! $message->attachment_path, 404);
+        abort_unless(Storage::disk('local')->exists($message->attachment_path), 404);
+
+        return Storage::disk('local')->response($message->attachment_path, $message->attachment_name ?: 'attachment', [
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Type' => $message->attachment_mime ?: 'application/octet-stream',
+        ]);
     }
 
     public function update(Request $request, Message $message): JsonResponse
@@ -281,7 +310,7 @@ class MessageController extends Controller
         $attachment = null;
         if (! $deleted && $message->attachment_path) {
             $attachment = [
-                'url' => '/storage/' . ltrim($message->attachment_path, '/'),
+                'url' => URL::temporarySignedRoute('messages.attachment', now()->addHours(6), ['message' => $message->id], false),
                 'name' => $message->attachment_name,
                 'mime' => $message->attachment_mime,
                 'size' => (int) $message->attachment_size,
