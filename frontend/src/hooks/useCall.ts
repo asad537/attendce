@@ -41,8 +41,11 @@ const cleanSdp = (sdpInit: any): RTCSessionDescription => {
     type = sdpInit.type || 'offer';
     sdp = sdpInit.sdp || '';
   }
-  // WebRTC RFC 4566 requires strict CRLF \r\n line endings in SDP strings
+  // WebRTC RFC 4566 requires strict CRLF \r\n line endings in SDP strings.
   sdp = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  // The transport (Laravel's TrimStrings middleware) strips the SDP's trailing
+  // newline; without it Chrome rejects the final line ("Invalid SDP line").
+  if (sdp && !sdp.endsWith('\r\n')) sdp += '\r\n';
   return new RTCSessionDescription({ type, sdp });
 };
 
