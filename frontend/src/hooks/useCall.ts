@@ -262,7 +262,7 @@ export function useCall(meId?: number) {
   const startHeartbeat = useCallback(() => {
     stopHeartbeat();
     void heartbeat();
-    heartbeatRef.current = window.setInterval(() => void heartbeat(), 3000);
+    heartbeatRef.current = window.setInterval(() => void heartbeat(), 2000);
   }, [heartbeat]);
 
   const start = useCallback(async (peer: Peer, kind: 'voice' | 'video') => {
@@ -403,14 +403,21 @@ export function useCall(meId?: number) {
   useEffect(() => {
     if (!meId) return;
     let active = true;
+    let timeoutId: number;
     const tick = async () => {
       try {
         const signals = await callService.poll();
         for (const sig of signals) { if (active) await handleSignal(sig); }
       } catch { /* noop */ }
+      if (active) {
+        // Poll fast while a call is live so connect/hangup feel instant; back
+        // off to a lighter cadence when idle (just watching for invites).
+        const delay = statusRef.current === 'idle' ? 1000 : 500;
+        timeoutId = window.setTimeout(tick, delay);
+      }
     };
-    const id = window.setInterval(tick, 1500);
-    return () => { active = false; clearInterval(id); };
+    void tick();
+    return () => { active = false; clearTimeout(timeoutId); };
   }, [meId, handleSignal]);
 
   useEffect(() => () => cleanup(), [cleanup]);
