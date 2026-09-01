@@ -102,32 +102,63 @@ export function useCall(meId?: number) {
     return pc;
   }, [sendSignal, finish]);
 
+  const formatMediaError = (err: any, kind: 'voice' | 'video') => {
+    const name = err?.name || '';
+    const msg = err?.message || '';
+
+    if (msg === 'SECURE_CONTEXT_REQUIRED' || name === 'SecurityError') {
+      return 'Calls require an HTTPS connection or localhost to access your microphone.';
+    }
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return 'Microphone access blocked. Please check browser permissions AND macOS Privacy & Security -> Microphone.';
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return 'No microphone found on your device. Please plug in a headset or microphone.';
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError') {
+      return 'Microphone is busy in another app (Zoom, Teams, FaceTime, or Meet).';
+    }
+    return `${kind === 'video' ? 'Camera/Mic' : 'Microphone'} error (${name || 'Error'}): ${msg || 'Unable to access media device'}`;
+  };
+
   const getMedia = useCallback(async (kind: 'voice' | 'video') => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    const nav = navigator as any;
+    if (!nav.mediaDevices?.getUserMedia && !nav.getUserMedia && !nav.webkitGetUserMedia && !nav.mozGetUserMedia) {
       throw new Error('SECURE_CONTEXT_REQUIRED');
     }
-    let stream: MediaStream;
+
+    const getUserMediaPromised = (constraints: MediaStreamConstraints): Promise<MediaStream> => {
+      if (nav.mediaDevices?.getUserMedia) {
+        return nav.mediaDevices.getUserMedia(constraints);
+      }
+      return new Promise((resolve, reject) => {
+        const legacy = nav.getUserMedia || nav.webkitGetUserMedia || nav.mozGetUserMedia;
+        legacy.call(nav, constraints, resolve, reject);
+      });
+    };
+
+    let stream: MediaStream | null = null;
+    let lastError: any = null;
+
     try {
       if (kind === 'video') {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true },
-          video: { facingMode: 'user' }
-        });
+        stream = await getUserMediaPromised({ audio: true, video: true });
       } else {
-        // Audio call - explicit audio only, no video requested!
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: false
-        });
+        stream = await getUserMediaPromised({ audio: true, video: false });
       }
-    } catch {
-      // Fallback to basic constraints if specialized constraints fail
-      if (kind === 'video') {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      } else {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (err1) {
+      lastError = err1;
+      try {
+        stream = await getUserMediaPromised({ audio: true });
+      } catch (err2) {
+        lastError = err2 || err1;
       }
     }
+
+    if (!stream) {
+      throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
+    }
+
     localRef.current = stream;
     setLocalStream(stream);
     return stream;
@@ -152,12 +183,7 @@ export function useCall(meId?: number) {
       }, 45000);
     } catch (err: any) {
       console.error('Start call error:', err);
-      let msg = 'Microphone not available, or permission was denied.';
-      if (err?.message === 'SECURE_CONTEXT_REQUIRED') {
-        msg = 'Calls require an HTTPS connection or localhost to access your microphone.';
-      } else if (kind === 'video') {
-        msg = 'Camera / microphone not available, or permission was denied.';
-      }
+      const msg = formatMediaError(err, kind);
       toast.error(msg);
       reset(msg);
     }
@@ -184,12 +210,7 @@ export function useCall(meId?: number) {
     } catch (err: any) {
       sendSignal('reject');
       console.error('Accept call error:', err);
-      let msg = 'Microphone not available, or permission was denied.';
-      if (err?.message === 'SECURE_CONTEXT_REQUIRED') {
-        msg = 'Calls require an HTTPS connection or localhost to access your microphone.';
-      } else if (currentKind === 'video') {
-        msg = 'Camera / microphone not available, or permission was denied.';
-      }
+      const msg = formatMediaError(err, currentKind);
       toast.error(msg);
       reset(msg);
     }
