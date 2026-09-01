@@ -31,6 +31,21 @@ const ICE: RTCConfiguration = {
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, error: null };
 
+const cleanSdp = (sdpInit: any): RTCSessionDescription => {
+  if (sdpInit instanceof RTCSessionDescription) return sdpInit;
+  let type: RTCSdpType = 'offer';
+  let sdp = '';
+  if (typeof sdpInit === 'string') {
+    sdp = sdpInit;
+  } else if (sdpInit && typeof sdpInit === 'object') {
+    type = sdpInit.type || 'offer';
+    sdp = sdpInit.sdp || '';
+  }
+  // WebRTC RFC 4566 requires strict CRLF \r\n line endings in SDP strings
+  sdp = sdp.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n/g, '\r\n');
+  return new RTCSessionDescription({ type, sdp });
+};
+
 export function useCall(meId?: number) {
   const [state, setState] = useState<CallState>(idleState);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -169,7 +184,6 @@ export function useCall(meId?: number) {
     callIdRef.current = randomId();
     peerRef.current = peer;
     kindRef.current = kind;
-    roleRef.current = 'caller';
     setState({ status: 'calling', peer, kind, muted: false, camOff: false, error: null });
     try {
       const stream = await getMedia(kind);
@@ -177,7 +191,8 @@ export function useCall(meId?: number) {
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      sendSignal('offer', { sdp: pc.localDescription, kind }, peer.id);
+      const localDesc = pc.localDescription;
+      sendSignal('offer', { sdp: { type: localDesc?.type || 'offer', sdp: localDesc?.sdp }, kind }, peer.id);
       timerRef.current = window.setTimeout(() => {
         if (statusRef.current === 'calling') { sendSignal('cancel'); finish(); }
       }, 45000);
@@ -191,7 +206,6 @@ export function useCall(meId?: number) {
 
   const accept = useCallback(async () => {
     if (statusRef.current !== 'incoming') return;
-    roleRef.current = 'callee';
     const currentKind = kindRef.current || 'voice';
     setState(s => ({ ...s, status: 'connecting' }));
     try {
@@ -199,14 +213,18 @@ export function useCall(meId?: number) {
       const pc = buildPc();
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
       if (pendingOffer.current) {
-        await pc.setRemoteDescription(pendingOffer.current);
+        const offerSdp = cleanSdp(pendingOffer.current);
+        await pc.setRemoteDescription(offerSdp);
         remoteSet.current = true;
-        for (const c of pendingIce.current) { try { await pc.addIceCandidate(c); } catch { /* noop */ } }
+        for (const c of pendingIce.current) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ }
+        }
         pendingIce.current = [];
       }
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      sendSignal('answer', { sdp: pc.localDescription });
+      const localDesc = pc.localDescription;
+      sendSignal('answer', { sdp: { type: localDesc?.type || 'answer', sdp: localDesc?.sdp } });
     } catch (err: any) {
       sendSignal('reject');
       console.error('Accept call error:', err);
@@ -250,16 +268,23 @@ export function useCall(meId?: number) {
       setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, error: null });
     } else if (sig.type === 'answer') {
       if (pc && sig.data) {
-        await pc.setRemoteDescription((sig.data as { sdp: RTCSessionDescriptionInit }).sdp);
+        const rawAnswer = (sig.data as { sdp: RTCSessionDescriptionInit }).sdp || sig.data;
+        const answerSdp = cleanSdp(rawAnswer);
+        await pc.setRemoteDescription(answerSdp);
         remoteSet.current = true;
-        for (const c of pendingIce.current) { try { await pc.addIceCandidate(c); } catch { /* noop */ } }
+        for (const c of pendingIce.current) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ }
+        }
         pendingIce.current = [];
         setState(s => (s.status === 'calling' ? { ...s, status: 'connecting' } : s));
       }
     } else if (sig.type === 'ice') {
       const candidate = sig.data as RTCIceCandidateInit;
-      if (pc && remoteSet.current) { try { await pc.addIceCandidate(candidate); } catch { /* noop */ } }
-      else pendingIce.current.push(candidate);
+      if (pc && remoteSet.current) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* noop */ }
+      } else {
+        pendingIce.current.push(candidate);
+      }
     } else if (sig.type === 'hangup' || sig.type === 'cancel' || sig.type === 'reject') {
       if (statusRef.current !== 'idle') finish();
     }
