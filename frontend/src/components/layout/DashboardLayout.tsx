@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import ProfileSettingsModal from '../common/ProfileSettingsModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { CallProvider } from '../../contexts/CallContext';
 
 export default function DashboardLayout() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function DashboardLayout() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
+    <CallProvider>
     <div className="flex min-h-screen h-dvh bg-gray-50 overflow-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-60 xl:w-64 flex-shrink-0">
@@ -57,5 +59,6 @@ export default function DashboardLayout() {
       {/* Settings Modal */}
       <ProfileSettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
+    </CallProvider>
   );
 }
