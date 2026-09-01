@@ -125,25 +125,31 @@ export function useCall(meId?: number) {
     setState({ ...idleState, error });
   }, [cleanup]);
 
-  // Move to "ended" briefly, then back to idle so the UI can show a closing frame.
-  const finish = useCallback(() => {
-    cleanup();
-    setState(s => ({ ...s, status: 'ended' }));
-    window.setTimeout(() => { primaryPeerRef.current = null; setState(idleState); }, 1200);
-  }, [cleanup]);
-
   const sendSignal = useCallback((type: SignalType, data: unknown, toId: number) => {
     if (!toId || !roomRef.current) return;
     callService.signal({ call_id: roomRef.current, to_user_id: toId, type, data }).catch(() => { /* noop */ });
   }, []);
 
-  // Only the caller writes the 1:1 call-log message, so it is never duplicated.
   const logCall = useCallback((outcome: 'ended' | 'missed' | 'declined' | 'cancelled') => {
-    if (roleRef.current !== 'caller' || loggedRef.current || groupRef.current || !primaryPeerRef.current) return;
+    if (loggedRef.current || groupRef.current || !primaryPeerRef.current) return;
     loggedRef.current = true;
     const duration = connectedAtRef.current ? Math.floor((Date.now() - connectedAtRef.current) / 1000) : 0;
     callService.log({ to_user_id: primaryPeerRef.current.id, kind: kindRef.current, outcome, duration });
   }, []);
+
+  // Move to "ended" briefly, then back to idle so the UI can show a closing frame.
+  const finish = useCallback(() => {
+    if (!loggedRef.current && primaryPeerRef.current && !groupRef.current) {
+      if (statusRef.current === 'connected') {
+        logCall('ended');
+      } else if (statusRef.current === 'calling') {
+        logCall('cancelled');
+      }
+    }
+    cleanup();
+    setState(s => ({ ...s, status: 'ended' }));
+    window.setTimeout(() => { primaryPeerRef.current = null; setState(idleState); }, 1200);
+  }, [cleanup, logCall]);
 
   const removePeer = useCallback((id: number) => {
     const entry = peersRef.current.get(id);

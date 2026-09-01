@@ -25,11 +25,27 @@ class CallController extends Controller
             'duration' => 'nullable|integer|min:0',
         ]);
 
-        abort_if((int) $data['to_user_id'] === (int) $request->user()->id, 422, 'You cannot call yourself.');
+        $userId = $request->user()->id;
+        $peerId = (int) $data['to_user_id'];
+
+        abort_if($peerId === $userId, 422, 'You cannot call yourself.');
+
+        // Prevent duplicate call logs between the same 2 users within 10 seconds
+        $recentLog = Message::where('label', 'call')
+            ->where(function ($q) use ($userId, $peerId) {
+                $q->where(fn ($x) => $x->where('sender_id', $userId)->where('recipient_id', $peerId))
+                  ->orWhere(fn ($x) => $x->where('sender_id', $peerId)->where('recipient_id', $userId));
+            })
+            ->where('created_at', '>=', now()->subSeconds(10))
+            ->first();
+
+        if ($recentLog) {
+            return response()->json(['ok' => true, 'id' => $recentLog->id, 'duplicate' => true], 200);
+        }
 
         $message = Message::create([
-            'sender_id' => $request->user()->id,
-            'recipient_id' => $data['to_user_id'],
+            'sender_id' => $userId,
+            'recipient_id' => $peerId,
             'subject' => '(Call)',
             'body' => json_encode([
                 'kind' => $data['kind'],
