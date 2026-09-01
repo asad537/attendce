@@ -641,8 +641,20 @@ export default function InboxPage() {
                                     setSearch(event.target.value)
                                 }
                                 placeholder="Search"
-                                className="h-9 w-full rounded-lg border border-[#dfe5e2] bg-white pl-9 pr-3 text-sm outline-none focus:border-emerald-500"
+                                className="h-9 w-full rounded-lg border border-[#dfe5e2] bg-white pl-9 pr-9 text-sm outline-none focus:border-emerald-500"
                             />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearch("")}
+                                    title="Clear search"
+                                    className="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full bg-[#dfe5e2] text-[#5b6b64] hover:bg-[#cbd6d1]"
+                                >
+                                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                                        <path d="M6 6l12 12M18 6L6 18" />
+                                    </svg>
+                                </button>
+                            )}
                         </label>
                         <div className="mt-3 flex gap-2 overflow-x-auto">
                             {(

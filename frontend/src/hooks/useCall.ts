@@ -356,6 +356,9 @@ export function useCall(meId?: number) {
       primaryPeerRef.current = sig.from;
       kindRef.current = callKind;
       setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, isGroup: false, error: null });
+      // Safety net: if the cancel signal is ever missed, stop ringing anyway.
+      clearTimer();
+      timerRef.current = window.setTimeout(() => { if (statusRef.current === 'incoming') reset(); }, 50000);
       return;
     }
     if (statusRef.current === 'idle') return;
@@ -391,14 +394,19 @@ export function useCall(meId?: number) {
       // A peer just joined our room — connect immediately instead of waiting
       // for the next roster heartbeat.
       await connectTo({ id: sig.from.id, name: sig.from.name, avatar_url: (sig.from as any).avatar_url, kind: kindRef.current });
-    } else if (sig.type === 'reject') {
-      logCall('declined');
-      removePeer(sig.from.id);
-    } else if (sig.type === 'hangup' || sig.type === 'cancel' || sig.type === 'leave') {
-      if (sig.type === 'hangup') logCall('ended');
-      removePeer(sig.from.id);
+    } else if (sig.type === 'reject' || sig.type === 'cancel' || sig.type === 'hangup' || sig.type === 'leave') {
+      // Log first (finish() would otherwise mislabel a decline as cancelled).
+      if (sig.type === 'reject') logCall('declined');
+      else if (sig.type === 'hangup') logCall('ended');
+      if (peersRef.current.has(sig.from.id)) {
+        removePeer(sig.from.id);
+      } else if (statusRef.current === 'incoming' || statusRef.current === 'calling') {
+        // Still ringing with no media peer yet — the other side ended it, so
+        // tear down instantly (stops the ringtone, dismisses the card).
+        reset();
+      }
     }
-  }, [createPeer, connectTo, sendSignal, logCall, removePeer]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset]);
 
   useEffect(() => {
     if (!meId) return;
