@@ -103,7 +103,31 @@ export function useCall(meId?: number) {
   }, [sendSignal, finish]);
 
   const getMedia = useCallback(async (kind: 'voice' | 'video') => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: kind === 'video' });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('SECURE_CONTEXT_REQUIRED');
+    }
+    let stream: MediaStream;
+    try {
+      if (kind === 'video') {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+          video: { facingMode: 'user' }
+        });
+      } else {
+        // Audio call - explicit audio only, no video requested!
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false
+        });
+      }
+    } catch {
+      // Fallback to basic constraints if specialized constraints fail
+      if (kind === 'video') {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
+    }
     localRef.current = stream;
     setLocalStream(stream);
     return stream;
@@ -126,18 +150,26 @@ export function useCall(meId?: number) {
       timerRef.current = window.setTimeout(() => {
         if (statusRef.current === 'calling') { sendSignal('cancel'); finish(); }
       }, 45000);
-    } catch {
-      toast.error('Camera / microphone not available, or permission was denied.');
-      reset();
+    } catch (err: any) {
+      console.error('Start call error:', err);
+      let msg = 'Microphone not available, or permission was denied.';
+      if (err?.message === 'SECURE_CONTEXT_REQUIRED') {
+        msg = 'Calls require an HTTPS connection or localhost to access your microphone.';
+      } else if (kind === 'video') {
+        msg = 'Camera / microphone not available, or permission was denied.';
+      }
+      toast.error(msg);
+      reset(msg);
     }
   }, [getMedia, buildPc, sendSignal, finish, reset]);
 
   const accept = useCallback(async () => {
     if (statusRef.current !== 'incoming') return;
     roleRef.current = 'callee';
+    const currentKind = kindRef.current || 'voice';
     setState(s => ({ ...s, status: 'connecting' }));
     try {
-      const stream = await getMedia(kindRef.current);
+      const stream = await getMedia(currentKind);
       const pc = buildPc();
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
       if (pendingOffer.current) {
@@ -149,10 +181,17 @@ export function useCall(meId?: number) {
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       sendSignal('answer', { sdp: pc.localDescription });
-    } catch {
+    } catch (err: any) {
       sendSignal('reject');
-      toast.error('Camera / microphone not available, or permission was denied.');
-      reset();
+      console.error('Accept call error:', err);
+      let msg = 'Microphone not available, or permission was denied.';
+      if (err?.message === 'SECURE_CONTEXT_REQUIRED') {
+        msg = 'Calls require an HTTPS connection or localhost to access your microphone.';
+      } else if (currentKind === 'video') {
+        msg = 'Camera / microphone not available, or permission was denied.';
+      }
+      toast.error(msg);
+      reset(msg);
     }
   }, [getMedia, buildPc, sendSignal, reset]);
 
@@ -179,14 +218,15 @@ export function useCall(meId?: number) {
         callService.signal({ call_id: sig.call_id, to_user_id: sig.from.id, type: 'reject' }).catch(() => { /* noop */ });
         return;
       }
-      const payload = sig.data as { sdp: RTCSessionDescriptionInit; kind: 'voice' | 'video' };
+      const payload = sig.data as { sdp: RTCSessionDescriptionInit; kind?: 'voice' | 'video' };
+      const callKind = payload?.kind === 'video' ? 'video' : 'voice';
       callIdRef.current = sig.call_id;
       peerRef.current = sig.from;
-      kindRef.current = payload.kind;
+      kindRef.current = callKind;
       pendingOffer.current = payload.sdp;
       remoteSet.current = false;
       pendingIce.current = [];
-      setState({ status: 'incoming', peer: sig.from, kind: payload.kind, muted: false, camOff: false, error: null });
+      setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, error: null });
     } else if (sig.type === 'answer') {
       if (pc && sig.data) {
         await pc.setRemoteDescription((sig.data as { sdp: RTCSessionDescriptionInit }).sdp);

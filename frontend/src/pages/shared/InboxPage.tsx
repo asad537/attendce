@@ -198,7 +198,10 @@ function Video({
 }) {
     const ref = useRef<HTMLVideoElement>(null);
     useEffect(() => {
-        if (ref.current) ref.current.srcObject = stream;
+        if (ref.current && stream) {
+            ref.current.srcObject = stream;
+            ref.current.play().catch(() => { /* autoplay handling */ });
+        }
     }, [stream]);
     return (
         <video
@@ -1599,9 +1602,9 @@ export default function InboxPage() {
                                             <b className="truncate text-sm font-semibold text-[#1f2c28]">
                                                 {c.user.name}
                                             </b>
-                                            {c.user.designation?.title && (
+                                            {c.user.designation && (
                                                 <small className="truncate text-[11px] text-[#7f8c87]">
-                                                    {c.user.designation.title}
+                                                    {typeof c.user.designation === 'string' ? c.user.designation : (c.user.designation as any).title}
                                                 </small>
                                             )}
                                         </span>
