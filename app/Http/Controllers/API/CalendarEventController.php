@@ -18,7 +18,7 @@ class CalendarEventController extends Controller
         return response()->json(['event' => $this->format($event)], 201);
     }
     public function update(Request $request, CalendarEvent $calendarEvent): JsonResponse {
-        abort_unless(in_array($request->user()->role, ['ceo','manager','tl']), 403);
+        abort_unless(in_array($request->user()->role, ['ceo','manager','tl']) && $calendarEvent->created_by === $request->user()->id, 403);
         $calendarEvent->update($this->payload($request));
         NotificationService::notifyAll('Calendar agenda updated', $calendarEvent->title . ' has been updated.', 'info', $calendarEvent);
         return response()->json(['event' => $this->format($calendarEvent)]);

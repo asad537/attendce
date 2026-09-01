@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function CalendarPage() {
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -53,7 +54,7 @@ export default function CalendarPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({
-    title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00 AM', type: 'talent', location: '', note: ''
+    title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: ''
   });
 
   const handlePrevMonth = () => setCalendarDate(subMonths(calendarDate, 1));
@@ -68,19 +69,23 @@ export default function CalendarPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00 AM', type: 'talent', location: '', note: '' });
+    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '' });
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      editEvent(editingId, newEvent);
-    } else {
-      addEvent(newEvent);
+    try {
+      if (editingId) {
+        await editEvent(editingId, newEvent);
+      } else {
+        await addEvent(newEvent);
+      }
+      setSelectedDate(parseISO(newEvent.date));
+      setShowDetails(true);
+      handleCloseModal();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Could not save the agenda. You may not have permission.');
     }
-    setSelectedDate(parseISO(newEvent.date));
-    setShowDetails(true);
-    handleCloseModal();
   };
 
   const handleEditEvent = (id: number) => {
@@ -92,9 +97,13 @@ export default function CalendarPage() {
     }
   };
 
-  const handleDeleteEvent = (id: number) => {
+  const handleDeleteEvent = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this event?")) {
-      deleteEvent(id);
+      try {
+        await deleteEvent(id);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Could not delete the agenda.');
+      }
     }
   };
 
@@ -160,8 +169,8 @@ export default function CalendarPage() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-bold text-sm text-gray-800">Categories</h4>
-              <button onClick={() => setActiveTypes(activeTypes.length === 3 ? [] : ['talent', 'dev', 'engagement'])} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-                {activeTypes.length === 3 ? 'Clear all' : 'Select all'}
+              <button onClick={() => setActiveTypes(activeTypes.length === categories.length ? [] : categories.map(c => c.key))} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                {activeTypes.length === categories.length ? 'Clear all' : 'Select all'}
               </button>
             </div>
             <div className="space-y-3">
@@ -268,16 +277,18 @@ export default function CalendarPage() {
                 Month <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
 
-              <button 
-                onClick={() => {
-                  setEditingId(null);
-                  setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00 AM', type: 'talent', location: '', note: '' });
-                  setIsModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700"
-              >
-                + New Agenda
-              </button>
+              {canManageCats && (
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '' });
+                    setIsModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700"
+                >
+                  + New Agenda
+                </button>
+              )}
             </div>
           </div>
           
@@ -289,7 +300,7 @@ export default function CalendarPage() {
               ))}
             </div>
             
-            <div className="min-w-[700px] flex-1 grid grid-cols-7 grid-rows-5 bg-gray-50 gap-[1px]">
+            <div className="min-w-[700px] flex-1 grid grid-cols-7 auto-rows-fr bg-gray-50 gap-[1px]">
               {calendarDays.map((day, idx) => {
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const dayStr = format(day, 'yyyy-MM-dd');

@@ -1251,6 +1251,7 @@ export default function InboxPage() {
                                                                         >
                                                                             Reply
                                                                         </button>
+                                                                        {!att && (
                                                                         <button
                                                                             onClick={() => {
                                                                                 setForwardingMessage(
@@ -1282,6 +1283,7 @@ export default function InboxPage() {
                                                                             </svg>{" "}
                                                                             Forward
                                                                         </button>
+                                                                        )}
                                                                         {mine &&
                                                                             !att &&
                                                                             !item.is_forwarded && (
