@@ -20,4 +20,7 @@ export const callService = {
     const response = await api.get('/calls/poll');
     return response.data.signals;
   },
+  async log(payload: { to_user_id: number; kind: 'voice' | 'video'; outcome: 'ended' | 'missed' | 'declined' | 'cancelled'; duration?: number }): Promise<void> {
+    await api.post('/calls/log', payload).catch(() => { /* logging is best-effort */ });
+  },
 };

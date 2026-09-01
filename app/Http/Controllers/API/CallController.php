@@ -4,11 +4,43 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\CallSignal;
+use App\Models\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CallController extends Controller
 {
+    /**
+     * Record a finished call as a message in the conversation so it shows up
+     * in the chat thread (like WhatsApp's "Missed voice call" rows). Only the
+     * caller logs, so the entry is never duplicated.
+     */
+    public function log(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'to_user_id' => 'required|exists:users,id',
+            'kind' => 'required|in:voice,video',
+            'outcome' => 'required|in:ended,missed,declined,cancelled',
+            'duration' => 'nullable|integer|min:0',
+        ]);
+
+        abort_if((int) $data['to_user_id'] === (int) $request->user()->id, 422, 'You cannot call yourself.');
+
+        $message = Message::create([
+            'sender_id' => $request->user()->id,
+            'recipient_id' => $data['to_user_id'],
+            'subject' => '(Call)',
+            'body' => json_encode([
+                'kind' => $data['kind'],
+                'outcome' => $data['outcome'],
+                'duration' => (int) ($data['duration'] ?? 0),
+            ]),
+            'label' => 'call',
+        ]);
+
+        return response()->json(['ok' => true, 'id' => $message->id], 201);
+    }
+
     /**
      * Post a signalling message (offer / answer / ice / hangup / reject / cancel)
      * to the other participant. Signalling rides on top of normal polling so no

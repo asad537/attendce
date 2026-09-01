@@ -72,6 +72,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // Calls (WebRTC signalling over polling)
     Route::post('/calls/signal',               [CallController::class, 'signal']);
     Route::get('/calls/poll',                  [CallController::class, 'poll']);
+    Route::post('/calls/log',                  [CallController::class, 'log']);
 
     // Organisation settings (currency + theme accent)
     Route::get('/settings',                    [SettingController::class, 'index']);

@@ -245,6 +245,15 @@ class MessageController extends Controller
     private function preview(Message $message): string
     {
         if ($message->deleted_for_everyone_at) return 'This message was deleted';
+        if ($message->label === 'call') {
+            $info = json_decode((string) $message->body, true) ?: [];
+            $noun = ($info['kind'] ?? 'voice') === 'video' ? 'video call' : 'voice call';
+            $outcome = $info['outcome'] ?? 'ended';
+            if ($outcome === 'missed')    return '📞 Missed ' . $noun;
+            if ($outcome === 'declined')  return '📞 Declined ' . $noun;
+            if ($outcome === 'cancelled') return '📞 Cancelled ' . $noun;
+            return '📞 ' . ucfirst($noun);
+        }
         if (trim((string) $message->body) !== '') return $message->body;
         if ($message->attachment_path) {
             return str_starts_with((string) $message->attachment_mime, 'image/') ? '📷 Photo' : '📎 ' . ($message->attachment_name ?: 'Attachment');

@@ -65,6 +65,8 @@ export function useCall(meId?: number) {
   const remoteSet = useRef(false);
   const statusRef = useRef<CallStatus>('idle');
   const timerRef = useRef<number | undefined>(undefined);
+  const connectedAtRef = useRef(0);
+  const loggedRef = useRef(false);
 
   useEffect(() => { statusRef.current = state.status; }, [state.status]);
 
@@ -81,6 +83,8 @@ export function useCall(meId?: number) {
     pendingOffer.current = null;
     remoteSet.current = false;
     roleRef.current = null;
+    connectedAtRef.current = 0;
+    loggedRef.current = false;
     setLocalStream(null);
     setRemoteStream(null);
   }, []);
@@ -105,6 +109,14 @@ export function useCall(meId?: number) {
     callService.signal({ call_id: callIdRef.current, to_user_id: to, type, data }).catch(() => { /* noop */ });
   }, []);
 
+  // Only the caller writes the call-log message, so it is never duplicated.
+  const logCall = useCallback((outcome: 'ended' | 'missed' | 'declined' | 'cancelled') => {
+    if (roleRef.current !== 'caller' || loggedRef.current || !peerRef.current) return;
+    loggedRef.current = true;
+    const duration = connectedAtRef.current ? Math.floor((Date.now() - connectedAtRef.current) / 1000) : 0;
+    callService.log({ to_user_id: peerRef.current.id, kind: kindRef.current, outcome, duration });
+  }, []);
+
   const buildPc = useCallback(() => {
     const pc = new RTCPeerConnection(ICE);
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON()); };
@@ -113,12 +125,12 @@ export function useCall(meId?: number) {
     pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => remote.addTrack(t)); };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
-      if (st === 'connected') { clearTimer(); setState(s => ({ ...s, status: 'connected' })); }
-      if (st === 'failed') finish();
+      if (st === 'connected') { clearTimer(); connectedAtRef.current = connectedAtRef.current || Date.now(); setState(s => ({ ...s, status: 'connected' })); }
+      if (st === 'failed') { logCall('ended'); finish(); }
     };
     pcRef.current = pc;
     return pc;
-  }, [sendSignal, finish]);
+  }, [sendSignal, finish, logCall]);
 
   const formatMediaError = (err: any, kind: 'voice' | 'video') => {
     const name = err?.name || '';
@@ -187,6 +199,7 @@ export function useCall(meId?: number) {
     callIdRef.current = randomId();
     peerRef.current = peer;
     kindRef.current = kind;
+    roleRef.current = 'caller';
     setState({ status: 'calling', peer, kind, muted: false, camOff: false, error: null });
     try {
       const stream = await getMedia(kind);
@@ -197,7 +210,7 @@ export function useCall(meId?: number) {
       const localDesc = pc.localDescription;
       sendSignal('offer', { sdp: { type: localDesc?.type || 'offer', sdp: localDesc?.sdp }, kind }, peer.id);
       timerRef.current = window.setTimeout(() => {
-        if (statusRef.current === 'calling') { sendSignal('cancel'); finish(); }
+        if (statusRef.current === 'calling') { logCall('missed'); sendSignal('cancel'); finish(); }
       }, 45000);
     } catch (err: any) {
       console.error('Start call error:', err);
@@ -205,11 +218,12 @@ export function useCall(meId?: number) {
       toast.error(msg);
       reset(msg);
     }
-  }, [getMedia, buildPc, sendSignal, finish, reset]);
+  }, [getMedia, buildPc, sendSignal, finish, reset, logCall]);
 
   const accept = useCallback(async () => {
     if (statusRef.current !== 'incoming') return;
     const currentKind = kindRef.current || 'voice';
+    roleRef.current = 'callee';
     setState(s => ({ ...s, status: 'connecting' }));
     try {
       const stream = await getMedia(currentKind);
@@ -239,9 +253,11 @@ export function useCall(meId?: number) {
 
   const reject = useCallback(() => { sendSignal('reject'); reset(); }, [sendSignal, reset]);
   const hangup = useCallback(() => {
-    sendSignal(statusRef.current === 'calling' ? 'cancel' : 'hangup');
+    const calling = statusRef.current === 'calling';
+    sendSignal(calling ? 'cancel' : 'hangup');
+    logCall(calling ? 'cancelled' : 'ended');
     finish();
-  }, [sendSignal, finish]);
+  }, [sendSignal, finish, logCall]);
 
   const toggleMute = useCallback(() => {
     const track = localRef.current?.getAudioTracks()[0];
@@ -289,9 +305,13 @@ export function useCall(meId?: number) {
         pendingIce.current.push(candidate);
       }
     } else if (sig.type === 'hangup' || sig.type === 'cancel' || sig.type === 'reject') {
-      if (statusRef.current !== 'idle') finish();
+      if (statusRef.current !== 'idle') {
+        if (sig.type === 'reject') logCall('declined');
+        else if (sig.type === 'hangup') logCall('ended');
+        finish();
+      }
     }
-  }, [finish]);
+  }, [finish, logCall]);
 
   useEffect(() => {
     if (!meId) return;

@@ -121,6 +121,43 @@ function MenuIcon() {
         </svg>
     );
 }
+
+// Human-readable label for a call-log message (body holds JSON call metadata).
+function callLogText(body: string) {
+    let info: { kind?: string; outcome?: string; duration?: number } = {};
+    try {
+        info = JSON.parse(body);
+    } catch {
+        /* not a call payload */
+    }
+    const isVideo = info.kind === "video";
+    const noun = isVideo ? "video call" : "voice call";
+    const dur = info.duration || 0;
+    const mmss = `${Math.floor(dur / 60)}:${(dur % 60).toString().padStart(2, "0")}`;
+    let text: string;
+    if (info.outcome === "missed") text = `Missed ${noun}`;
+    else if (info.outcome === "declined") text = `Declined ${noun}`;
+    else if (info.outcome === "cancelled") text = `Cancelled ${noun}`;
+    else text = dur ? `${isVideo ? "Video" : "Voice"} call · ${mmss}` : `${isVideo ? "Video" : "Voice"} call`;
+    const bad = info.outcome === "missed" || info.outcome === "declined";
+    return { text, isVideo, bad };
+}
+
+function CallLogLine({ body, mine }: { body: string; mine: boolean }) {
+    const { text, isVideo, bad } = callLogText(body);
+    return (
+        <span
+            className={`flex items-center gap-2 px-0.5 text-[13px] ${mine ? "text-white" : bad ? "text-red-500" : "text-slate-700"}`}
+        >
+            <span
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${mine ? "bg-emerald-700/50 text-white" : bad ? "bg-red-50 text-red-500" : "bg-slate-100 text-slate-600"}`}
+            >
+                {isVideo ? <VideoIcon /> : <PhoneIcon />}
+            </span>
+            {text}
+        </span>
+    );
+}
 function SearchIcon() {
     return (
         <svg
@@ -1072,15 +1109,26 @@ export default function InboxPage() {
                                                                                 </span>
                                                                             </a>
                                                                         ))}
-                                                                    {item.body && (
-                                                                        <p
-                                                                            className={`whitespace-pre-wrap break-words px-0.5 text-[13px] leading-5 ${mine ? "text-white" : "text-slate-800"}`}
-                                                                        >
-                                                                            {
-                                                                                item.body
-                                                                            }
-                                                                        </p>
-                                                                    )}
+                                                                    {item.body &&
+                                                                        (item.label ===
+                                                                        "call" ? (
+                                                                            <CallLogLine
+                                                                                body={
+                                                                                    item.body
+                                                                                }
+                                                                                mine={
+                                                                                    mine
+                                                                                }
+                                                                            />
+                                                                        ) : (
+                                                                            <p
+                                                                                className={`whitespace-pre-wrap break-words px-0.5 text-[13px] leading-5 ${mine ? "text-white" : "text-slate-800"}`}
+                                                                            >
+                                                                                {
+                                                                                    item.body
+                                                                                }
+                                                                            </p>
+                                                                        ))}
                                                                 </>
                                                             )}
                                                             {item.reactions &&
