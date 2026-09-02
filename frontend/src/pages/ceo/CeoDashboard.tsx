@@ -97,6 +97,14 @@ export default function CeoDashboard() {
   const attendanceHeatmap = dstats?.attendance_report.heatmap || [];
   const teamPerf = dstats?.team_performance;
   const turnoverRateData = dstats?.turnover_rate?.data || [];
+  // Headline figures for the two turnover stat cards: latest point + change vs
+  // the previous period.
+  const toLast = turnoverRateData[turnoverRateData.length - 1];
+  const toPrev = turnoverRateData[turnoverRateData.length - 2];
+  const activeNow = toLast?.active ?? 0;
+  const leftNow = toLast?.left ?? 0;
+  const activeDelta = toLast && toPrev ? Math.round((toLast.active - toPrev.active) * 100) / 100 : 0;
+  const leftDelta = toLast && toPrev ? Math.round((toLast.left - toPrev.left) * 100) / 100 : 0;
   const attReport = dstats?.attendance_report;
   const employment = dstats?.employment_status;
   const tasks = dstats?.tasks || [];
@@ -235,38 +243,6 @@ export default function CeoDashboard() {
             </div>
           </div>
 
-          {/* Turnover Rate */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Turnover Rate</h3>
-              <div className="relative shrink-0">
-                <select
-                  className="appearance-none cursor-pointer text-xs font-semibold bg-emerald-50 text-emerald-700 pl-3 pr-8 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors outline-none"
-                  value={turnoverPeriod}
-                  onChange={(e) => setTurnoverPeriod(e.target.value as 'monthly' | 'yearly')}
-                >
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                  <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
-                </div>
-              </div>
-            </div>
-            <div className="h-48 w-full mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={turnoverRateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                  <Line type="monotone" dataKey="active" name="Currently Working" stroke="var(--color-emerald-500)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: 'var(--color-emerald-500)', stroke: '#fff', strokeWidth: 2 }} />
-                  <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         </div>
 
         {/* MIDDLE COLUMN */}
@@ -431,6 +407,73 @@ export default function CeoDashboard() {
           <UpcomingHolidaysWidget />
         </div>
 
+      </div>
+
+      {/* Turnover Rate — full width */}
+      <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-gray-100 mt-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 7h7v7" /></svg>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Turnover Rate</h3>
+              <p className="text-sm text-gray-400">Overview of employee turnover trends</p>
+            </div>
+          </div>
+          <div className="relative shrink-0">
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <select value={turnoverPeriod} onChange={(e) => setTurnoverPeriod(e.target.value as 'monthly' | 'yearly')} className="appearance-none cursor-pointer text-sm font-semibold bg-white text-gray-700 border border-gray-200 pl-9 pr-9 py-2 rounded-xl hover:bg-gray-50 transition-colors outline-none">
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="rounded-2xl bg-blue-50/60 p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</div>
+            <div className="text-3xl font-bold text-gray-900 mt-2">{activeNow}%</div>
+            <div className="text-xs font-medium mt-1 flex items-center gap-1 text-emerald-600">
+              {activeDelta >= 0 ? '+' : ''}{activeDelta}% vs last month
+              <svg className={`w-3 h-3 ${activeDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-red-50/60 p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-red-500"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</div>
+            <div className="text-3xl font-bold text-gray-900 mt-2">{leftNow}%</div>
+            <div className="text-xs font-medium mt-1 flex items-center gap-1 text-red-500">
+              {leftDelta >= 0 ? '+' : ''}{leftDelta}% vs last month
+              <svg className={`w-3 h-3 ${leftDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={turnoverRateData} margin={{ top: 10, right: 24, left: -8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+              <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }} />
+              <Line type="monotone" dataKey="active" name="Currently Working" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
+              <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="flex items-center justify-center gap-6 mt-2 text-sm">
+          <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</span>
+          <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</span>
+        </div>
+
+        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/></svg>
+          Data is calculated as a percentage of total active employees.
+        </p>
       </div>
     </div>
   );
