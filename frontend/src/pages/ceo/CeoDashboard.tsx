@@ -20,7 +20,23 @@ import {
   BarChart,
   Bar,
   Legend,
+  LabelList,
 } from 'recharts';
+
+// Renders a rounded value pill at the end of a turnover line (e.g. "2.35%"),
+// matching the design. Only draws on the last data point.
+const makeEndLabel = (bg: string, fg: string, lastIndex: number) => (props: any) => {
+  const { x, y, value, index } = props;
+  if (index !== lastIndex || value == null) return null;
+  const label = `${value}%`;
+  const w = 16 + label.length * 8;
+  return (
+    <g>
+      <rect x={x + 10} y={y - 12} width={w} height={24} rx={7} fill={bg} />
+      <text x={x + 10 + w / 2} y={y + 4} textAnchor="middle" fontSize={12} fontWeight={700} fill={fg}>{label}</text>
+    </g>
+  );
+};
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 
 export default function CeoDashboard() {
@@ -454,13 +470,17 @@ export default function CeoDashboard() {
 
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={turnoverRateData} margin={{ top: 10, right: 24, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eef2f7" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+            <LineChart data={turnoverRateData} margin={{ top: 10, right: 64, left: -8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e9f0" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} padding={{ left: 10, right: 10 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickCount={5} />
               <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }} />
-              <Line type="monotone" dataKey="active" name="Currently Working" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} />
-              <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+              <Line type="monotone" dataKey="active" name="Currently Working" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}>
+                <LabelList dataKey="active" content={makeEndLabel('#dbeafe', '#2563eb', turnoverRateData.length - 1)} />
+              </Line>
+              <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}>
+                <LabelList dataKey="left" content={makeEndLabel('#fee2e2', '#dc2626', turnoverRateData.length - 1)} />
+              </Line>
             </LineChart>
           </ResponsiveContainer>
         </div>
