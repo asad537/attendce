@@ -134,7 +134,13 @@ class User extends Authenticatable
     // ─── Scopes ────────────────────────────────────────────────────
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', 'active')
+            ->whereNotIn('id', function($q) {
+                $q->select('user_id')
+                  ->from('resignations')
+                  ->where('status', 'approved')
+                  ->where('last_working_day', '<=', now()->toDateString());
+            });
     }
 
     public function scopeByRole($query, string $role)

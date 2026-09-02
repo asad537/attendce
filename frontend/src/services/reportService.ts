@@ -15,6 +15,7 @@ export interface DashboardStats {
   employment_status: { total: number; breakdown: { type: string; count: number; percent: number }[] };
   team_performance: { current: number; delta: number; monthly: { name: string; value: number }[] };
   attendance_report: { rate: number; delta: number; heatmap: { time: string; mon: number; tue: number; wed: number; thu: number; fri: number }[] };
+  turnover_rate: { data: { name: string; left: number; active: number }[] };
   tasks: { title: string; category: string; due_date: string | null }[];
 }
 
@@ -39,7 +40,7 @@ export const reportService = {
     return res.data;
   },
 
-  async getDashboardStats(params?: { months?: number; period?: 'this_month' | 'last_month' | 'this_week' }): Promise<DashboardStats> {
+  async getDashboardStats(params?: { months?: number; period?: 'this_month' | 'last_month' | 'this_week', turnover_period?: 'monthly' | 'yearly' }): Promise<DashboardStats> {
     const res = await api.get('/reports/dashboard-stats', { params });
     return res.data;
   },

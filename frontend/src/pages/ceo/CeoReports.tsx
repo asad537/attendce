@@ -177,7 +177,10 @@ export default function CeoReports() {
         <main className="min-w-0 space-y-5">
           <div className="grid gap-5 lg:grid-cols-[minmax(330px,.9fr)_minmax(420px,1.3fr)]">
             <Card className="p-5 sm:p-6">
-              <div className="mb-7 flex items-center justify-between gap-3"><h2 className="text-lg font-bold">Team Performance</h2><PeriodSelect value={period} onChange={value => { setPeriod(value); setPage(1); }} /></div>
+              <div className="mb-7 flex items-center justify-between gap-3">
+                <h2 className="text-lg font-bold">Company Performance</h2>
+                <PeriodSelect value={period} onChange={value => { setPeriod(value); setPage(1); }} />
+              </div>
               <div className="flex h-64 items-end justify-around gap-3 border-b border-[#edf1ef] px-1">
                 {departments.map(department => <div key={department.name} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end" title={`${department.name}: ${department.attendance}% attendance, ${department.completion}% ticket completion`}><span className="mb-3 text-xs font-bold text-[#50605a]">{department.score}%</span><div className="flex h-[76%] w-full max-w-[48px] flex-col justify-end overflow-hidden rounded-t-lg bg-[#f2f4f3]"><span className="bg-[var(--color-emerald-100,#e2f1d9)]" style={{ height: `${Math.max(0, 100 - department.score)}%` }}/><span className="bg-[var(--color-emerald-500,#10b981)]" style={{ height: `${department.completion * .4}%` }}/><span className="bg-[var(--color-emerald-800,#064e3b)]" style={{ height: `${department.attendance * .6}%` }}/></div><span className="mt-3 max-w-full truncate text-[11px] text-[#7c8984]">{department.name.split(' ')[0]}</span></div>)}
                 {!departments.length && <div className="flex h-full w-full items-center justify-center text-sm text-[#929d98]">No department activity in this period.</div>}

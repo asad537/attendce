@@ -182,6 +182,44 @@ class ReportController extends Controller
             ];
         }
 
+        // ── Turnover Rate ────────────────────────────────────────────────
+        $turnoverPeriod = $request->query('turnover_period') === 'yearly' ? 'yearly' : 'monthly';
+        $turnoverData = [];
+        
+        if ($turnoverPeriod === 'yearly') {
+            $years = 5;
+            for ($i = $years - 1; $i >= 0; $i--) {
+                $y = now()->copy()->subYears($i);
+                $resigned = \App\Models\Resignation::where('status', 'approved')
+                    ->whereYear('last_working_day', $y->year)
+                    ->count();
+                $activeThisYear = \App\Models\User::where('status', 'active')
+                    ->whereNotIn('id', function($query) use ($y) {
+                        $query->select('user_id')
+                              ->from('resignations')
+                              ->where('status', 'approved')
+                              ->where('last_working_day', '<=', $y->copy()->endOfYear());
+                    })->count();
+                $turnoverData[] = ['name' => $y->format('Y'), 'left' => $resigned, 'active' => $activeThisYear];
+            }
+        } else {
+            for ($i = $months - 1; $i >= 0; $i--) {
+                $m = now()->copy()->subMonths($i);
+                $resigned = \App\Models\Resignation::where('status', 'approved')
+                    ->whereYear('last_working_day', $m->year)
+                    ->whereMonth('last_working_day', $m->month)
+                    ->count();
+                $activeThisMonth = \App\Models\User::where('status', 'active')
+                    ->whereNotIn('id', function($query) use ($m) {
+                        $query->select('user_id')
+                              ->from('resignations')
+                              ->where('status', 'approved')
+                              ->where('last_working_day', '<=', $m->copy()->endOfMonth());
+                    })->count();
+                $turnoverData[] = ['name' => $m->format('M'), 'left' => $resigned, 'active' => $activeThisMonth];
+            }
+        }
+
         // ── Tasks: pending tickets in scope ──────────────────────────────
         $tasks = \App\Models\ProjectTicket::whereIn('assignee_id', $ids)->where('status', '!=', 'done')
             ->with('project:id,name')->orderByRaw('due_date IS NULL, due_date ASC')->limit(4)->get()
@@ -195,6 +233,7 @@ class ReportController extends Controller
             'employment_status' => ['total' => $users->count(), 'breakdown' => $employmentStatus],
             'team_performance' => ['current' => $current, 'delta' => round($current - $prev, 2), 'monthly' => $monthly],
             'attendance_report' => ['rate' => $attRate, 'delta' => round($attRate - $attPrev, 2), 'heatmap' => $heatmap],
+            'turnover_rate' => ['data' => $turnoverData],
             'tasks' => $tasks,
         ]);
     }

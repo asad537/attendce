@@ -17,6 +17,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  BarChart,
+  Bar,
+  Legend,
 } from 'recharts';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 
@@ -29,9 +32,10 @@ export default function CeoDashboard() {
   const [dstats, setDstats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Dropdown-driven ranges for the Attendance Report + Team Performance cards.
+  // Dropdown-driven ranges for the Attendance Report + Company Performance cards.
   const [attPeriod, setAttPeriod] = useState<'this_month' | 'last_month' | 'this_week'>('this_month');
   const [perfMonths, setPerfMonths] = useState<number>(6);
+  const [turnoverPeriod, setTurnoverPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const load = useCallback(async () => {
     // Give each request a second chance so a transient failure (a rate-limit
@@ -61,12 +65,12 @@ export default function CeoDashboard() {
   // Re-fetch the report stats whenever a range dropdown changes (retry once).
   useEffect(() => {
     let active = true;
-    reportService.getDashboardStats({ months: perfMonths, period: attPeriod })
-      .catch(() => new Promise(r => setTimeout(r, 700)).then(() => reportService.getDashboardStats({ months: perfMonths, period: attPeriod })))
+    reportService.getDashboardStats({ months: perfMonths, period: attPeriod, turnover_period: turnoverPeriod })
+      .catch(() => new Promise(r => setTimeout(r, 700)).then(() => reportService.getDashboardStats({ months: perfMonths, period: attPeriod, turnover_period: turnoverPeriod })))
       .then(stats => { if (active && stats) setDstats(stats); })
       .catch(() => {});
     return () => { active = false; };
-  }, [perfMonths, attPeriod]);
+  }, [perfMonths, attPeriod, turnoverPeriod]);
 
   const PRESENT_SET = ['working', 'on_break', 'checked_out', 'work_from_home'];
   const stats = useMemo(() => ({
@@ -92,6 +96,7 @@ export default function CeoDashboard() {
   const performanceData = dstats?.team_performance.monthly || [];
   const attendanceHeatmap = dstats?.attendance_report.heatmap || [];
   const teamPerf = dstats?.team_performance;
+  const turnoverRateData = dstats?.turnover_rate?.data || [];
   const attReport = dstats?.attendance_report;
   const employment = dstats?.employment_status;
   const tasks = dstats?.tasks || [];
@@ -229,6 +234,39 @@ export default function CeoDashboard() {
               })()}
             </div>
           </div>
+
+          {/* Turnover Rate */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Turnover Rate</h3>
+              <div className="relative shrink-0">
+                <select
+                  className="appearance-none cursor-pointer text-xs font-semibold bg-emerald-50 text-emerald-700 pl-3 pr-8 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors outline-none"
+                  value={turnoverPeriod}
+                  onChange={(e) => setTurnoverPeriod(e.target.value as 'monthly' | 'yearly')}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                  <svg className="w-3 h-3 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+            </div>
+            <div className="h-48 w-full mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={turnoverRateData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                  <Line type="monotone" dataKey="active" name="Currently Working" stroke="var(--color-emerald-500)" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: 'var(--color-emerald-500)', stroke: '#fff', strokeWidth: 2 }} />
+                  <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
         {/* MIDDLE COLUMN */}
@@ -292,11 +330,11 @@ export default function CeoDashboard() {
 
         {/* RIGHT COLUMN */}
         <div className="space-y-6">
-          {/* Team Performance */}
+          {/* Company Performance */}
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h3 className="font-bold text-lg">Team Performance</h3>
+                <h3 className="font-bold text-lg">Company Performance</h3>
                 <div className="text-3xl font-bold mt-2">{teamPerf?.current ?? 0}%</div>
                 <div className="flex items-center gap-2 mt-2">
                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-md flex items-center gap-1 ${(teamPerf?.delta ?? 0) < 0 ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
