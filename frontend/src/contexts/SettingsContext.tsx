@@ -1,5 +1,15 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AppSettings, settingsService } from '../services/settingsService';
+import { useAuth } from './AuthContext';
+
+// Per-user accent is keyed by user id so two people sharing a browser (log out
+// / log in) never inherit each other's colour.
+const accentKey = (id?: number | string | null) => (id ? `accent_user_${id}` : '');
+function readUserAccent(id?: number | string | null): string {
+  try { return (id && localStorage.getItem(accentKey(id))) || ''; } catch { return ''; }
+}
+// One-time cleanup of the old browser-global key that leaked across users.
+try { localStorage.removeItem('user_accent'); } catch { /* ignore */ }
 
 const SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
@@ -45,8 +55,9 @@ export function formatMoney(value: number, currency: string) {
 }
 
 // Apply any previously-saved accent immediately (before the first paint / API
-// call). A per-user override (user_accent) wins over the org default (app_accent).
-try { applyAccent(localStorage.getItem('user_accent') || localStorage.getItem('app_accent') || 'emerald'); } catch { /* ignore */ }
+// call). Apply the org default up front; the logged-in user's personal accent
+// (if any) is applied once we know who they are.
+try { applyAccent(localStorage.getItem('app_accent') || 'emerald'); } catch { /* ignore */ }
 
 interface SettingsContextValue {
   currency: string;
@@ -62,28 +73,39 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [currency, setCurrency] = useState(() => { try { return localStorage.getItem('app_currency') || 'USD'; } catch { return 'USD'; } });
   const [accent, setAccent] = useState(() => { try { return localStorage.getItem('app_accent') || 'emerald'; } catch { return 'emerald'; } });
-  const [userAccent, setUserAccentState] = useState(() => { try { return localStorage.getItem('user_accent') || ''; } catch { return ''; } });
+  const [userAccent, setUserAccentState] = useState<string>(() => readUserAccent(user?.id));
   const [options, setOptions] = useState<AppSettings | null>(null);
+
+  // Whenever the logged-in user (or the org accent) changes, apply THAT user's
+  // personal accent, falling back to the org default. Logging out (user = null)
+  // resets to the org default, so no colour ever leaks between accounts.
+  useEffect(() => {
+    const ua = readUserAccent(user?.id);
+    setUserAccentState(ua);
+    applyAccent(ua || accent);
+  }, [user?.id, accent]);
 
   const apply = useCallback((data: AppSettings) => {
     setOptions(data);
     setCurrency(data.currency);
     setAccent(data.accent);
     // A personal override always wins over the org-wide accent.
-    applyAccent(userAccent || data.accent);
+    applyAccent(readUserAccent(user?.id) || data.accent);
     try { localStorage.setItem('app_currency', data.currency); localStorage.setItem('app_accent', data.accent); } catch { /* ignore */ }
-  }, [userAccent]);
+  }, [user?.id]);
 
-  // Per-user theme colour, kept only in this browser (does not touch the org
-  // setting, so it never changes anyone else's dashboard). '' resets to default.
+  // Per-user theme colour, stored under this user's own key so it never changes
+  // anyone else's dashboard (and never touches the org setting). '' resets.
   const setUserAccent = useCallback((next: string) => {
     try {
-      if (!next) { localStorage.removeItem('user_accent'); setUserAccentState(''); applyAccent(accent); }
-      else { localStorage.setItem('user_accent', next); setUserAccentState(next); applyAccent(next); }
+      if (!user?.id) return;
+      if (!next) { localStorage.removeItem(accentKey(user.id)); setUserAccentState(''); applyAccent(accent); }
+      else { localStorage.setItem(accentKey(user.id), next); setUserAccentState(next); applyAccent(next); }
     } catch { /* ignore */ }
-  }, [accent]);
+  }, [accent, user?.id]);
 
   const refresh = useCallback(async () => {
     try { apply(await settingsService.get()); } catch { /* keep local values */ }
