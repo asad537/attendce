@@ -442,7 +442,8 @@ export default function CeoDashboard() {
 
       </div>
 
-      {/* Turnover Rate — full width */}
+      {/* Turnover Rate — hidden for now (change false to true to re-enable) */}
+      {false && (
       <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-gray-100 mt-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -512,6 +513,7 @@ export default function CeoDashboard() {
           Data is calculated as a percentage of total active employees.
         </p>
       </div>
+      )}
     </div>
   );
 }
