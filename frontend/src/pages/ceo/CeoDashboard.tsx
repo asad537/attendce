@@ -181,10 +181,10 @@ export default function CeoDashboard() {
                 <button onClick={handleNextMonth} className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 "><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></button>
               </div>
             </div>
-            <div className="grid grid-cols-7 text-center text-xs font-semibold text-gray-400 mb-2">
+            <div className="grid grid-cols-7 text-center text-sm font-semibold text-gray-400 mb-3">
               <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
             </div>
-            <div className="grid grid-cols-7 text-center text-sm gap-y-3 font-medium">
+            <div className="grid grid-cols-7 text-center text-base gap-y-4 font-medium">
               {calendarDays.map((day, idx) => {
                 const isCurrentMonth = isSameMonth(day, monthStart);
                 const isCurrentDay = isToday(day);
@@ -192,7 +192,7 @@ export default function CeoDashboard() {
                 const hasEvents = events.some(e => e.date === dayStr);
 
                 let dayContent;
-                let bgClass = "mx-auto w-7 h-7 flex items-center justify-center rounded-full transition-colors cursor-default";
+                let bgClass = "mx-auto w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-default";
                 
                 if (!isCurrentMonth) {
                   dayContent = <div className="text-gray-300">{format(day, 'd')}</div>;

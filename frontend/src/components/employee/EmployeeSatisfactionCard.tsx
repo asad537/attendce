@@ -114,7 +114,7 @@ export default function EmployeeSatisfactionCard() {
   const strokeDashoffset = circumference - (animatedPercentage / 100) * (circumference / 2);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 max-w-lg w-full font-sans">
+    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 w-full font-sans">
       <div className="flex justify-between items-start mb-6">
         <h3 className="text-xl font-bold text-gray-900">Employee Satisfaction</h3>
       </div>
