@@ -52,6 +52,7 @@ export default function CeoDashboard() {
   const [attPeriod, setAttPeriod] = useState<'this_month' | 'last_month' | 'this_week'>('this_month');
   const [perfMonths, setPerfMonths] = useState<number>(6);
   const [turnoverPeriod, setTurnoverPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   const load = useCallback(async () => {
     // Give each request a second chance so a transient failure (a rate-limit
@@ -403,7 +404,7 @@ export default function CeoDashboard() {
             </div>
             
             <div className="space-y-4">
-              {tasks.map((t, i) => (
+              {tasks.slice(0, showAllTasks ? tasks.length : 2).map((t, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <input type="checkbox" className="mt-1 w-5 h-5 rounded border-gray-300 text-emerald-500 focus:ring-emerald-500" />
                   <div className="min-w-0">
@@ -416,6 +417,11 @@ export default function CeoDashboard() {
                 </div>
               ))}
               {!tasks.length && <p className="text-sm text-gray-400 italic">No pending tasks.</p>}
+              {tasks.length > 2 && (
+                <button onClick={() => setShowAllTasks(v => !v)} className="w-full pt-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+                  {showAllTasks ? 'Show less' : `See all (${tasks.length})`}
+                </button>
+              )}
             </div>
           </div>
 

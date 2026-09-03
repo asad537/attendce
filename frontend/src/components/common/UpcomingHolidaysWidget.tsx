@@ -6,6 +6,7 @@ import { Holiday } from '../../types';
 export default function UpcomingHolidaysWidget() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     holidayService.getUpcoming()
@@ -30,7 +31,7 @@ export default function UpcomingHolidaysWidget() {
         <p className="text-sm text-gray-500">No upcoming holidays scheduled.</p>
       ) : (
         <div className="space-y-3">
-          {holidays.slice(0, 5).map(h => {
+          {holidays.slice(0, showAll ? holidays.length : 2).map(h => {
             const date = parseISO(h.date);
             const endDate = h.end_date ? parseISO(h.end_date) : null;
             return (
@@ -49,6 +50,14 @@ export default function UpcomingHolidaysWidget() {
               </div>
             );
           })}
+          {holidays.length > 2 && (
+            <button
+              onClick={() => setShowAll(v => !v)}
+              className="w-full pt-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+            >
+              {showAll ? 'Show less' : `See all (${holidays.length})`}
+            </button>
+          )}
         </div>
       )}
     </section>
