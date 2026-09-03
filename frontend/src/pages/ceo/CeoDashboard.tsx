@@ -53,6 +53,7 @@ export default function CeoDashboard() {
   const [perfMonths, setPerfMonths] = useState<number>(6);
   const [turnoverPeriod, setTurnoverPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [showAllTasks, setShowAllTasks] = useState(false);
+  const [showAllSchedules, setShowAllSchedules] = useState(false);
 
   const load = useCallback(async () => {
     // Give each request a second chance so a transient failure (a rate-limit
@@ -243,19 +244,29 @@ export default function CeoDashboard() {
               {(() => {
                  const monthEvents = events.filter(e => e.date.startsWith(format(calendarDate, 'yyyy-MM'))).sort((a, b) => a.date.localeCompare(b.date));
                  if (monthEvents.length === 0) return <p className="text-sm text-gray-500 italic">No schedules this month.</p>;
-                 return monthEvents.map(ev => {
-                   const cat = categories.find(c => c.key === ev.type);
-                   return (
-                     <ScheduleCard 
-                       key={ev.id} 
-                       category={cat?.label || ev.type}
-                       title={ev.title} 
-                       room={ev.location || 'Online'} 
-                       time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`} 
-                       color={cat?.color || 'text-gray-500'} 
-                     />
-                   );
-                 });
+                 const shown = showAllSchedules ? monthEvents : monthEvents.slice(0, 2);
+                 return (
+                   <>
+                     {shown.map(ev => {
+                       const cat = categories.find(c => c.key === ev.type);
+                       return (
+                         <ScheduleCard
+                           key={ev.id}
+                           category={cat?.label || ev.type}
+                           title={ev.title}
+                           room={ev.location || 'Online'}
+                           time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`}
+                           color={cat?.color || 'text-gray-500'}
+                         />
+                       );
+                     })}
+                     {monthEvents.length > 2 && (
+                       <button onClick={() => setShowAllSchedules(v => !v)} className="w-full pt-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700">
+                         {showAllSchedules ? 'Show less' : `See all (${monthEvents.length})`}
+                       </button>
+                     )}
+                   </>
+                 );
               })()}
             </div>
           </div>
