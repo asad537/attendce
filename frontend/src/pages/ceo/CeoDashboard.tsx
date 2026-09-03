@@ -214,7 +214,7 @@ export default function CeoDashboard() {
           </div>
 
           {/* Schedules */}
-          <div>
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Schedules</h3>
               <div className="relative">
@@ -536,7 +536,7 @@ function StatCard({ title, value, suffix, message }: { title: string, value: str
 function ScheduleCard({ category, title, room, time, color }: { category: string, title: string, room: string, time: string, color: string }) {
   const isHex = color?.startsWith('#');
   return (
-    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-col gap-2">
+    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-2">
       <span className={`text-[10px] font-bold ${!isHex ? color : ''}`} style={isHex ? { color } : undefined}>{category}</span>
       <h4 className="font-bold text-sm text-gray-800">{title}</h4>
       <div className="flex justify-between items-center mt-1">
