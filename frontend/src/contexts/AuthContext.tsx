@@ -21,26 +21,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken]     = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on mount
+  // Verify the saved session before rendering a protected route. Rendering the
+  // cached user immediately can briefly send an already signed-in user to a
+  // route that no longer matches their current server-side role/session.
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser  = localStorage.getItem('auth_user');
+    let mounted = true;
 
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        // Refresh from the server so cached fields (e.g. the signed avatar URL,
-        // which expires) are renewed on every app load.
-        authService.me()
-          .then(fresh => { setUser(fresh); localStorage.setItem('auth_user', JSON.stringify(fresh)); })
-          .catch(() => {});
-      } catch {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+    const hydrateSession = async () => {
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('auth_user');
+
+      if (storedToken && storedUser) {
+        try {
+          // Validate the JSON first, then use the server as the source of truth
+          // before a route is chosen.
+          JSON.parse(storedUser);
+          setToken(storedToken);
+          const fresh = await authService.me();
+
+          if (mounted) {
+            setUser(fresh);
+            localStorage.setItem('auth_user', JSON.stringify(fresh));
+          }
+        } catch {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+          if (mounted) {
+            setToken(null);
+            setUser(null);
+          }
+        }
       }
-    }
-    setIsLoading(false);
+
+      if (mounted) setIsLoading(false);
+    };
+
+    void hydrateSession();
+    return () => { mounted = false; };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
