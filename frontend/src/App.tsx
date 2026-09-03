@@ -1,49 +1,45 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { PageLoader } from './components/common/LoadingSpinner';
 
-// Auth
-import LoginPage from './pages/auth/LoginPage';
+// Pages are lazy-loaded so each route ships its own small chunk instead of one
+// ~2 MB bundle — the app boots fast and only downloads a page when it's visited.
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 
-// Employee pages
-import EmployeeDashboard from './pages/employee/EmployeeDashboard';
-import AttendanceHistory from './pages/employee/AttendanceHistory';
-import LeaveManagement from './pages/employee/LeaveManagement';
-import WfhManagement from './pages/employee/WfhManagement';
+const EmployeeDashboard = lazy(() => import('./pages/employee/EmployeeDashboard'));
+const AttendanceHistory = lazy(() => import('./pages/employee/AttendanceHistory'));
+const LeaveManagement = lazy(() => import('./pages/employee/LeaveManagement'));
+const WfhManagement = lazy(() => import('./pages/employee/WfhManagement'));
+const RateEmployeesPage = lazy(() => import('./pages/employee/RateEmployeesPage'));
 
-import RateEmployeesPage from './pages/employee/RateEmployeesPage';
+const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'));
+const ManagerLeaveApprovals = lazy(() => import('./pages/manager/ManagerLeaveApprovals'));
+const WfhApprovals = lazy(() => import('./pages/manager/WfhApprovals'));
+const TeamMembers = lazy(() => import('./pages/shared/TeamMembers'));
 
-// Manager pages
-import ManagerDashboard from './pages/manager/ManagerDashboard';
-import ManagerLeaveApprovals from './pages/manager/ManagerLeaveApprovals';
-import WfhApprovals from './pages/manager/WfhApprovals';
-import TeamMembers from './pages/shared/TeamMembers';
-
-// CEO pages
-import CeoDashboard from './pages/ceo/CeoDashboard';
-import CeoAttendance from './pages/ceo/CeoAttendance';
-import CeoLeaveApprovals from './pages/ceo/CeoLeaveApprovals';
-import CeoEmployees from './pages/ceo/CeoEmployees';
-import CeoDepartments from './pages/ceo/CeoDepartments';
-import CeoReports from './pages/ceo/CeoReports';
-import CeoHolidays from './pages/ceo/CeoHolidays';
-import CeoAuditLogs from './pages/ceo/CeoAuditLogs';
-
-import CeoProjects from './pages/ceo/CeoProjects';
-import ProjectTickets from './pages/ceo/ProjectTickets';
-import MyTickets from './pages/shared/MyTickets';
-import AddEditEmployeePage from './pages/shared/AddEditEmployeePage';
-import CalendarPage from './pages/shared/CalendarPage';
-import EmployeeDetails from './pages/shared/EmployeeDetails';
-import InboxPage from './pages/shared/InboxPage';
-import SettingsPage from './pages/shared/SettingsPage';
-import AttendanceSheetPage from './pages/shared/AttendanceSheetPage';
-import ResignationPage from './pages/shared/ResignationPage';
-import CeoPayroll from './pages/ceo/CeoPayroll';
-import NotificationsPage from './pages/shared/NotificationsPage';
+const CeoDashboard = lazy(() => import('./pages/ceo/CeoDashboard'));
+const CeoAttendance = lazy(() => import('./pages/ceo/CeoAttendance'));
+const CeoLeaveApprovals = lazy(() => import('./pages/ceo/CeoLeaveApprovals'));
+const CeoEmployees = lazy(() => import('./pages/ceo/CeoEmployees'));
+const CeoDepartments = lazy(() => import('./pages/ceo/CeoDepartments'));
+const CeoReports = lazy(() => import('./pages/ceo/CeoReports'));
+const CeoHolidays = lazy(() => import('./pages/ceo/CeoHolidays'));
+const CeoAuditLogs = lazy(() => import('./pages/ceo/CeoAuditLogs'));
+const CeoProjects = lazy(() => import('./pages/ceo/CeoProjects'));
+const ProjectTickets = lazy(() => import('./pages/ceo/ProjectTickets'));
+const MyTickets = lazy(() => import('./pages/shared/MyTickets'));
+const AddEditEmployeePage = lazy(() => import('./pages/shared/AddEditEmployeePage'));
+const CalendarPage = lazy(() => import('./pages/shared/CalendarPage'));
+const EmployeeDetails = lazy(() => import('./pages/shared/EmployeeDetails'));
+const InboxPage = lazy(() => import('./pages/shared/InboxPage'));
+const SettingsPage = lazy(() => import('./pages/shared/SettingsPage'));
+const AttendanceSheetPage = lazy(() => import('./pages/shared/AttendanceSheetPage'));
+const ResignationPage = lazy(() => import('./pages/shared/ResignationPage'));
+const CeoPayroll = lazy(() => import('./pages/ceo/CeoPayroll'));
+const NotificationsPage = lazy(() => import('./pages/shared/NotificationsPage'));
 
 function App() {
   const { user, isLoading } = useAuth();
@@ -62,6 +58,7 @@ function App() {
   };
 
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public */}
       <Route
@@ -201,6 +198,7 @@ function App() {
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
 
