@@ -44,16 +44,19 @@ export function formatMoney(value: number, currency: string) {
   }
 }
 
-// Apply any previously-saved accent immediately (before the first paint / API call).
-try { applyAccent(localStorage.getItem('app_accent') || 'emerald'); } catch { /* ignore */ }
+// Apply any previously-saved accent immediately (before the first paint / API
+// call). A per-user override (user_accent) wins over the org default (app_accent).
+try { applyAccent(localStorage.getItem('user_accent') || localStorage.getItem('app_accent') || 'emerald'); } catch { /* ignore */ }
 
 interface SettingsContextValue {
   currency: string;
-  accent: string;
+  accent: string;             // org-wide default accent
+  userAccent: string;         // this user's personal override ('' = use org default)
   options: AppSettings | null;
   money: (value: number) => string;
   refresh: () => Promise<void>;
   save: (payload: { currency?: string; accent?: string }) => Promise<void>;
+  setUserAccent: (accent: string) => void;   // per-user theme, stored locally
 }
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -61,15 +64,26 @@ const SettingsContext = createContext<SettingsContextValue | undefined>(undefine
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState(() => { try { return localStorage.getItem('app_currency') || 'USD'; } catch { return 'USD'; } });
   const [accent, setAccent] = useState(() => { try { return localStorage.getItem('app_accent') || 'emerald'; } catch { return 'emerald'; } });
+  const [userAccent, setUserAccentState] = useState(() => { try { return localStorage.getItem('user_accent') || ''; } catch { return ''; } });
   const [options, setOptions] = useState<AppSettings | null>(null);
 
   const apply = useCallback((data: AppSettings) => {
     setOptions(data);
     setCurrency(data.currency);
     setAccent(data.accent);
-    applyAccent(data.accent);
+    // A personal override always wins over the org-wide accent.
+    applyAccent(userAccent || data.accent);
     try { localStorage.setItem('app_currency', data.currency); localStorage.setItem('app_accent', data.accent); } catch { /* ignore */ }
-  }, []);
+  }, [userAccent]);
+
+  // Per-user theme colour, kept only in this browser (does not touch the org
+  // setting, so it never changes anyone else's dashboard). '' resets to default.
+  const setUserAccent = useCallback((next: string) => {
+    try {
+      if (!next) { localStorage.removeItem('user_accent'); setUserAccentState(''); applyAccent(accent); }
+      else { localStorage.setItem('user_accent', next); setUserAccentState(next); applyAccent(next); }
+    } catch { /* ignore */ }
+  }, [accent]);
 
   const refresh = useCallback(async () => {
     try { apply(await settingsService.get()); } catch { /* keep local values */ }
@@ -85,7 +99,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const money = useCallback((value: number) => formatMoney(value, currency), [currency]);
 
-  return <SettingsContext.Provider value={{ currency, accent, options, money, refresh, save }}>{children}</SettingsContext.Provider>;
+  return <SettingsContext.Provider value={{ currency, accent, userAccent, options, money, refresh, save, setUserAccent }}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {

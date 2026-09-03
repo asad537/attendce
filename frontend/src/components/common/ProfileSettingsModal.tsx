@@ -2,7 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { documentService, UserDocument } from '../../services/documentService';
+import { useSettings } from '../../contexts/SettingsContext';
 import toast from 'react-hot-toast';
+
+// Accent colours every user can pick for their own dashboard.
+const THEME_ACCENTS = ['emerald', 'teal', 'green', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber'];
+const ACCENT_HEX: Record<string, string> = {
+  emerald: '#059669', teal: '#0d9488', green: '#16a34a', cyan: '#0891b2', sky: '#0284c7', blue: '#2563eb',
+  indigo: '#4f46e5', violet: '#7c3aed', purple: '#9333ea', fuchsia: '#c026d3', pink: '#db2777', rose: '#e11d48',
+  red: '#dc2626', orange: '#ea580c', amber: '#d97706',
+};
 
 interface Props {
   isOpen: boolean;
@@ -12,7 +21,8 @@ interface Props {
 export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
   const { user, refreshUser, logout } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents'>('education');
+  const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents' | 'appearance'>('education');
+  const { userAccent, accent, setUserAccent } = useSettings();
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
@@ -219,6 +229,13 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
               className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'documents' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Documents
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('appearance')}
+              className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'appearance' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Appearance
             </button>
           </div>
         </div>
@@ -453,7 +470,39 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
               </div>
             </div>
           )}
-          
+
+          {/* Appearance Tab — per-user dashboard accent (all users) */}
+          {activeTab === 'appearance' && (
+            <div className="space-y-5">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800">Dashboard colour</h4>
+                <p className="text-xs text-gray-500 mt-1">Pick your own accent colour — this changes only your dashboard, not anyone else's. Applies instantly.</p>
+              </div>
+              <div className="grid grid-cols-5 sm:grid-cols-8 gap-3">
+                {THEME_ACCENTS.map(name => {
+                  const active = (userAccent || accent) === name;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setUserAccent(name)}
+                      title={name}
+                      className={`h-10 w-10 rounded-xl grid place-items-center transition-transform ${active ? 'ring-2 ring-offset-2 ring-gray-400 scale-105' : 'hover:scale-105'}`}
+                      style={{ backgroundColor: ACCENT_HEX[name] }}
+                    >
+                      {active && <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                    </button>
+                  );
+                })}
+              </div>
+              {userAccent && (
+                <button type="button" onClick={() => setUserAccent('')} className="text-xs font-semibold text-gray-500 hover:text-gray-700 underline">
+                  Reset to default
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-8 flex gap-3">
             <button
               type="button"
