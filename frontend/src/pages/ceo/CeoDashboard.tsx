@@ -407,7 +407,8 @@ export default function CeoDashboard() {
             </div>
           </div>
 
-          {/* Tasks */}
+          {/* Tasks — hidden for now (change false to true to re-enable) */}
+          {false && (
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg">Tasks</h3>
@@ -435,6 +436,7 @@ export default function CeoDashboard() {
               )}
             </div>
           </div>
+          )}
 
           {/* Upcoming Holidays */}
           <UpcomingHolidaysWidget />
