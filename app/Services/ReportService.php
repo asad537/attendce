@@ -130,6 +130,9 @@ class ReportService
         $todayStr = today()->toDateString();
 
         $users = User::active()
+            // The CEO administers attendance but is not an attendance-sheet
+            // employee, so their own row must never be included in the matrix.
+            ->where('role', '!=', 'ceo')
             ->when($userIds !== null, fn ($q) => $q->whereIn('id', $userIds))
             ->with('department:id,name')
             ->orderBy('name')->get();
