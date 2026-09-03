@@ -330,6 +330,77 @@ export default function CeoDashboard() {
 
           {/* Employee Satisfaction */}
           <EmployeeSatisfactionCard />
+
+          {/* Turnover Rate */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 7h7v7" /></svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Turnover Rate</h3>
+                  <p className="text-xs text-gray-400">Overview of employee turnover trends</p>
+                </div>
+              </div>
+              <div className="relative shrink-0">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </div>
+                <select value={turnoverPeriod} onChange={(e) => setTurnoverPeriod(e.target.value as 'monthly' | 'yearly')} className="appearance-none cursor-pointer text-sm font-semibold bg-white text-gray-700 border border-gray-200 pl-9 pr-9 py-2 rounded-xl hover:bg-gray-50 transition-colors outline-none">
+                  <option value="monthly">Monthly</option>
+                  <option value="yearly">Yearly</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="rounded-2xl bg-blue-50/60 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-blue-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</div>
+                <div className="text-3xl font-bold text-gray-900 mt-2">{activeNow}%</div>
+                <div className="text-xs font-medium mt-1 flex items-center gap-1 text-emerald-600">
+                  {activeDelta >= 0 ? '+' : ''}{activeDelta}% vs last month
+                  <svg className={`w-3 h-3 ${activeDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-red-50/60 p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-red-500"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</div>
+                <div className="text-3xl font-bold text-gray-900 mt-2">{leftNow}%</div>
+                <div className="text-xs font-medium mt-1 flex items-center gap-1 text-red-500">
+                  {leftDelta >= 0 ? '+' : ''}{leftDelta}% vs last month
+                  <svg className={`w-3 h-3 ${leftDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={turnoverRateData} margin={{ top: 10, right: 48, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e9f0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} dy={10} padding={{ left: 8, right: 8 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickCount={5} />
+                  <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }} />
+                  <Line type="monotone" dataKey="active" name="Currently Working" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}>
+                    <LabelList dataKey="active" content={makeEndLabel('#dbeafe', '#2563eb', turnoverRateData.length - 1)} />
+                  </Line>
+                  <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}>
+                    <LabelList dataKey="left" content={makeEndLabel('#fee2e2', '#dc2626', turnoverRateData.length - 1)} />
+                  </Line>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="flex items-center justify-center gap-6 mt-2 text-sm">
+              <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</span>
+              <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</span>
+            </div>
+
+            <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/></svg>
+              Data is calculated as a percentage of total active employees.
+            </p>
+          </div>
         </div>
 
         {/* RIGHT COLUMN */}
@@ -440,77 +511,6 @@ export default function CeoDashboard() {
           <UpcomingHolidaysWidget />
         </div>
 
-      </div>
-
-      {/* Turnover Rate — full width */}
-      <div className="bg-white rounded-3xl p-6 lg:p-7 shadow-sm border border-gray-100 mt-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8" /><path strokeLinecap="round" strokeLinejoin="round" d="M14 7h7v7" /></svg>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Turnover Rate</h3>
-              <p className="text-sm text-gray-400">Overview of employee turnover trends</p>
-            </div>
-          </div>
-          <div className="relative shrink-0">
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            </div>
-            <select value={turnoverPeriod} onChange={(e) => setTurnoverPeriod(e.target.value as 'monthly' | 'yearly')} className="appearance-none cursor-pointer text-sm font-semibold bg-white text-gray-700 border border-gray-200 pl-9 pr-9 py-2 rounded-xl hover:bg-gray-50 transition-colors outline-none">
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg></div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="rounded-2xl bg-blue-50/60 p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-blue-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</div>
-            <div className="text-3xl font-bold text-gray-900 mt-2">{activeNow}%</div>
-            <div className="text-xs font-medium mt-1 flex items-center gap-1 text-emerald-600">
-              {activeDelta >= 0 ? '+' : ''}{activeDelta}% vs last month
-              <svg className={`w-3 h-3 ${activeDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
-            </div>
-          </div>
-          <div className="rounded-2xl bg-red-50/60 p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-red-500"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</div>
-            <div className="text-3xl font-bold text-gray-900 mt-2">{leftNow}%</div>
-            <div className="text-xs font-medium mt-1 flex items-center gap-1 text-red-500">
-              {leftDelta >= 0 ? '+' : ''}{leftDelta}% vs last month
-              <svg className={`w-3 h-3 ${leftDelta >= 0 ? '' : 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7"/></svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={turnoverRateData} margin={{ top: 10, right: 64, left: -8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e5e9f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} dy={10} padding={{ left: 10, right: 10 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickCount={5} />
-              <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 12px rgb(0 0 0 / 0.1)' }} />
-              <Line type="monotone" dataKey="active" name="Currently Working" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}>
-                <LabelList dataKey="active" content={makeEndLabel('#dbeafe', '#2563eb', turnoverRateData.length - 1)} />
-              </Line>
-              <Line type="monotone" dataKey="left" name="Left / Resigned" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}>
-                <LabelList dataKey="left" content={makeEndLabel('#fee2e2', '#dc2626', turnoverRateData.length - 1)} />
-              </Line>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="flex items-center justify-center gap-6 mt-2 text-sm">
-          <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Currently Working</span>
-          <span className="flex items-center gap-2 text-gray-600"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Left / Resigned</span>
-        </div>
-
-        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/></svg>
-          Data is calculated as a percentage of total active employees.
-        </p>
       </div>
     </div>
   );
