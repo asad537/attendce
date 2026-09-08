@@ -504,10 +504,11 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                   Reset to default
                 </button>
               )}
+              <p className="text-xs text-emerald-700">Your appearance is saved automatically on this device.</p>
             </div>
           )}
 
-          <div className="mt-8 flex gap-3">
+          {activeTab !== 'appearance' && activeTab !== 'dashboard' && <div className="mt-8 flex gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -530,7 +531,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                 </span>
               ) : 'Save Changes'}
             </button>
-          </div>
+          </div>}
         </form>
       </div>
     </div>
