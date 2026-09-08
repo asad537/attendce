@@ -41,6 +41,12 @@ const ICE: RTCConfiguration = {
 };
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null };
+const CALL_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  channelCount: 1,
+};
 
 const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   if (sdpInit instanceof RTCSessionDescription) return sdpInit;
@@ -262,7 +268,9 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     let stream: MediaStream | null = null;
     let lastError: any = null;
     try {
-      stream = await getUserMediaPromised(kind === 'video' ? { audio: true, video: true } : { audio: true, video: false });
+      stream = await getUserMediaPromised(kind === 'video'
+        ? { audio: CALL_AUDIO_CONSTRAINTS, video: true }
+        : { audio: CALL_AUDIO_CONSTRAINTS, video: false });
     } catch (err1) {
       lastError = err1;
       try { stream = await getUserMediaPromised({ audio: true }); } catch (err2) { lastError = err2 || err1; }

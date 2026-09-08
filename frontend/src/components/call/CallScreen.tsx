@@ -261,9 +261,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
 
     return (
         <div className="fixed inset-0 z-[60] flex flex-col bg-[#202124] text-white">
-            {/* A voice call has no visible media element; render one audio sink
-                per remote participant so their microphone plays immediately. */}
-            {!isVideo && remotes.map((participant) => <RemoteAudio key={participant.id} stream={participant.stream} />)}
+            {/* Keep exactly one audio sink per remote participant. Video
+                elements are always muted, preventing duplicate playback/echo
+                and ensuring audio continues when their camera is turned off. */}
+            {remotes.map((participant) => <RemoteAudio key={participant.id} stream={participant.stream} />)}
             {/* Top bar: clock · meeting code + participant count */}
             <div className="flex items-center justify-between px-5 py-3 text-sm">
                 <div className="flex items-center gap-2 text-white/85">
@@ -295,7 +296,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             <div className="aspect-video shrink-0">
                                 <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
                             </div>
-                            {(presenting ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
+                            {(presenting && !selectedRemoteId ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
                                 <button
                                     key={p.id}
                                     type="button"
@@ -473,7 +474,7 @@ function MeetTile({ name, stream, showVideo, muted = false, big, note }: { name:
     return (
         <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#3c4043]">
             {hasVideo ? (
-                <Video stream={stream!} className="h-full w-full object-cover" />
+                <Video stream={stream!} muted className="h-full w-full object-cover" />
             ) : (
                 <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#5b4636,#241d18)]">
                     <span className={`grid place-items-center rounded-full bg-black/30 font-semibold ${big ? "h-28 w-28 text-4xl" : "h-16 w-16 text-2xl"}`}>
