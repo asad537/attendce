@@ -190,7 +190,7 @@ const roleLabel: Record<string, string> = {
   employee: 'Employee',
   tl:       'Team Lead',
   manager:  'Manager',
-  ceo:      'Chief Executive Officer',
+  ceo:      'President',
 };
 
 interface SidebarProps {

@@ -198,7 +198,7 @@ export default function ProjectTickets() {
         if (!ticket || ticket.status === status) return;
         const isManagement = ['ceo', 'manager', 'tl'].includes(currentUser?.role || '');
         if (ticket.status === 'in_review' && status === 'done' && !isManagement) {
-            toast.error("Only CEO, Manager, or Team Lead can move tickets from Review to Done.");
+            toast.error("Only President, Manager, or Team Lead can move tickets from Review to Done.");
             return;
         }
         setTickets(current => current.map(item => item.id === ticketId ? { ...item, status } : item));
@@ -740,7 +740,7 @@ export default function ProjectTickets() {
                                     const nextStatus = e.target.value as any;
                                     const isManagement = ['ceo', 'manager', 'tl'].includes(currentUser?.role || '');
                                     if (detail.status === 'in_review' && nextStatus === 'done' && !isManagement) {
-                                        toast.error("Only CEO, Manager, or Team Lead can move a ticket from Review to Done.");
+                                        toast.error("Only President, Manager, or Team Lead can move a ticket from Review to Done.");
                                         return;
                                     }
                                     try {

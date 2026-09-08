@@ -57,7 +57,7 @@ class LeaveController extends Controller
     {
         // CEO is the company owner and does not submit leave requests
         if ($request->user()->isCeo()) {
-            return response()->json(['message' => 'CEO does not require leave requests.'], 403);
+            return response()->json(['message' => 'President does not require leave requests.'], 403);
         }
 
         $this->authorize('create', Leave::class);
@@ -128,10 +128,10 @@ class LeaveController extends Controller
             $request->action,
             $request->remarks
         );
-        NotificationService::send($leave->user, 'Leave request ' . $request->action . 'd', 'Your leave request has been ' . $request->action . 'd by the CEO.', $request->action === 'approve' ? 'success' : 'warning', '/leave-management', $leave);
+        NotificationService::send($leave->user, 'Leave request ' . $request->action . 'd', 'Your leave request has been ' . $request->action . 'd by the President.', $request->action === 'approve' ? 'success' : 'warning', '/leave-management', $leave);
 
         return response()->json([
-            'message' => "Leave {$request->action}d by CEO.",
+            'message' => "Leave {$request->action}d by President.",
             'leave'   => new LeaveResource($leave),
         ]);
     }

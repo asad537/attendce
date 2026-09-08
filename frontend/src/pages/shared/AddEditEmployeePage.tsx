@@ -252,7 +252,7 @@ export default function AddEditEmployeePage() {
         { value: 'employee', label: 'Employee' },
         { value: 'tl',       label: 'Team Lead (TL)' },
         { value: 'manager',  label: 'Manager' },
-        { value: 'ceo',      label: 'Chief Executive Officer' },
+        { value: 'ceo',      label: 'President' },
       ];
     }
     if (authRole === 'manager') {

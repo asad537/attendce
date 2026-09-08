@@ -270,7 +270,7 @@ export default function LoginPage() {
             <p className="text-xs text-slate-800 font-bold mb-3 lg:mb-4">Demo Accounts</p>
             <div className="grid grid-cols-1 gap-2 lg:gap-3">
               {[
-                { label: 'Chief Executive Officer', email: 'ceo@jmdsol.com', password: 'password', iconText: 'CEO' },
+                { label: 'President', email: 'ceo@jmdsol.com', password: 'password', iconText: 'PRES' },
                 { label: 'Employee', email: 'carol@attendance.com', password: 'password', iconText: 'EMP' },
               ].map((d) => (
                 <button

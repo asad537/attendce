@@ -144,7 +144,7 @@ export default function LeaveManagement() {
                       <button onClick={() => handleCancel(l.id)} className="btn-secondary btn-sm text-red-600 hover:text-red-700">Cancel</button>
                     )}
                     {l.manager_remarks && <p className="text-xs text-gray-400 mt-1">Manager: {l.manager_remarks}</p>}
-                    {l.ceo_remarks && <p className="text-xs text-gray-400">CEO: {l.ceo_remarks}</p>}
+                    {l.ceo_remarks && <p className="text-xs text-gray-400">President: {l.ceo_remarks}</p>}
                   </td>
                 </tr>
               ))}

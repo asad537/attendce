@@ -70,7 +70,7 @@ export default function CeoEmployees() {
     employee: 'Employee',
     tl:       'Team Lead',
     manager:  'Manager',
-    ceo:      'Chief Executive Officer',
+    ceo:      'President',
   };
 
   return (

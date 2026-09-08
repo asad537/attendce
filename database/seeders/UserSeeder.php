@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
         $engDept      = Department::where('code', 'DEV')->first();
         $hrDept       = Department::where('code', 'CW')->first();
         $execDept     = Department::where('code', 'DSGN')->first();
-        $ceoDesig     = Designation::where('title', 'Chief Executive Officer')->first();
+        $ceoDesig     = Designation::where('title', 'President')->first();
         $engMgrDesig  = Designation::where('title', 'Engineering Manager')->first();
         $hrMgrDesig   = Designation::where('title', 'HR Manager')->first();
         $swDesig      = Designation::where('title', 'Software Engineer')->first();
@@ -36,7 +36,7 @@ class UserSeeder extends Seeder
             ['email' => 'ceo@attendance.com'],
             [
                 'employee_id'   => 'EMP-0001',
-                'name'          => 'John CEO',
+                'name'          => 'John President',
                 'password'      => Hash::make('password'),
                 'role'          => 'ceo',
                 'status'        => 'active',

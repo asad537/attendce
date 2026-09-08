@@ -122,7 +122,7 @@ class ProjectTicketController extends Controller
             $data = array_intersect_key($data, array_flip(['status', 'progress']));
         }
         if (isset($data['status']) && $data['status'] === 'done' && $ticket->status === 'in_review') {
-            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the CEO or a project lead can move a ticket from Review to Done.');
+            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the President or a project lead can move a ticket from Review to Done.');
         }
         // Keep the progress bar honest: a done ticket is 100%, anything else <100.
         if (isset($data['status'])) {
@@ -177,7 +177,7 @@ class ProjectTicketController extends Controller
     public function rate(Request $request, ProjectTicket $ticket)
     {
         $ticket->load('project');
-        abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the CEO or a project lead can rate a ticket.');
+        abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the President or a project lead can rate a ticket.');
         abort_unless($ticket->status === 'done', 422, 'Only completed (Done) tickets can be rated.');
 
         $data = $request->validate(['rating' => 'required|integer|min:1|max:5']);

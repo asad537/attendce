@@ -184,13 +184,13 @@ class LeaveService
             return $lockedLeave;
         });
 
-        AuditService::log("ceo_{$action}d_leave", 'leave', "CEO {$ceo->name} {$action}d leave", $ceo->id, Leave::class, $leave->id);
+        AuditService::log("ceo_{$action}d_leave", 'leave', "President {$ceo->name} {$action}d leave", $ceo->id, Leave::class, $leave->id);
 
         // Notify employee
         NotificationService::send(
             $leave->user,
             'Leave Request ' . ucfirst($status),
-            "Your leave request has been {$status} by the CEO. " . ($remarks ? "Remarks: {$remarks}" : ''),
+            "Your leave request has been {$status} by the President. " . ($remarks ? "Remarks: {$remarks}" : ''),
             $status === 'approved' ? 'success' : 'error',
             null,
             $leave
@@ -201,7 +201,7 @@ class LeaveService
             NotificationService::send(
                 $leave->user->manager,
                 'Leave Request ' . ucfirst($status),
-                "{$leave->user->name}'s leave has been {$status} by the CEO.",
+                "{$leave->user->name}'s leave has been {$status} by the President.",
                 'info',
                 null,
                 $leave

@@ -57,7 +57,7 @@ export function SharedEmployeeForm({
 
   const reportingLabel = form.role === 'tl' ? 'Reporting Manager' : 'Reporting Team Lead (TL)';
   const reportingPlaceholder = form.role === 'manager'
-    ? 'Reports directly to CEO'
+    ? 'Reports directly to President'
     : form.role === 'tl' ? 'Select manager…' : 'Select team lead…';
 
   const COUNTRY_CODES = [
@@ -380,7 +380,7 @@ export function SharedEmployeeForm({
                   </div>
                   {form.role === 'manager' ? (
                     <div className="input pl-10 bg-gray-50 text-gray-400 cursor-not-allowed flex items-center">
-                      Reports directly to CEO
+                      Reports directly to President
                     </div>
                   ) : (
                     <select
