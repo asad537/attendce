@@ -25,9 +25,21 @@ api.interceptors.response.use(
   (res) => res,
   (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      window.location.href = '/login';
+      // A slow request from an earlier session must never clear a token that
+      // was saved by a newer, successful login. This happens frequently in
+      // local development because React Strict Mode replays the initial
+      // session check.
+      const requestToken = String(error.config?.headers?.Authorization || '').replace(/^Bearer\s+/i, '');
+      const currentToken = localStorage.getItem('auth_token');
+
+      if (requestToken && requestToken === currentToken) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+
+        if (window.location.pathname !== '/login') {
+          window.location.assign('/login');
+        }
+      }
     }
     return Promise.reject(error);
   }
