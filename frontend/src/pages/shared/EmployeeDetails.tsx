@@ -261,7 +261,7 @@ export default function EmployeeDetails() {
             </div>
             
             <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
-            <p className="text-sm font-medium text-gray-500 mt-1">{user.designation?.title || user.role} · {user.department?.name}</p>
+            <p className="text-sm font-medium text-gray-500 mt-1">{user.designation?.title || roleLabels[user.role] || user.role} · {user.department?.name}</p>
             
             <div className="flex items-center gap-3 mt-4 w-full justify-center">
               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold font-mono">
@@ -766,3 +766,9 @@ export default function EmployeeDetails() {
     </div>
   );
 }
+const roleLabels: Record<string, string> = {
+  ceo: 'President',
+  manager: 'Manager',
+  tl: 'Team Lead',
+  employee: 'Employee',
+};

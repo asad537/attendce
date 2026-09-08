@@ -27,6 +27,16 @@ const colors = [
     "from-[#7b8fb6] to-[#435577]",
 ];
 
+const roleLabel: Record<string, string> = {
+    ceo: "President",
+    manager: "Manager",
+    tl: "Team Lead",
+    employee: "Employee",
+};
+
+const displayRole = (user: MessageUser) =>
+    user.designation || roleLabel[user.role || "employee"] || "Team member";
+
 function Avatar({
     user,
     index = 0,
@@ -802,9 +812,7 @@ export default function InboxPage() {
                                                 />
                                             ) : (
                                                 <small className="block truncate text-[#7f8c87]">
-                                                    {thread.user.designation ||
-                                                        thread.user.role ||
-                                                        "Team member"}
+                                                    {displayRole(thread.user)}
                                                 </small>
                                             )}
                                         </div>
