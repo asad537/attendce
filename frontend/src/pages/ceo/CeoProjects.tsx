@@ -9,6 +9,7 @@ import { userService } from '../../services/userService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Project, ProjectStatus, User } from '../../types';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import { confirmDialog } from '../../components/common/ConfirmDialog';
 
 const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', status, start_date: '', due_date: '' });
 
@@ -130,6 +131,18 @@ export default function CeoProjects() {
   };
 
   const startCreate = () => { setEditing(null); setForm(blank()); setLeadIds([]); setMemberIds([]); setOpen(true); };
+  const canDeleteProjects = user?.role === 'ceo' || user?.role === 'manager';
+
+  const remove = async (project: Project) => {
+    if (!await confirmDialog({ title: 'Delete project?', message: `“${project.name}” and its tickets will be permanently deleted.`, confirmText: 'Delete project', tone: 'danger' })) return;
+    try {
+      await projectService.remove(project.id);
+      toast.success('Project deleted.');
+      load();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
 
   const toggleId = (list: number[], id: number) => list.includes(id) ? list.filter(x => x !== id) : [...list, id];
 
@@ -391,6 +404,12 @@ export default function CeoProjects() {
                             >
                               Edit
                             </button>
+                            {canDeleteProjects && <button
+                              onClick={() => { setDropdownOpen(null); void remove(p); }}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                            >
+                              Delete
+                            </button>}
                           </div>
                         )}
                       </div>
@@ -499,6 +518,7 @@ export default function CeoProjects() {
                         <div className="flex items-center justify-end gap-3">
                           <button onClick={() => navigate(`/projects/${p.id}`)} className="text-xs font-semibold text-gray-500 hover:text-emerald-600">Open</button>
                           <button onClick={() => edit(p)} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Edit</button>
+                          {canDeleteProjects && <button onClick={() => void remove(p)} className="text-xs font-semibold text-red-600 hover:text-red-700">Delete</button>}
                         </div>
                       </td>
                     </tr>

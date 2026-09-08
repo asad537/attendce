@@ -166,6 +166,18 @@ class ProjectController extends Controller
         return response()->json(['message' => 'Project updated successfully.', 'project' => $project->fresh($this->teamLoad())]);
     }
 
+    public function destroy(Request $request, Project $project): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user->isCeo() || $user->isManager(), 403, 'Only the President or a manager can delete projects.');
+
+        $projectName = $project->name;
+        $project->delete();
+        AuditService::log('project_deleted', 'project', "Project {$projectName} deleted", $user->id);
+
+        return response()->json(['message' => 'Project deleted successfully.']);
+    }
+
     // The assignable team for a project: everyone attached as a lead or member,
     // deduped. Used to populate ticket-assignee dropdowns.
     public function members(Request $request, Project $project): JsonResponse

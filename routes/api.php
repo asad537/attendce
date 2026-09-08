@@ -139,6 +139,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
     Route::get('/projects/{project}/members', [ProjectController::class, 'members']);
     Route::get('/projects/{project}/tickets', [ProjectTicketController::class, 'index']);
     Route::post('/projects/{project}/tickets', [ProjectTicketController::class, 'store']);

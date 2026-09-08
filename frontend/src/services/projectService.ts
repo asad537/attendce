@@ -25,4 +25,7 @@ export const projectService = {
     const res = await api.put(`/projects/${id}`, payload);
     return res.data.project;
   },
+  async remove(id: number): Promise<void> {
+    await api.delete(`/projects/${id}`);
+  },
 };
