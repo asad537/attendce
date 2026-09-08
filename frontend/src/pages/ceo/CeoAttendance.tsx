@@ -5,6 +5,7 @@ import { attendanceService } from '../../services/attendanceService';
 import { departmentService, userService } from '../../services/userService';
 import { Attendance, Department, PaginatedResponse, User } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'on_leave' | 'holiday' | '';
 const statusColor: Record<string, string> = {
@@ -26,8 +27,8 @@ export default function CeoAttendance() {
   const [filterEmp, setFilterEmp] = useState('');
   const [filterStatus, setFilterStatus] = useState<AttStatus>('');
 
-  const load = useCallback(async (page = 1) => {
-    setLoading(true);
+  const load = useCallback(async (page = 1, silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const params: Record<string, unknown> = { page, per_page: 20 };
       if (filterDate) params.date = filterDate;
@@ -35,7 +36,7 @@ export default function CeoAttendance() {
       if (filterEmp) params.user_id = filterEmp;
       if (filterStatus) params.status = filterStatus;
       setData(await attendanceService.getList(params));
-    } catch { toast.error('Failed to load attendance records'); } finally { setLoading(false); }
+    } catch { if (!silent) toast.error('Failed to load attendance records'); } finally { if (!silent) setLoading(false); }
   }, [filterDate, filterDept, filterEmp, filterStatus]);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function CeoAttendance() {
       .then(([deps, users]) => { setDepts(deps); setEmployees(users.data); }).catch(() => undefined);
   }, []);
   useEffect(() => { load(1); }, [load]);
+  useAutoRefresh(() => { void load(1, true); }, { intervalMs: 3000 });
 
   const summary = useMemo(() => {
     const rows = data?.data || [];
