@@ -463,7 +463,7 @@ export default function InboxPage() {
                 subject: "Chat message",
                 body: message,
                 is_draft: false,
-                is_read: true,
+                is_read: false,
                 is_starred: false,
                 sender: {
                     id: me?.id || 0,
@@ -728,7 +728,9 @@ export default function InboxPage() {
                                                         {conversation
                                                             .last_message
                                                             .sent_by_me && (
-                                                            <DoubleCheck className="mr-0.5 h-[13px] w-[15px] text-[#53bdeb]" />
+                                                            <DoubleCheck
+                                                                className={`mr-0.5 h-[13px] w-[15px] ${conversation.last_message.is_read ? "text-[#53bdeb]" : "text-[#9ba8a3]"}`}
+                                                            />
                                                         )}
                                                         {
                                                             conversation
@@ -1140,7 +1142,9 @@ export default function InboxPage() {
                                                                 )}
                                                                 {mine &&
                                                                     !item.is_deleted && (
-                                                                        <DoubleCheck className="ml-0.5 h-[13px] w-[15px] text-emerald-200" />
+                                                                        <DoubleCheck
+                                                                            className={`ml-0.5 h-[13px] w-[15px] ${item.is_read ? "text-[#53bdeb]" : "text-slate-300"}`}
+                                                                        />
                                                                     )}
                                                             </span>
                                                             {!item.is_deleted && (

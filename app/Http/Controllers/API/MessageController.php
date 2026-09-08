@@ -78,6 +78,7 @@ class MessageController extends Controller
                 'last_message' => $latest ? [
                     'id' => $latest->id, 'body' => $this->preview($latest), 'subject' => $latest->subject,
                     'created_at' => $latest->created_at, 'sent_by_me' => $latest->sender_id === $current->id,
+                    'is_read' => (bool) $latest->read_at,
                 ] : null,
                 'unread_count' => $unread,
             ];
@@ -329,7 +330,7 @@ class MessageController extends Controller
         return [
             'id' => $message->id, 'subject' => $message->subject,
             'body' => $deleted ? '' : $message->body, 'label' => $message->label,
-            'is_draft' => $message->is_draft, 'is_read' => $sent || (bool) $message->read_at,
+            'is_draft' => $message->is_draft, 'is_read' => (bool) $message->read_at,
             'is_starred' => (bool) ($sent ? $message->starred_by_sender_at : $message->starred_by_recipient_at),
             'is_deleted' => $deleted, 'is_edited' => (bool) $message->edited_at,
             'is_forwarded' => (bool) $message->is_forwarded, 'reactions' => $message->reactions ?: null,

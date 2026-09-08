@@ -11,7 +11,7 @@ export interface InboxMessage {
   sender: MessageUser; recipient?: MessageUser | null; created_at: string;
 }
 export interface MessageCounts { inbox: number; unread: number; starred: number; sent: number; drafts: number; spam: number; trash: number }
-export interface Conversation { user: MessageUser & { role?: string }; last_message?: { id: number; body: string; subject: string; created_at: string; sent_by_me: boolean } | null; unread_count: number }
+export interface Conversation { user: MessageUser & { role?: string }; last_message?: { id: number; body: string; subject: string; created_at: string; sent_by_me: boolean; is_read: boolean } | null; unread_count: number }
 
 export const messageService = {
   async list(folder: string, search = ''): Promise<{ messages: InboxMessage[]; counts: MessageCounts }> {
