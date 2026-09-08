@@ -196,6 +196,9 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const totalCount = participants.length + 1;
     const presenting = sharingScreen;                          // local user is sharing their screen
     const filmstripMode = remotes.length >= 2 || presenting;   // spotlight + right filmstrip
+    // Spotlight whoever is actually sending video (a screen-share or live camera)
+    // so a remote presenter fills the stage rather than a camera-off avatar.
+    const spotlight = remotes.find((r) => r.stream && r.stream.getVideoTracks().length > 0) || remotes[0];
     void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
@@ -224,12 +227,14 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             {presenting ? (
                                 <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
                             ) : (
-                                <MeetTile big name={remotes[0]?.name || peer.name} stream={remotes[0]?.stream} showVideo={isVideo} />
+                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo} />
                             )}
                         </div>
                         <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
-                            <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
-                            {(presenting ? remotes : remotes.slice(1)).map((p) => (
+                            <div className="aspect-video shrink-0">
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
+                            </div>
+                            {(presenting ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
                                 <div key={p.id} className="aspect-video shrink-0">
                                     <MeetTile name={p.name} stream={p.stream} showVideo={isVideo} />
                                 </div>
@@ -241,8 +246,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     <>
                         <MeetTile
                             big
-                            name={remotes[0]?.name || peer.name}
-                            stream={remotes[0]?.stream}
+                            name={spotlight?.name || peer.name}
+                            stream={spotlight?.stream}
                             showVideo={isVideo}
                             note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
                         />
