@@ -85,8 +85,8 @@ export default function CeoProjects() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [p, u] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200 })]);
       setProjects(p);
@@ -112,13 +112,13 @@ export default function CeoProjects() {
       }));
       setProjectMetrics(metrics);
     } catch (e) {
-      toast.error(getErrorMessage(e));
+      if (!silent) toast.error(getErrorMessage(e));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
   useEffect(() => { load(); }, [load]);
-  useAutoRefresh(load);
+  useAutoRefresh(() => { void load(true); });
 
   const edit = (p: Project) => {
     setEditing(p);

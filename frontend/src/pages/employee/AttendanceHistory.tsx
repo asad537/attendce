@@ -14,17 +14,17 @@ export default function AttendanceHistory() {
   const [startDate, setStart] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
   const [endDate, setEnd]     = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await attendanceService.getList({ start_date: startDate, end_date: endDate, page, per_page: 20 });
       setData(res);
-    } catch { toast.error('Failed to load attendance'); }
-    finally { setLoading(false); }
+    } catch { if (!silent) toast.error('Failed to load attendance'); }
+    finally { if (!silent) setLoading(false); }
   };
 
   useEffect(() => { load(); }, [page, startDate, endDate]);
-  useAutoRefresh(load);
+  useAutoRefresh(() => { void load(true); });
 
   const summary = useMemo(() => {
     const rows = data?.data || [];

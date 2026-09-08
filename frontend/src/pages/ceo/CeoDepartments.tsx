@@ -53,8 +53,8 @@ export default function CeoDepartments() {
   const [submitting, setSubmitting] = useState(false);
 
   // ── Load ──────────────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [depts, desigs] = await Promise.all([
         departmentService.getAll(),
@@ -69,14 +69,14 @@ export default function CeoDepartments() {
         setExpanded(user.department.id);
       }
     } catch {
-      toast.error('Failed to load departments');
+      if (!silent) toast.error('Failed to load departments');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
-  useAutoRefresh(load);
+  useAutoRefresh(() => { void load(true); });
 
   // designations for a specific dept
   const desigFor = (deptId: number) =>
