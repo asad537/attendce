@@ -192,6 +192,13 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         connectedAtRef.current = connectedAtRef.current || Date.now();
         setState(s => (s.status === 'connected' ? s : { ...s, status: 'connected' }));
       }
+      if (st === 'disconnected') {
+        // A browser/tab close has no chance to send a hangup signal. Give a
+        // brief grace period for a Wi-Fi hiccup, then end the abandoned peer.
+        window.setTimeout(() => {
+          if (pc.connectionState === 'disconnected') removePeer(id);
+        }, 3000);
+      }
       if (st === 'failed' || st === 'closed') removePeer(id);
     };
     peersRef.current.set(id, entry);

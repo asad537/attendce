@@ -149,7 +149,7 @@ class GuestCallController extends Controller
         ]);
     }
 
-    /** Guest heartbeat + roster (same 12s liveness window as real users). */
+    /** Guest heartbeat + roster (same 6s liveness window as real users). */
     public function heartbeat(Request $request): JsonResponse
     {
         [$guestId, $callId] = $this->session($request);
@@ -163,7 +163,7 @@ class GuestCallController extends Controller
         $roster = CallParticipant::with('user:id,name,avatar,role')
             ->where('call_id', $callId)
             ->where('user_id', '!=', $guestId)
-            ->where('last_seen_at', '>=', now()->subSeconds(12))
+            ->where('last_seen_at', '>=', now()->subSeconds(6))
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->user_id,

@@ -61,7 +61,7 @@ class CallController extends Controller
     /**
      * Join / heartbeat a group-call room and return its live roster. Called
      * every few seconds while in a group call; participants whose heartbeat
-     * is older than 12s are treated as gone.
+     * is older than 6s are treated as gone.
      */
     public function join(Request $request): JsonResponse
     {
@@ -98,13 +98,13 @@ class CallController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /** Active participants of a room (heartbeat within 12s), excluding $exceptId. */
+    /** Active participants of a room (heartbeat within 6s), excluding $exceptId. */
     private function roster(string $callId, int $exceptId): array
     {
         return CallParticipant::with('user:id,name,avatar,role')
             ->where('call_id', $callId)
             ->where('user_id', '!=', $exceptId)
-            ->where('last_seen_at', '>=', now()->subSeconds(12))
+            ->where('last_seen_at', '>=', now()->subSeconds(6))
             ->get()
             ->map(fn ($p) => [
                 'id' => $p->user_id,
