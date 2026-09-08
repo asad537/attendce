@@ -10,6 +10,7 @@ import { getErrorMessage } from '../../services/api';
 import { PaginatedResponse } from '../../types';
 import RichTextComposer from '../../components/common/RichTextComposer';
 import { plainText } from '../../lib/text';
+import { confirmDialog } from '../../components/common/ConfirmDialog';
 
 export default function WfhManagement() {
   const { user } = useAuth();
@@ -72,7 +73,7 @@ export default function WfhManagement() {
   };
 
   const handleCancel = async (id: number) => {
-    if (!confirm('Cancel this WFM request?')) return;
+    if (!(await confirmDialog({ title: 'Cancel WFM request', message: 'Are you sure you want to cancel this work-from-home request?', confirmText: 'Cancel request', cancelText: 'Keep it', tone: 'danger' }))) return;
     try {
       await wfhService.cancel(id);
       toast.success('WFM cancelled');

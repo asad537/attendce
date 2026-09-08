@@ -4,6 +4,7 @@ import { holidayService } from '../../services/reportService';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { Holiday } from '../../types';
+import { confirmDialog } from '../../components/common/ConfirmDialog';
 
 export default function CeoHolidays() {
   const queryClient = useQueryClient();
@@ -89,8 +90,8 @@ export default function CeoHolidays() {
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this holiday?')) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDialog({ title: 'Delete holiday', message: 'This holiday will be removed from the calendar. Continue?', confirmText: 'Delete', tone: 'danger' })) {
       deleteMutation.mutate(id);
     }
   };

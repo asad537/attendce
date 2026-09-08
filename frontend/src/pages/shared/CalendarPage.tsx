@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { useAuth } from '../../contexts/AuthContext';
+import { confirmDialog } from '../../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 export default function CalendarPage() {
@@ -44,9 +45,9 @@ export default function CalendarPage() {
   const [editColor, setEditColor] = useState('#6366f1');
   const startEditCat = (c: { key: string; label: string; color: string }) => { setEditingKey(c.key); setEditName(c.label); setEditColor(c.color); setShowAddCat(false); };
   const saveEditCat = () => { if (editingKey && editName.trim()) { editCategory(editingKey, editName, editColor); setEditingKey(null); } };
-  const removeCat = (c: { key: string; label: string }) => {
+  const removeCat = async (c: { key: string; label: string }) => {
     const used = events.filter(e => e.type === c.key).length;
-    if (window.confirm(`Delete category "${c.label}"?${used ? ` ${used} event(s) will show as “General”.` : ''}`)) {
+    if (await confirmDialog({ title: `Delete "${c.label}"`, message: used ? `${used} event(s) in this category will show as “General”.` : 'This category will be removed.', confirmText: 'Delete', tone: 'danger' })) {
       deleteCategory(c.key);
       setActiveTypes(prev => prev.filter(k => k !== c.key));
     }
@@ -99,7 +100,7 @@ export default function CalendarPage() {
   };
 
   const handleDeleteEvent = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
+    if (await confirmDialog({ title: 'Delete event', message: 'This event will be removed from the calendar. Continue?', confirmText: 'Delete', tone: 'danger' })) {
       try {
         await deleteEvent(id);
       } catch (err: any) {

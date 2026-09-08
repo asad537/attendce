@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import SignaturePad from './SignaturePad';
+import { promptDialog } from './ConfirmDialog';
 
 interface RichTextComposerProps {
   value: string;
@@ -41,8 +42,8 @@ export default function RichTextComposer({
     fileInputRef.current?.click();
   };
 
-  const handleDrivePrompt = () => {
-    const link = prompt('Enter Google Drive Link:', driveLink);
+  const handleDrivePrompt = async () => {
+    const link = await promptDialog({ title: 'Attach Google Drive link', message: 'Paste a shareable Google Drive link.', defaultValue: driveLink, placeholder: 'https://drive.google.com/...', confirmText: 'Attach' });
     if (link !== null) {
       onDriveLinkChange(link);
     }

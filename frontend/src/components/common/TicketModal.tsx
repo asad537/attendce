@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import { confirmDialog } from './ConfirmDialog';
 
 interface TicketModalProps {
   open: boolean;
@@ -42,7 +43,7 @@ export default function TicketModal({ open, onClose, ticketId, children, onDelet
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this ticket?")) return;
+    if (!(await confirmDialog({ title: 'Delete ticket', message: 'This ticket will be permanently deleted. This action cannot be undone.', confirmText: 'Delete', tone: 'danger' }))) return;
     try {
         await api.delete(`/tickets/${ticketId}`);
         toast.success("Ticket deleted");

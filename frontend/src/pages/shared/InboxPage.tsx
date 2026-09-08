@@ -11,6 +11,7 @@ import {
     messageService,
 } from "../../services/messageService";
 import { useCallContext } from "../../contexts/CallContext";
+import { confirmDialog } from "../../components/common/ConfirmDialog";
 
 const initials = (name = "") =>
     name
@@ -879,14 +880,17 @@ export default function InboxPage() {
                                                                 Search messages
                                                             </button>
                                                             <button
-                                                                onClick={() => {
+                                                                onClick={async () => {
                                                                     setShowChatMenu(
                                                                         false,
                                                                     );
                                                                     if (
-                                                                        window.confirm(
-                                                                            `Clear all messages with ${thread.user.name}? This only removes them for you.`,
-                                                                        )
+                                                                        await confirmDialog({
+                                                                            title: 'Clear chat',
+                                                                            message: `All messages with ${thread.user.name} will be removed for you only. They will still see the conversation.`,
+                                                                            confirmText: 'Clear chat',
+                                                                            tone: 'danger',
+                                                                        })
                                                                     )
                                                                         clearChat.mutate();
                                                                 }}

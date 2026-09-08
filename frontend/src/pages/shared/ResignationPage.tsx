@@ -10,6 +10,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import RichTextComposer from '../../components/common/RichTextComposer';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
 import { plainText } from '../../lib/text';
+import { promptDialog } from '../../components/common/ConfirmDialog';
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700 border border-amber-200/60',
@@ -72,9 +73,18 @@ export default function ResignationPage() {
     onError: e => toast.error(getErrorMessage(e)),
   });
 
-  const onReview = (r: Resignation, action: 'approve' | 'reject') => {
-    const remarks = window.prompt(`${action === 'approve' ? 'Approve' : 'Reject'} ${r.user.name}'s resignation — remarks (optional):`) ?? undefined;
-    review.mutate({ id: r.id, action, remarks });
+  const onReview = async (r: Resignation, action: 'approve' | 'reject') => {
+    const label = action === 'approve' ? 'Approve' : 'Reject';
+    const remarks = await promptDialog({
+      title: `${label} resignation`,
+      message: `Add remarks for ${r.user.name} (optional).`,
+      placeholder: 'Optional remarks',
+      textarea: true,
+      confirmText: label,
+      tone: action === 'approve' ? 'primary' : 'danger',
+    });
+    if (remarks === null) return; // cancelled
+    review.mutate({ id: r.id, action, remarks: remarks || undefined });
   };
 
   const STAT_CARDS = [

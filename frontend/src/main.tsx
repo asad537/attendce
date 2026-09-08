@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { SettingsProvider } from './contexts/SettingsContext'
+import { ConfirmDialogHost } from './components/common/ConfirmDialog'
 import './index.css'
 import App from './App.tsx'
 
@@ -33,6 +34,7 @@ createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <SettingsProvider>
             <Toaster position="top-right" />
+            <ConfirmDialogHost />
             <App />
           </SettingsProvider>
         </AuthProvider>
