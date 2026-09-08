@@ -156,10 +156,19 @@ export default function CeoEmployees() {
                   )}
                   
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                      {u.status === 'active' ? 'Active' : u.status}
-                    </div>
+                    {/* Presence badge — "Online" (green) only when the employee is
+                        actually working right now; otherwise a muted "Offline". */}
+                    {u.current_status === 'working' ? (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-semibold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        Online
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                        Offline
+                      </div>
+                    )}
                     
                     <div className="relative group">
                       <button onClick={(e) => e.stopPropagation()} className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none">
