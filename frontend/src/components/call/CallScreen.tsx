@@ -130,6 +130,7 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
         toggleMute,
         toggleCam,
         toggleScreenShare,
+        switchToVideo,
         addToCall,
     } = call;
     const { peer, kind, status, muted, camOff, sharingScreen, error } = state;
@@ -257,7 +258,7 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                         >
                             {muted ? <MicOffIcon /> : <MicIcon />}
                         </button>
-                        {isVideo && (
+                        {isVideo ? (
                             <button
                                 onClick={toggleCam}
                                 className={`grid h-14 w-14 place-items-center rounded-full transition ${camOff ? "bg-white text-[#0c241b]" : "bg-white/15"}`}
@@ -265,8 +266,16 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                             >
                                 <VideoIcon />
                             </button>
+                        ) : (status === "connected" || status === "connecting") && (
+                            <button
+                                onClick={switchToVideo}
+                                className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-white transition"
+                                title="Switch to video call"
+                            >
+                                <VideoIcon />
+                            </button>
                         )}
-                        {isVideo && (status === "connected" || status === "connecting") && (
+                        {(status === "connected" || status === "connecting") && (
                             <button
                                 onClick={toggleScreenShare}
                                 className={`grid h-14 w-14 place-items-center rounded-full transition ${sharingScreen ? "bg-white text-[#0c241b]" : "bg-white/15 text-white"}`}

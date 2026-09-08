@@ -370,9 +370,10 @@ export function useCall(meId?: number) {
     setState(s => ({ ...s, sharingScreen: false }));
   }, []);
 
-  // Share the screen with everyone in the call. Only available in video calls
-  // (there must already be an outgoing video sender to replace); voice calls
-  // have no video track, so we tell the user instead of renegotiating.
+  // Share the screen with everyone in the call. In a video call we swap the
+  // camera track (replaceTrack, no renegotiation). In a voice call there is no
+  // video sender yet, so we add the screen track and renegotiate that peer —
+  // and upgrade the UI to video so the screen is actually shown.
   const toggleScreenShare = useCallback(async () => {
     if (screenTrackRef.current) { stopScreenShare(); return; }
     if (statusRef.current !== 'connected' && statusRef.current !== 'connecting') return;
@@ -385,30 +386,73 @@ export function useCall(meId?: number) {
     } catch { return; /* user cancelled the picker */ }
     if (!screenTrack) return;
 
-    // Replace the camera track on every peer's existing video sender.
-    let replaced = false;
-    peersRef.current.forEach(e => {
-      const sender = e.pc.getSenders().find(s => s.track && s.track.kind === 'video');
-      if (sender) { try { sender.replaceTrack(screenTrack!); replaced = true; } catch { /* noop */ } }
-    });
-    if (!replaced) {
-      try { screenTrack.stop(); } catch { /* noop */ }
-      toast.error('Screen share is available in video calls.');
-      return;
-    }
-
     cameraTrackRef.current = localRef.current?.getVideoTracks()[0] || null;
+
+    // Video calls already have a sender to swap; voice calls need a new track
+    // added + a renegotiation offer to that peer.
+    const toRenegotiate: Array<[number, PeerConn]> = [];
+    peersRef.current.forEach((e, id) => {
+      const sender = e.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) { try { sender.replaceTrack(screenTrack!); } catch { /* noop */ } }
+      else { try { e.pc.addTrack(screenTrack!, localRef.current || new MediaStream([screenTrack!])); toRenegotiate.push([id, e]); } catch { /* noop */ } }
+    });
+
     screenTrackRef.current = screenTrack;
-    // Reflect the shared screen in the local preview tile.
+    // Show the shared screen in our own local tile and switch the UI to video.
     if (localRef.current) {
       if (cameraTrackRef.current) { try { localRef.current.removeTrack(cameraTrackRef.current); } catch { /* noop */ } }
       try { localRef.current.addTrack(screenTrack); } catch { /* noop */ }
       setLocalStream(new MediaStream(localRef.current.getTracks()));
     }
+    kindRef.current = 'video';
+    setState(s => ({ ...s, sharingScreen: true, kind: 'video' }));
+
+    // Renegotiate the voice peers we just added a video track to.
+    for (const [id, e] of toRenegotiate) {
+      try {
+        const offer = await e.pc.createOffer();
+        await e.pc.setLocalDescription(offer);
+        sendSignal('offer', { sdp: { type: e.pc.localDescription?.type || 'offer', sdp: e.pc.localDescription?.sdp }, kind: 'video' }, id);
+      } catch { /* noop */ }
+    }
+
     // The browser's own "Stop sharing" bar ends the track — revert cleanly.
     screenTrack.onended = () => stopScreenShare();
-    setState(s => ({ ...s, sharingScreen: true }));
-  }, [stopScreenShare]);
+  }, [stopScreenShare, sendSignal]);
+
+  // Upgrade an ongoing voice call to video: turn the camera on and renegotiate
+  // with every peer (we add a video track, so we send a fresh offer). The peer
+  // learns it's now a video call from the offer's `kind` and shows our video.
+  const switchToVideo = useCallback(async () => {
+    if (kindRef.current === 'video') return;
+    if (statusRef.current !== 'connected' && statusRef.current !== 'connecting') return;
+    let camTrack: MediaStreamTrack | null = null;
+    try {
+      const cam = await navigator.mediaDevices.getUserMedia({ video: true });
+      camTrack = cam.getVideoTracks()[0] || null;
+    } catch (err: any) {
+      toast.error(formatMediaError(err, 'video'));
+      return;
+    }
+    if (!camTrack) return;
+
+    if (localRef.current) {
+      try { localRef.current.addTrack(camTrack); } catch { /* noop */ }
+      setLocalStream(new MediaStream(localRef.current.getTracks()));
+    }
+    kindRef.current = 'video';
+    setState(s => ({ ...s, kind: 'video', camOff: false }));
+
+    // Add the track to each peer and renegotiate — we are the offerer here.
+    for (const [id, entry] of peersRef.current) {
+      try {
+        entry.pc.addTrack(camTrack, localRef.current!);
+        const offer = await entry.pc.createOffer();
+        await entry.pc.setLocalDescription(offer);
+        sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
+      } catch { /* noop */ }
+    }
+  }, [sendSignal]);
 
   const handleSignal = useCallback(async (sig: CallSignal) => {
     if (sig.type === 'invite') {
@@ -431,7 +475,14 @@ export function useCall(meId?: number) {
     if (statusRef.current === 'idle') return;
 
     if (sig.type === 'offer') {
-      const raw = (sig.data as { sdp: RTCSessionDescriptionInit }).sdp || sig.data;
+      const data = sig.data as { sdp: RTCSessionDescriptionInit; kind?: 'voice' | 'video' };
+      // A renegotiation offer carrying kind:'video' means the other side turned
+      // their camera on — upgrade our UI so their video is shown.
+      if (data?.kind === 'video' && kindRef.current !== 'video') {
+        kindRef.current = 'video';
+        setState(s => ({ ...s, kind: 'video' }));
+      }
+      const raw = data?.sdp || sig.data;
       const entry = createPeer(sig.from.id, sig.from as any);
       await entry.pc.setRemoteDescription(cleanSdp(raw));
       entry.remoteSet = true;
@@ -497,5 +548,5 @@ export function useCall(meId?: number) {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, addToCall };
+  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, addToCall };
 }
