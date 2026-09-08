@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api, { getErrorMessage } from "../../services/api";
-import { userService } from "../../services/userService";
 import { useAuth } from "../../contexts/AuthContext";
 import { projectService } from "../../services/projectService";
 import Modal from "../../components/common/Modal";
@@ -32,11 +31,15 @@ type Ticket = {
     title: string;
     description?: string;
     status: "todo" | "in_progress" | "in_review" | "done";
+    progress?: number;
     priority?: "low" | "medium" | "high" | "urgent";
     due_date?: string;
     attachment_path?: string;
     attachment_name?: string;
     assignee?: { id: number; name: string };
+    rating?: number | null;
+    rated_by?: number | null;
+    rater?: { id: number; name: string } | null;
 };
 const cols = [
     { key: "todo", name: "To Do" },
@@ -76,9 +79,9 @@ export default function ProjectTickets() {
     });
     const load = async () => {
         try {
-            const [t, u, p] = await Promise.all([
+            const [t, m, p] = await Promise.all([
                 api.get(`/projects/${projectId}/tickets`),
-                userService.getList({ per_page: 200 }),
+                api.get(`/projects/${projectId}/members`).catch(() => null),
                 projectService.getAll(),
             ]);
             const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
@@ -86,14 +89,14 @@ export default function ProjectTickets() {
             const sharedTicketId = Number(new URLSearchParams(window.location.search).get('ticket'));
             if (sharedTicketId) setDetail(fetchedTickets.find((ticket: Ticket) => ticket.id === sharedTicketId) || null);
 
-            setUsers(
-                (Array.isArray(u.data) ? u.data : []).filter((user) =>
-                    ["manager", "tl", "employee"].includes(user.role)
-                ),
-            );
+            // Assignee pool = the project's own team (leads + members). can_manage
+            // comes from the backend so any project lead — not just any manager —
+            // gets full control.
+            const team: User[] = Array.isArray(m?.data?.team) ? m!.data.team : [];
+            setUsers(team);
+            setCanManage(Boolean(m?.data?.can_manage));
             const currentProject = (Array.isArray(p) ? p : []).find((project) => project.id === Number(projectId));
             setProjectName(currentProject?.name || "Project");
-            setCanManage(Boolean(['ceo', 'manager', 'tl'].includes(currentUser?.role || '')));
         } catch (e) {
             toast.error(getErrorMessage(e));
         }
@@ -102,11 +105,9 @@ export default function ProjectTickets() {
         load();
     }, [projectId]);
 
-    // Assignee pool for the *action* dropdowns (create/edit/inline reassign).
-    // The current user can never assign a ticket to themselves — assigners
-    // aren't the doers of the work. The filter dropdown up top still shows
-    // everyone so a manager can filter tickets by their own name.
-    const assignableUsers = users.filter((u) => u.id !== currentUser?.id);
+    // Assignee pool = the whole project team (leads + members). The CEO / project
+    // leads decide who is on the team, so any team member can receive a ticket.
+    const assignableUsers = users;
 
     const save = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -168,6 +169,28 @@ export default function ProjectTickets() {
         } catch (err) {
             toast.error("Failed to update assignee");
         }
+    };
+
+    // The assignee (doer) — or a manager/lead — can nudge the completion %.
+    const canEditProgress = (ticket: Ticket) => canManage || ticket.assignee?.id === currentUser?.id;
+
+    const updateProgress = async (ticket: Ticket, value: number) => {
+        const progress = Math.max(0, Math.min(100, Math.round(value)));
+        setTickets(current => current.map(item => item.id === ticket.id ? { ...item, progress } : item));
+        if (detail?.id === ticket.id) setDetail(d => d ? { ...d, progress } : d);
+        try { await api.put(`/tickets/${ticket.id}`, { progress }); }
+        catch (err) { toast.error(getErrorMessage(err)); load(); }
+    };
+
+    // A completed ticket can be rated 1-5 by a manager / project lead, re-ratable.
+    const rateTicket = async (ticket: Ticket, rating: number) => {
+        try {
+            const res = await api.post(`/tickets/${ticket.id}/rate`, { rating });
+            const updated = res.data.ticket;
+            setTickets(current => current.map(item => item.id === ticket.id ? { ...item, rating: updated.rating, rated_by: updated.rated_by, rater: updated.rater } : item));
+            if (detail?.id === ticket.id) setDetail(d => d ? { ...d, rating: updated.rating, rated_by: updated.rated_by, rater: updated.rater } : d);
+            toast.success(`Rated ${rating}★`);
+        } catch (err) { toast.error(getErrorMessage(err)); }
     };
 
     const moveTicket = async (ticketId: number, status: Ticket['status']) => {
@@ -486,6 +509,16 @@ export default function ProjectTickets() {
                                             </div>
                                         </div>
                                     </div>
+                                    {t.status !== 'todo' && (
+                                        <div className="mt-3">
+                                            <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-gray-400">
+                                                <span>Progress</span><span>{t.progress ?? 0}%</span>
+                                            </div>
+                                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                                                <div className={`h-full rounded-full transition-all ${t.status === 'done' ? 'bg-emerald-500' : 'bg-orange-400'}`} style={{ width: `${t.progress ?? 0}%` }} />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 place-items-center text-center"><div><div className={`mx-auto grid h-16 w-16 place-items-center rounded-2xl text-3xl ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</div><p className="mt-4 font-semibold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-400">Create an issue or drag one here</p></div></div>}
@@ -683,6 +716,10 @@ export default function ProjectTickets() {
                                                             <span>changed priority from <strong className="text-gray-900 capitalize">{item.old_value || 'medium'}</strong> to <strong className="text-gray-900 capitalize">{item.new_value}</strong></span>
                                                         ) : item.activity_type === 'status_changed' ? (
                                                             <span>moved this ticket from <strong className="text-gray-900 capitalize">{item.old_value?.replace('_', ' ')}</strong> to <strong className="text-gray-900 capitalize">{item.new_value?.replace('_', ' ')}</strong></span>
+                                                        ) : item.activity_type === 'progress_changed' ? (
+                                                            <span>updated progress from <strong className="text-gray-900">{item.old_value}</strong> to <strong className="text-gray-900">{item.new_value}</strong></span>
+                                                        ) : (item.activity_type === 'rated' || item.activity_type === 'rating_updated') ? (
+                                                            <span>{item.old_value ? <>changed the rating from <strong className="text-gray-900">{item.old_value}</strong> to <strong className="text-gray-900">{item.new_value}</strong></> : <>rated this ticket <strong className="text-gray-900">{item.new_value}</strong></>}</span>
                                                         ) : (
                                                             <span>updated the ticket</span>
                                                         )}
@@ -708,7 +745,8 @@ export default function ProjectTickets() {
                                     }
                                     try {
                                         await api.put(`/tickets/${detail.id}`, { status: nextStatus });
-                                        setDetail({...detail, status: nextStatus});
+                                        // Backend snaps a done ticket to 100% — mirror that here.
+                                        setDetail({...detail, status: nextStatus, progress: nextStatus === 'done' ? 100 : detail.progress});
                                         load();
                                     } catch (err) {
                                         toast.error(getErrorMessage(err));
@@ -763,6 +801,35 @@ export default function ProjectTickets() {
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
                                         <input type="date" className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; setDetail({...detail, due_date}); api.put(`/tickets/${detail.id}`, { due_date }); load(); }} />
                                     </div>
+                                    <div className="flex items-start">
+                                        <span className="w-[120px] pt-1 text-[13px] font-medium text-gray-500">Progress</span>
+                                        <div className="flex-1">
+                                            <div className="mb-1.5 flex items-center justify-between text-[13px]">
+                                                <span className="font-semibold text-gray-800">{detail.progress ?? 0}%</span>
+                                                {!canEditProgress(detail) && <span className="text-[11px] text-gray-400">Set by assignee</span>}
+                                            </div>
+                                            <input
+                                                type="range" min={0} max={100} step={5}
+                                                value={detail.progress ?? 0}
+                                                disabled={!canEditProgress(detail)}
+                                                onChange={(e) => updateProgress(detail, Number(e.target.value))}
+                                                className="w-full accent-emerald-600 disabled:opacity-60 cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                    {detail.status === 'done' && (
+                                        <div className="flex items-center">
+                                            <span className="w-[120px] text-[13px] font-medium text-gray-500">Rating</span>
+                                            <div className="flex flex-col gap-0.5">
+                                                <StarRating value={detail.rating || 0} readOnly={!canManage} onRate={(v) => rateTicket(detail, v)} />
+                                                {detail.rating ? (
+                                                    <span className="text-[11px] text-gray-400">{detail.rater?.name ? `Rated by ${detail.rater.name}` : `Rated ${detail.rating}★`}</span>
+                                                ) : (
+                                                    <span className="text-[11px] text-gray-400">{canManage ? 'Tap a star to rate' : 'Not rated yet'}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
@@ -799,13 +866,40 @@ export default function ProjectTickets() {
                 )}
             </TicketModal>
             {detail && (
-                <TimeTrackingModal 
-                    open={showTimeTracking} 
-                    onClose={() => setShowTimeTracking(false)} 
-                    ticketId={detail.id} 
-                    onSuccess={() => { loadActivity(detail.id); load(); }} 
+                <TimeTrackingModal
+                    open={showTimeTracking}
+                    onClose={() => setShowTimeTracking(false)}
+                    ticketId={detail.id}
+                    onSuccess={() => { loadActivity(detail.id); load(); }}
                 />
             )}
+        </div>
+    );
+}
+
+// 5-star rating control. Read-only shows the current score; interactive lets a
+// manager / project lead click (or re-click) to set the rating.
+function StarRating({ value, onRate, readOnly = false }: { value: number; onRate?: (v: number) => void; readOnly?: boolean }) {
+    const [hover, setHover] = useState(0);
+    return (
+        <div className="flex items-center gap-0.5" onMouseLeave={() => setHover(0)}>
+            {[1, 2, 3, 4, 5].map((star) => {
+                const active = (hover || value) >= star;
+                return (
+                    <button
+                        key={star}
+                        type="button"
+                        disabled={readOnly}
+                        onMouseEnter={() => !readOnly && setHover(star)}
+                        onClick={() => !readOnly && onRate?.(star)}
+                        className={`text-lg leading-none transition-colors ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${active ? 'text-amber-400' : 'text-gray-300'}`}
+                        title={readOnly ? `${value}/5` : `Rate ${star}★`}
+                        aria-label={`${star} star`}
+                    >
+                        {active ? '★' : '☆'}
+                    </button>
+                );
+            })}
         </div>
     );
 }

@@ -47,6 +47,9 @@ export default function CeoProjects() {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [form, setForm] = useState<CreateProjectPayload>(blank());
+  // A project can have several leads and several members (the assignable team).
+  const [leadIds, setLeadIds] = useState<number[]>([]);
+  const [memberIds, setMemberIds] = useState<number[]>([]);
 
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
@@ -112,15 +115,22 @@ export default function CeoProjects() {
   const edit = (p: Project) => {
     setEditing(p);
     setForm({ name: p.name, description: p.description || '', status: p.status, start_date: p.start_date?.slice(0, 10) || '', due_date: p.due_date?.slice(0, 10) || '', project_lead_id: p.project_lead?.id });
+    const ls = (p.leads && p.leads.length ? p.leads.map(l => l.id) : (p.project_lead ? [p.project_lead.id] : []));
+    setLeadIds(ls);
+    setMemberIds((p.members || []).map(m => m.id));
     setOpen(true);
   };
+
+  const startCreate = () => { setEditing(null); setForm(blank()); setLeadIds([]); setMemberIds([]); setOpen(true); };
+
+  const toggleId = (list: number[], id: number) => list.includes(id) ? list.filter(x => x !== id) : [...list, id];
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Project name is required.');
     setSaving(true);
     try {
-      const data = { ...form, name: form.name.trim(), description: form.description || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined };
+      const data = { ...form, name: form.name.trim(), description: form.description || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined, lead_ids: leadIds, member_ids: memberIds };
       if (editing) await projectService.update(editing.id, data);
       else await projectService.create(data);
       toast.success(editing ? 'Project updated.' : 'Project created.');
@@ -208,7 +218,7 @@ export default function CeoProjects() {
           {canCreateProjects && (
             <button 
               className="btn-primary h-10 px-5 text-sm font-semibold rounded-xl" 
-              onClick={() => { setEditing(null); setForm(blank()); setOpen(true); }}
+              onClick={startCreate}
             >
               + New project
             </button>
@@ -550,13 +560,6 @@ export default function CeoProjects() {
               </select>
             </div>
             <div>
-              <label className="label">Project lead</label>
-              <select className="input" value={form.project_lead_id || ''} onChange={e => setForm({ ...form, project_lead_id: e.target.value ? Number(e.target.value) : undefined })}>
-                <option value="">Assign to me</option>
-                {leads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
-            </div>
-            <div>
               <label className="label">Start date</label>
               <input type="date" className="input" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             </div>
@@ -565,12 +568,83 @@ export default function CeoProjects() {
               <input type="date" className="input" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <PeoplePicker
+              title="Project leads"
+              hint="Can manage this project & assign tickets"
+              users={leads}
+              selected={leadIds}
+              onToggle={(id) => setLeadIds(prev => toggleId(prev, id))}
+            />
+            <PeoplePicker
+              title="Team members"
+              hint="Tickets can be assigned to these people"
+              users={leads}
+              selected={memberIds}
+              onToggle={(id) => setMemberIds(prev => toggleId(prev, id))}
+            />
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
             <button className="btn-primary" disabled={saving}>{saving ? 'Saving...' : editing ? 'Save changes' : 'Create project'}</button>
           </div>
         </form>
       </Modal>
+    </div>
+  );
+}
+
+// Compact multi-select for people: a search box + scrollable checkbox list, with
+// the current selection shown as chips. Used for both leads and members.
+function PeoplePicker({ title, hint, users, selected, onToggle }: {
+  title: string;
+  hint?: string;
+  users: User[];
+  selected: number[];
+  onToggle: (id: number) => void;
+}) {
+  const [q, setQ] = useState('');
+  const filtered = users.filter(u => (u.name || '').toLowerCase().includes(q.trim().toLowerCase()));
+  const chosen = users.filter(u => selected.includes(u.id));
+
+  return (
+    <div>
+      <label className="label flex items-center justify-between">
+        <span>{title}{selected.length > 0 && <span className="ml-1 text-emerald-600">({selected.length})</span>}</span>
+      </label>
+      {hint && <p className="-mt-1 mb-1.5 text-[11px] text-gray-400">{hint}</p>}
+      {chosen.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {chosen.map(u => (
+            <span key={u.id} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              {u.name}
+              <button type="button" onClick={() => onToggle(u.id)} className="text-emerald-500 hover:text-emerald-700" aria-label={`Remove ${u.name}`}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        className="input mb-2 h-9 text-sm"
+        placeholder="Search people..."
+        value={q}
+        onChange={e => setQ(e.target.value)}
+      />
+      <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 divide-y divide-gray-100">
+        {filtered.length === 0 ? (
+          <p className="px-3 py-3 text-center text-xs text-gray-400">No people found</p>
+        ) : filtered.map(u => (
+          <label key={u.id} className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              checked={selected.includes(u.id)}
+              onChange={() => onToggle(u.id)}
+            />
+            <span className="truncate text-gray-700">{u.name}</span>
+            <span className="ml-auto text-[10px] font-semibold uppercase text-gray-400">{u.role}</span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }

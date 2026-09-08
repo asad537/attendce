@@ -8,6 +8,8 @@ export interface CreateProjectPayload {
   start_date?: string;
   due_date?: string;
   project_lead_id?: number;
+  lead_ids?: number[];
+  member_ids?: number[];
 }
 
 export const projectService = {

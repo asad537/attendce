@@ -89,6 +89,8 @@ export interface Project {
   due_date?: string;
   project_lead?: UserBrief;
   creator?: UserBrief;
+  leads?: UserBrief[];
+  members?: UserBrief[];
   created_at: string;
 }
 

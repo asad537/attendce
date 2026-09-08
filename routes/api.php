@@ -136,10 +136,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/projects',  [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::put('/projects/{project}', [ProjectController::class, 'update']);
+    Route::get('/projects/{project}/members', [ProjectController::class, 'members']);
     Route::get('/projects/{project}/tickets', [ProjectTicketController::class, 'index']);
     Route::post('/projects/{project}/tickets', [ProjectTicketController::class, 'store']);
     Route::put('/tickets/{ticket}', [ProjectTicketController::class, 'update']);
     Route::delete('/tickets/{ticket}', [ProjectTicketController::class, 'destroy']);
+    Route::post('/tickets/{ticket}/rate', [ProjectTicketController::class, 'rate']);
     Route::post('/tickets/{ticket}/attachment', [ProjectTicketController::class, 'uploadAttachment']);
     Route::get('/tickets/{ticket}/attachment', [ProjectTicketController::class, 'downloadAttachment']);
     Route::get('/tickets/{ticket}/watch', [ProjectTicketController::class, 'watchStatus']);
