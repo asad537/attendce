@@ -116,7 +116,7 @@ export default function CalendarPage() {
       {/* Page Header */}
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-        <p className="text-sm text-emerald-600 font-medium">Dashboard <span className="text-gray-400">/ Calendar</span></p>
+        <p className="text-sm text-gray-500 font-medium">Dashboard <span className="text-gray-400">/ Calendar</span></p>
       </header>
 
       {/* Top Stats Bar */}
