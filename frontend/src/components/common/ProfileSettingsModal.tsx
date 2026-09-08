@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { documentService, UserDocument } from '../../services/documentService';
-import { useSettings } from '../../contexts/SettingsContext';
+import { applyAccent, useSettings } from '../../contexts/SettingsContext';
 import toast from 'react-hot-toast';
 
 // Accent colours every user can pick for their own dashboard.
@@ -26,6 +26,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
   
   const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents' | 'appearance' | 'dashboard'>(defaultTab);
   const { userAccent, accent, setUserAccent } = useSettings();
+  const [appearanceAccent, setAppearanceAccent] = useState(userAccent);
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
@@ -56,6 +57,20 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
       fetchDocuments();
     }
   }, [isOpen, user?.id]);
+
+  useEffect(() => {
+    setAppearanceAccent(userAccent);
+  }, [userAccent]);
+
+  const previewAppearance = (next: string) => {
+    setAppearanceAccent(next);
+    applyAccent(next || accent);
+  };
+
+  const saveAppearance = () => {
+    setUserAccent(appearanceAccent);
+    toast.success('Appearance saved');
+  };
 
   const fetchDocuments = async () => {
     if (!user) return;
@@ -480,16 +495,16 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
             <div className="space-y-5">
               <div>
                 <h4 className="text-sm font-semibold text-gray-800">Dashboard colour</h4>
-                <p className="text-xs text-gray-500 mt-1">Pick your own accent colour — this changes only your dashboard, not anyone else's. Applies instantly.</p>
+                <p className="text-xs text-gray-500 mt-1">Pick your own accent colour — preview it, then save it for your dashboard.</p>
               </div>
               <div className="grid grid-cols-5 sm:grid-cols-8 gap-3">
                 {THEME_ACCENTS.map(name => {
-                  const active = (userAccent || accent) === name;
+                  const active = (appearanceAccent || accent) === name;
                   return (
                     <button
                       key={name}
                       type="button"
-                      onClick={() => setUserAccent(name)}
+                      onClick={() => previewAppearance(name)}
                       title={name}
                       className={`h-10 w-10 rounded-xl grid place-items-center transition-transform ${active ? 'ring-2 ring-offset-2 ring-gray-400 scale-105' : 'hover:scale-105'}`}
                       style={{ backgroundColor: ACCENT_HEX[name] }}
@@ -499,12 +514,17 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                   );
                 })}
               </div>
-              {userAccent && (
-                <button type="button" onClick={() => setUserAccent('')} className="text-xs font-semibold text-gray-500 hover:text-gray-700 underline">
+              {appearanceAccent && (
+                <button type="button" onClick={() => previewAppearance('')} className="text-xs font-semibold text-gray-500 hover:text-gray-700 underline">
                   Reset to default
                 </button>
               )}
-              <p className="text-xs text-emerald-700">Your appearance is saved automatically on this device.</p>
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                <p className="text-xs text-gray-500">Saved appearance applies only on this device.</p>
+                <button type="button" onClick={saveAppearance} disabled={appearanceAccent === userAccent} className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">
+                  Save appearance
+                </button>
+              </div>
             </div>
           )}
 
