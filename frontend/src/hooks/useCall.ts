@@ -11,6 +11,7 @@ export interface RemoteParticipant {
   name: string;
   avatar_url?: string | null;
   stream: MediaStream;
+  cameraOff: boolean;
 }
 
 export interface CallState {
@@ -64,6 +65,7 @@ interface PeerConn {
   remoteSet: boolean;
   pendingIce: RTCIceCandidateInit[];
   meta: { name: string; avatar_url?: string | null };
+  cameraOff: boolean;
 }
 
 export interface UseCallOpts {
@@ -103,7 +105,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
   const bumpParticipants = useCallback(() => {
     const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
-      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream,
+      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff,
     }));
     setParticipants(list);
     setRemoteStream(list[0]?.stream || null);
@@ -181,7 +183,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (existing) return existing;
     const pc = new RTCPeerConnection(ICE);
     const stream = new MediaStream();
-    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url } };
+    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false };
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
     pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => stream.addTrack(t)); bumpParticipants(); };
@@ -401,6 +403,9 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         if (localRef.current) setLocalStream(new MediaStream(localRef.current.getTracks()));
       }
       setState(s => ({ ...s, camOff: true }));
+      // WebRTC can take a moment to emit a remote track mute event. Send the
+      // UI state as well, so the other tile hides its last frame immediately.
+      peersRef.current.forEach((_entry, id) => sendSignal('camera', { off: true }, id));
       return;
     }
 
@@ -436,6 +441,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       setLocalStream(new MediaStream(localRef.current.getTracks()));
     }
     setState(s => ({ ...s, camOff: false }));
+    peersRef.current.forEach((_entry, id) => sendSignal('camera', { off: false }, id));
   }, [sendSignal]);
 
   // Swap the outgoing video track back to the camera (or nothing) and drop the
@@ -562,7 +568,13 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     }
     if (statusRef.current === 'idle') return;
 
-    if (sig.type === 'offer') {
+    if (sig.type === 'camera') {
+      const entry = peersRef.current.get(sig.from.id);
+      if (entry) {
+        entry.cameraOff = Boolean((sig.data as { off?: boolean } | null)?.off);
+        bumpParticipants();
+      }
+    } else if (sig.type === 'offer') {
       const data = sig.data as { sdp: RTCSessionDescriptionInit; kind?: 'voice' | 'video' };
       // A renegotiation offer carrying kind:'video' means the other side turned
       // their camera on — upgrade our UI so their video is shown.
@@ -612,7 +624,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         reset();
       }
     }
-  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants]);
 
   useEffect(() => {
     if (!meId) return;
@@ -626,7 +638,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       if (active) {
         // Poll fast while a call is live so connect/hangup feel instant; back
         // off to a lighter cadence when idle (just watching for invites).
-        const delay = statusRef.current === 'idle' ? 1000 : 500;
+        const delay = statusRef.current === 'idle' ? 1000 : 250;
         timeoutId = window.setTimeout(tick, delay);
       }
     };

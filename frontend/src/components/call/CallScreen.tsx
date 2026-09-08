@@ -95,6 +95,14 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
     return <audio ref={ref} autoPlay playsInline />;
 }
 
+// `replaceTrack(null)` does not always remove the receiver's track. Browsers
+// commonly leave that track in the remote MediaStream but mark it muted, which
+// makes a video element retain its last painted frame. Treat muted and ended
+// tracks as camera-off so the tile immediately falls back to the avatar.
+function hasRenderableVideo(stream?: MediaStream) {
+    return Boolean(stream?.getVideoTracks().some((track) => track.readyState === "live" && !track.muted));
+}
+
 // Compact incoming-call popup (shown while ringing, before the call is picked
 // up) — a small card rather than a full-screen takeover.
 export function IncomingCallCard({ call }: { call: ReturnType<typeof useCall> }) {
@@ -168,6 +176,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const { peer, kind, status, muted, camOff, sharingScreen, error } = state;
     const [seconds, setSeconds] = useState(0);
     const [showAdd, setShowAdd] = useState(false);
+    const [, setRemoteMediaVersion] = useState(0);
 
     // People we can add to the call (all directory users), fetched on demand.
     const { data: people = [] } = useQuery({
@@ -189,6 +198,36 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
         const id = setInterval(() => setSeconds((s) => s + 1), 1000);
         return () => clearInterval(id);
     }, [status]);
+
+    // Remote tracks change state without React state changing. Subscribe to
+    // those events so camera-off is reflected immediately instead of keeping a
+    // frozen last frame on the other participant's screen.
+    useEffect(() => {
+        const refresh = () => setRemoteMediaVersion((version) => version + 1);
+        const cleanups: Array<() => void> = [];
+
+        participants.forEach(({ stream }) => {
+            const tracks = stream.getVideoTracks();
+            stream.addEventListener("addtrack", refresh);
+            stream.addEventListener("removetrack", refresh);
+            cleanups.push(() => {
+                stream.removeEventListener("addtrack", refresh);
+                stream.removeEventListener("removetrack", refresh);
+            });
+            tracks.forEach((track) => {
+                track.addEventListener("mute", refresh);
+                track.addEventListener("unmute", refresh);
+                track.addEventListener("ended", refresh);
+                cleanups.push(() => {
+                    track.removeEventListener("mute", refresh);
+                    track.removeEventListener("unmute", refresh);
+                    track.removeEventListener("ended", refresh);
+                });
+            });
+        });
+
+        return () => cleanups.forEach((cleanup) => cleanup());
+    }, [participants]);
 
     if (!peer) return null;
     const isVideo = kind === "video";
@@ -213,7 +252,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const filmstripMode = remotes.length >= 2 || presenting;   // spotlight + right filmstrip
     // Spotlight whoever is actually sending video (a screen-share or live camera)
     // so a remote presenter fills the stage rather than a camera-off avatar.
-    const spotlight = remotes.find((r) => r.stream && r.stream.getVideoTracks().length > 0) || remotes[0];
+    const spotlight = remotes.find((r) => !r.cameraOff && hasRenderableVideo(r.stream)) || remotes[0];
     void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
@@ -245,7 +284,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             {presenting ? (
                                 <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
                             ) : (
-                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo} />
+                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} />
                             )}
                         </div>
                         <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
@@ -254,7 +293,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             </div>
                             {(presenting ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
                                 <div key={p.id} className="aspect-video shrink-0">
-                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo} />
+                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} />
                                 </div>
                             ))}
                         </div>
@@ -266,7 +305,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             big
                             name={spotlight?.name || peer.name}
                             stream={spotlight?.stream}
-                            showVideo={isVideo}
+                            showVideo={isVideo && !spotlight?.cameraOff}
                             note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
                         />
                         {status !== "ended" && (
@@ -391,7 +430,35 @@ function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boo
 // A single Google-Meet style tile: live video, or a themed avatar when the
 // camera is off / not yet connected.
 function MeetTile({ name, stream, showVideo, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; big?: boolean; note?: string }) {
-    const hasVideo = showVideo && !!stream && stream.getVideoTracks().length > 0;
+    const [mediaVersion, setMediaVersion] = useState(0);
+
+    // A remote camera can be disabled while its MediaStream still contains a
+    // muted receiver track. Listening here guarantees this tile unmounts the
+    // video element and cannot keep displaying the previous frame.
+    useEffect(() => {
+        if (!stream) return;
+        const refresh = () => setMediaVersion((version) => version + 1);
+        const tracks = stream.getVideoTracks();
+        stream.addEventListener("addtrack", refresh);
+        stream.addEventListener("removetrack", refresh);
+        tracks.forEach((track) => {
+            track.addEventListener("mute", refresh);
+            track.addEventListener("unmute", refresh);
+            track.addEventListener("ended", refresh);
+        });
+        return () => {
+            stream.removeEventListener("addtrack", refresh);
+            stream.removeEventListener("removetrack", refresh);
+            tracks.forEach((track) => {
+                track.removeEventListener("mute", refresh);
+                track.removeEventListener("unmute", refresh);
+                track.removeEventListener("ended", refresh);
+            });
+        };
+    }, [stream]);
+
+    void mediaVersion;
+    const hasVideo = showVideo && hasRenderableVideo(stream);
     return (
         <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#3c4043]">
             {hasVideo ? (

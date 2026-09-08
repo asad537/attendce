@@ -99,7 +99,7 @@ class GuestCallController extends Controller
         [$guestId, $callId] = $this->session($request);
         $data = $request->validate([
             'to_user_id' => 'required|exists:users,id',
-            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave',
+            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave,camera',
             'data' => 'nullable',
         ]);
         abort_if((int) $data['to_user_id'] === $guestId, 422, 'Invalid target.');

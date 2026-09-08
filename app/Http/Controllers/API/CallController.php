@@ -126,7 +126,7 @@ class CallController extends Controller
         $data = $request->validate([
             'call_id' => 'required|string|max:40',
             'to_user_id' => 'required|exists:users,id',
-            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave',
+            'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave,camera',
             'data' => 'nullable',
         ]);
 
