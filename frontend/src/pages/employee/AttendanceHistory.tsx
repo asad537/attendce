@@ -5,6 +5,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AttendanceHistory() {
   const [data, setData]   = useState<PaginatedResponse<Attendance> | null>(null);
@@ -23,6 +24,7 @@ export default function AttendanceHistory() {
   };
 
   useEffect(() => { load(); }, [page, startDate, endDate]);
+  useAutoRefresh(load);
 
   const summary = useMemo(() => {
     const rows = data?.data || [];

@@ -8,6 +8,7 @@ import { CreateProjectPayload, projectService } from '../../services/projectServ
 import { userService } from '../../services/userService';
 import { useAuth } from '../../contexts/AuthContext';
 import { Project, ProjectStatus, User } from '../../types';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', status, start_date: '', due_date: '' });
 
@@ -117,6 +118,7 @@ export default function CeoProjects() {
     }
   }, []);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const edit = (p: Project) => {
     setEditing(p);

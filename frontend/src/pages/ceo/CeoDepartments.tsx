@@ -6,6 +6,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export default function CeoDepartments() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   // designations for a specific dept
   const desigFor = (deptId: number) =>

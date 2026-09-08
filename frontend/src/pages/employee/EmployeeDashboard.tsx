@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { attendanceService, breakService } from '../../services/attendanceService';
 import { Attendance } from '../../types';
 import UpcomingHolidaysWidget from '../../components/common/UpcomingHolidaysWidget';
@@ -77,6 +78,7 @@ export default function EmployeeDashboard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
