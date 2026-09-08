@@ -194,6 +194,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const code = rawCode ? rawCode.slice(0, 12) : "call";
     const remotes = participants;
     const totalCount = participants.length + 1;
+    const presenting = sharingScreen;                          // local user is sharing their screen
+    const filmstripMode = remotes.length >= 2 || presenting;   // spotlight + right filmstrip
     void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
@@ -215,39 +217,41 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
             <div className="relative min-h-0 flex-1 px-3 pb-1">
                 {error && <div className="absolute left-1/2 top-2 z-30 -translate-x-1/2 rounded-lg bg-[#e94141]/90 px-3 py-2 text-center text-xs">{error}</div>}
 
-                {remotes.length <= 1 ? (
-                    <MeetTile
-                        big
-                        name={remotes[0]?.name || peer.name}
-                        stream={remotes[0]?.stream}
-                        showVideo={isVideo}
-                        note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
-                    />
-                ) : (
-                    <div className="grid h-full w-full auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
-                        {remotes.map((p) => (
-                            <MeetTile key={p.id} name={p.name} stream={p.stream} showVideo={isVideo} />
-                        ))}
+                {filmstripMode ? (
+                    /* Spotlight + right filmstrip (group call / someone presenting). */
+                    <div className="flex h-full w-full gap-2">
+                        <div className="min-w-0 flex-1">
+                            {presenting ? (
+                                <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
+                            ) : (
+                                <MeetTile big name={remotes[0]?.name || peer.name} stream={remotes[0]?.stream} showVideo={isVideo} />
+                            )}
+                        </div>
+                        <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
+                            <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
+                            {(presenting ? remotes : remotes.slice(1)).map((p) => (
+                                <div key={p.id} className="aspect-video shrink-0">
+                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo} />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                )}
-
-                {/* Self view — bottom-right */}
-                {status !== "ended" && (
-                    <div className="absolute bottom-4 right-6 z-20 aspect-video w-40 overflow-hidden rounded-xl bg-[#3c4043] shadow-lg ring-1 ring-black/40 sm:w-56">
-                        {isVideo && !camOff && localStream ? (
-                            <Video stream={localStream} muted className="h-full w-full object-cover" />
-                        ) : (
-                            <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#3f4b57,#242a30)]">
-                                <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-sm font-semibold">You</span>
+                ) : (
+                    /* 1:1 — big main tile + picture-in-picture self view. */
+                    <>
+                        <MeetTile
+                            big
+                            name={remotes[0]?.name || peer.name}
+                            stream={remotes[0]?.stream}
+                            showVideo={isVideo}
+                            note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
+                        />
+                        {status !== "ended" && (
+                            <div className="absolute bottom-4 right-6 z-20 aspect-video w-40 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/40 sm:w-56">
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
                             </div>
                         )}
-                        <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">You</span>
-                        {muted && (
-                            <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#ea4335]">
-                                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-.11 1.23l1.53 1.53A8.9 8.9 0 0021 11h-2zM4.27 3L3 4.27l6 6V11a3 3 0 003 3c.23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.42-2.31.42a5 5 0 01-5-5H5a7 7 0 007 7c1.28 0 2.49-.35 3.53-.95L19.73 21 21 19.73 4.27 3zM12 4a3 3 0 013 3v3.18l1.98 1.98A5 5 0 0017 7a5 5 0 00-5-5 4.94 4.94 0 00-2.02.44L12 4z" /></svg>
-                            </span>
-                        )}
-                    </div>
+                    </>
                 )}
             </div>
 
@@ -335,6 +339,28 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     <span className="rotate-[135deg]"><PhoneIcon /></span>
                 </button>
             </div>
+        </div>
+    );
+}
+
+// The local user's own tile ("You"), reused in the filmstrip and as the 1:1
+// picture-in-picture. Shows a mic-muted badge like Meet.
+function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boolean; stream: MediaStream | null }) {
+    return (
+        <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#3c4043]">
+            {showVideo && stream ? (
+                <Video stream={stream} muted className="h-full w-full object-cover" />
+            ) : (
+                <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#3f4b57,#242a30)]">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-sm font-semibold">You</span>
+                </div>
+            )}
+            <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">You</span>
+            {muted && (
+                <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#ea4335]">
+                    <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-.11 1.23l1.53 1.53A8.9 8.9 0 0021 11h-2zM4.27 3L3 4.27l6 6V11a3 3 0 003 3c.23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.42-2.31.42a5 5 0 01-5-5H5a7 7 0 007 7c1.28 0 2.49-.35 3.53-.95L19.73 21 21 19.73 4.27 3zM12 4a3 3 0 013 3v3.18l1.98 1.98A5 5 0 0017 7a5 5 0 00-5-5 4.94 4.94 0 00-2.02.44L12 4z" /></svg>
+                </span>
+            )}
         </div>
     );
 }
