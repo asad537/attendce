@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { callService, CallSignal, RosterParticipant, SignalType } from '../services/callService';
+import { callService, CallSignal, CallTransport, RosterParticipant, SignalType } from '../services/callService';
 import { MessageUser } from '../services/messageService';
 
 export type CallStatus = 'idle' | 'calling' | 'incoming' | 'connecting' | 'connected' | 'ended';
@@ -66,7 +66,13 @@ interface PeerConn {
   meta: { name: string; avatar_url?: string | null };
 }
 
-export function useCall(meId?: number) {
+export interface UseCallOpts {
+  transport?: CallTransport;                         // guest sessions inject their own
+  autoJoin?: { callId: string; kind: 'voice' | 'video'; peerName?: string };
+}
+
+export function useCall(meId?: number, opts: UseCallOpts = {}) {
+  const svc: CallTransport = opts.transport || callService;
   const [state, setState] = useState<CallState>(idleState);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
@@ -106,7 +112,7 @@ export function useCall(meId?: number) {
   const cleanup = useCallback(() => {
     clearTimer();
     stopHeartbeat();
-    if (roomRef.current) callService.leave(roomRef.current);
+    if (roomRef.current) svc.leave(roomRef.current);
     peersRef.current.forEach(e => { try { e.pc.close(); } catch { /* noop */ } });
     peersRef.current.clear();
     try { screenTrackRef.current?.stop(); } catch { /* noop */ }
@@ -134,14 +140,14 @@ export function useCall(meId?: number) {
 
   const sendSignal = useCallback((type: SignalType, data: unknown, toId: number) => {
     if (!toId || !roomRef.current) return;
-    callService.signal({ call_id: roomRef.current, to_user_id: toId, type, data }).catch(() => { /* noop */ });
+    svc.signal({ call_id: roomRef.current, to_user_id: toId, type, data }).catch(() => { /* noop */ });
   }, []);
 
   const logCall = useCallback((outcome: 'ended' | 'missed' | 'declined' | 'cancelled') => {
     if (loggedRef.current || groupRef.current || !primaryPeerRef.current) return;
     loggedRef.current = true;
     const duration = connectedAtRef.current ? Math.floor((Date.now() - connectedAtRef.current) / 1000) : 0;
-    callService.log({ to_user_id: primaryPeerRef.current.id, kind: kindRef.current, outcome, duration });
+    svc.log({ to_user_id: primaryPeerRef.current.id, kind: kindRef.current, outcome, duration });
   }, []);
 
   // Move to "ended" briefly, then back to idle so the UI can show a closing frame.
@@ -259,7 +265,7 @@ export function useCall(meId?: number) {
   const heartbeat = useCallback(async () => {
     if (!roomRef.current) return;
     try {
-      const roster = await callService.join({ call_id: roomRef.current, kind: kindRef.current });
+      const roster = await svc.join({ call_id: roomRef.current, kind: kindRef.current });
       // Roster only ADDs members; departures come via 'leave'/'hangup' or pc-close
       // (avoids racing a peer we just connected to but who hasn't heartbeat yet).
       for (const r of roster) { if (!peersRef.current.has(r.id)) await connectTo(r); }
@@ -315,6 +321,27 @@ export function useCall(meId?: number) {
       reset(msg);
     }
   }, [getMedia, startHeartbeat, sendSignal, reset]);
+
+  // Proactively join a known room (used by an external guest who opened a link
+  // rather than receiving an invite). Roster heartbeat wires up everyone.
+  const joinRoom = useCallback(async (callId: string, kind: 'voice' | 'video', peerName = 'Meeting') => {
+    if (statusRef.current !== 'idle') return;
+    roomRef.current = callId;
+    kindRef.current = kind;
+    roleRef.current = 'callee';
+    groupRef.current = true;
+    const placeholder = { id: 0, name: peerName } as Peer;
+    primaryPeerRef.current = placeholder;
+    setState({ status: 'connecting', peer: placeholder, kind, muted: false, camOff: false, isGroup: true, sharingScreen: false, error: null });
+    try {
+      await getMedia(kind);
+      startHeartbeat();
+    } catch (err: any) {
+      const msg = formatMediaError(err, kind);
+      toast.error(msg);
+      reset(msg);
+    }
+  }, [getMedia, startHeartbeat, reset]);
 
   const reject = useCallback(() => {
     if (primaryPeerRef.current && pendingInvite.current) {
@@ -458,7 +485,7 @@ export function useCall(meId?: number) {
     if (sig.type === 'invite') {
       if (statusRef.current !== 'idle') {
         // Busy — politely decline the new caller without disturbing the active call.
-        callService.signal({ call_id: sig.call_id, to_user_id: sig.from.id, type: 'reject' }).catch(() => { /* noop */ });
+        svc.signal({ call_id: sig.call_id, to_user_id: sig.from.id, type: 'reject' }).catch(() => { /* noop */ });
         return;
       }
       const payload = sig.data as { call_id: string; kind?: 'voice' | 'video' };
@@ -532,7 +559,7 @@ export function useCall(meId?: number) {
     let timeoutId: number;
     const tick = async () => {
       try {
-        const signals = await callService.poll();
+        const signals = await svc.poll();
         for (const sig of signals) { if (active) await handleSignal(sig); }
       } catch { /* noop */ }
       if (active) {
@@ -548,5 +575,11 @@ export function useCall(meId?: number) {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, addToCall };
+  // A guest session auto-joins its call once, on mount.
+  useEffect(() => {
+    if (opts.autoJoin) void joinRoom(opts.autoJoin.callId, opts.autoJoin.kind, opts.autoJoin.peerName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, addToCall, joinRoom, getCallId: () => roomRef.current };
 }

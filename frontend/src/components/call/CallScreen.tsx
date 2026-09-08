@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { useCall } from "../../hooks/useCall";
+import { callService } from "../../services/callService";
 import { MessageUser, messageService } from "../../services/messageService";
 
 const initials = (name = "") =>
@@ -118,7 +120,7 @@ export function IncomingCallCard({ call }: { call: ReturnType<typeof useCall> })
     );
 }
 
-export default function CallScreen({ call }: { call: ReturnType<typeof useCall> }) {
+export default function CallScreen({ call, guest = false }: { call: ReturnType<typeof useCall>; guest?: boolean }) {
     const {
         state,
         localStream,
@@ -132,7 +134,22 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
         toggleScreenShare,
         switchToVideo,
         addToCall,
+        getCallId,
     } = call;
+
+    const copyGuestLink = async () => {
+        try {
+            const callId = getCallId();
+            if (!callId) { toast.error("Call is not ready yet."); return; }
+            const { path } = await callService.inviteGuest(callId);
+            const url = window.location.origin + path;
+            try { await navigator.clipboard.writeText(url); toast.success("Guest link copied — valid for 1 hour."); }
+            catch { toast.success("Guest link ready:\n" + url); }
+        } catch {
+            toast.error("Could not create a guest link.");
+        }
+        setShowAdd(false);
+    };
     const { peer, kind, status, muted, camOff, sharingScreen, error } = state;
     const [seconds, setSeconds] = useState(0);
     const [showAdd, setShowAdd] = useState(false);
@@ -142,7 +159,7 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
         queryKey: ["chat-recipients"],
         queryFn: () => messageService.recipients(),
         staleTime: 60000,
-        enabled: status !== "idle",
+        enabled: !guest && status !== "idle",   // guests can't reach the directory
     });
 
     const inCall = participants.map((p) => p.id);
@@ -300,7 +317,7 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                                 </svg>
                             </button>
                         )}
-                        <div className="relative">
+                        {!guest && <div className="relative">
                             <button
                                 onClick={() => setShowAdd((v) => !v)}
                                 className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-2xl transition"
@@ -309,7 +326,14 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                                 +
                             </button>
                             {showAdd && (
-                                <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-60 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c241b] p-1 shadow-xl">
+                                <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c241b] p-1 shadow-xl">
+                                    <button
+                                        onClick={copyGuestLink}
+                                        className="mb-1 flex w-full items-center gap-2 rounded-xl bg-emerald-600/20 px-3 py-2 text-left text-sm font-medium text-emerald-300 hover:bg-emerald-600/30"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                                        Invite guest (copy link)
+                                    </button>
                                     <p className="px-3 py-2 text-xs font-semibold text-white/50">Add to call</p>
                                     {addable.length === 0 ? (
                                         <p className="px-3 py-2 text-xs text-white/40">No one else to add.</p>
@@ -330,7 +354,7 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                                     )}
                                 </div>
                             )}
-                        </div>
+                        </div>}
                         <button onClick={hangup} className="grid h-16 w-16 place-items-center rounded-full bg-[#e94141] shadow-lg transition" title="End call">
                             <span className="rotate-[135deg]"><PhoneIcon /></span>
                         </button>

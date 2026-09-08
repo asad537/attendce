@@ -8,6 +8,7 @@ import { PageLoader } from './components/common/LoadingSpinner';
 // Pages are lazy-loaded so each route ships its own small chunk instead of one
 // ~2 MB bundle — the app boots fast and only downloads a page when it's visited.
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const GuestCallPage = lazy(() => import('./pages/GuestCallPage'));
 
 const EmployeeDashboard = lazy(() => import('./pages/employee/EmployeeDashboard'));
 const AttendanceHistory = lazy(() => import('./pages/employee/AttendanceHistory'));
@@ -65,6 +66,9 @@ function App() {
         path="/login"
         element={!user ? <LoginPage /> : <Navigate to={getRootRedirect()} replace />}
       />
+
+      {/* Public guest call join (external, no login) */}
+      <Route path="/guest/:token" element={<GuestCallPage />} />
 
       {/* Root redirect */}
       <Route path="/" element={<Navigate to={getRootRedirect()} replace />} />
