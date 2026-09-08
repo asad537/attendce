@@ -44,7 +44,9 @@ export default function CeoAttendance() {
       .then(([deps, users]) => { setDepts(deps); setEmployees(users.data); }).catch(() => undefined);
   }, []);
   useEffect(() => { load(1); }, [load]);
-  useAutoRefresh(() => { void load(1, true); }, { intervalMs: 2000 });
+  // Keep the attendance list current without visually reloading it every two
+  // seconds. Focus/reconnect still refresh immediately via useAutoRefresh.
+  useAutoRefresh(() => { void load(1, true); }, { intervalMs: 15_000 });
 
   const summary = useMemo(() => {
     const rows = data?.data || [];
