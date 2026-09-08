@@ -69,7 +69,7 @@ function MicOffIcon() {
     );
 }
 
-function Video({ stream, muted, className }: { stream: MediaStream | null; muted?: boolean; className?: string }) {
+function Video({ stream, muted, mirror = false, className }: { stream: MediaStream | null; muted?: boolean; mirror?: boolean; className?: string }) {
     const ref = useRef<HTMLVideoElement>(null);
     useEffect(() => {
         if (ref.current && stream) {
@@ -77,7 +77,7 @@ function Video({ stream, muted, className }: { stream: MediaStream | null; muted
             ref.current.play().catch(() => { /* autoplay handling */ });
         }
     }, [stream]);
-    return <video ref={ref} autoPlay playsInline muted={muted} className={className} />;
+    return <video ref={ref} autoPlay playsInline muted={muted} className={`${className || ""}${mirror ? " -scale-x-100" : ""}`} />;
 }
 
 // Voice calls do not render a video tile, so their incoming MediaStream still
@@ -177,6 +177,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const [seconds, setSeconds] = useState(0);
     const [showAdd, setShowAdd] = useState(false);
     const [, setRemoteMediaVersion] = useState(0);
+    const [selectedRemoteId, setSelectedRemoteId] = useState<number | null>(null);
 
     // People we can add to the call (all directory users), fetched on demand.
     const { data: people = [] } = useQuery({
@@ -252,7 +253,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const filmstripMode = remotes.length >= 2 || presenting;   // spotlight + right filmstrip
     // Spotlight whoever is actually sending video (a screen-share or live camera)
     // so a remote presenter fills the stage rather than a camera-off avatar.
-    const spotlight = remotes.find((r) => !r.cameraOff && hasRenderableVideo(r.stream)) || remotes[0];
+    const automaticSpotlight = remotes.find((r) => !r.cameraOff && hasRenderableVideo(r.stream)) || remotes[0];
+    // A participant selected from the right rail remains on the main stage
+    // until another tile is selected or they leave the call.
+    const spotlight = remotes.find((r) => r.id === selectedRemoteId) || automaticSpotlight;
     void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
@@ -281,7 +285,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     /* Spotlight + right filmstrip (group call / someone presenting). */
                     <div className="flex h-full w-full gap-2">
                         <div className="min-w-0 flex-1">
-                            {presenting ? (
+                            {presenting && !selectedRemoteId ? (
                                 <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
                             ) : (
                                 <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} />
@@ -292,9 +296,15 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                                 <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
                             </div>
                             {(presenting ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
-                                <div key={p.id} className="aspect-video shrink-0">
+                                <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => setSelectedRemoteId(p.id)}
+                                    className="aspect-video shrink-0 overflow-hidden rounded-xl text-left outline-none ring-0 transition hover:ring-2 hover:ring-emerald-400 focus-visible:ring-2 focus-visible:ring-emerald-300"
+                                    title={`Show ${p.name} on main screen`}
+                                >
                                     <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} />
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -411,7 +421,7 @@ function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boo
     return (
         <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#3c4043]">
             {showVideo && stream ? (
-                <Video stream={stream} muted className="h-full w-full object-cover" />
+                <Video stream={stream} muted mirror className="h-full w-full object-cover" />
             ) : (
                 <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#3f4b57,#242a30)]">
                     <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-sm font-semibold">You</span>
