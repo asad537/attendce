@@ -181,7 +181,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Settings', path: '/settings',
-    roles: ['ceo', 'manager'],
+    roles: ['ceo', 'manager', 'tl', 'employee'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   },
 ];
@@ -335,7 +335,7 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
         </div>
         {onClose && (
           <button onClick={onClose} className="ml-auto text-gray-400 hover:text-gray-600 lg:hidden">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -477,10 +477,10 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
       {/* ── User strip + Logout ──────────────────────────────────────────── */}
       <div className="p-3 border-t border-gray-100 space-y-1 relative">
         {profileDropdownOpen && (
-          <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 py-1.5 z-50 overflow-hidden">
+          <div className="hidden">
             <button
               onClick={() => { setProfileDropdownOpen(false); onOpenSettings?.(); }}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none"
+              className="hidden"
             >
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -488,21 +488,12 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
               </svg>
               My Settings
             </button>
-            <div className="h-px bg-gray-100 my-1"></div>
-            <button
-              onClick={() => logout()}
-              className="flex items-center gap-3 w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors focus:outline-none"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
+            <div className="hidden"></div>
           </div>
         )}
 
         {/* compact user row */}
-        <button 
+        <div 
           onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} 
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors focus:outline-none text-left relative"
         >
@@ -518,12 +509,17 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
             <p className="text-sm font-medium text-gray-900 truncate leading-tight w-full">{user?.name}</p>
             <p className="text-[11px] text-gray-500 truncate leading-tight w-full">{user?.employee_id}</p>
             <div className="mt-0.5">
-              <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${roleColors[user?.role || 'employee']}`}>
+              <span className={`inline-flex items-center whitespace-nowrap text-[9px] px-1.5 py-0.5 rounded-md font-semibold ${roleColors[user?.role || 'employee']}`}>
                 {user?.designation?.title || roleLabel[user?.role || 'employee']}
               </span>
             </div>
           </div>
-        </button>
+          <button type="button" onClick={logout} title="Sign Out" aria-label="Sign Out" className="ml-1 mr-2 shrink-0 rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors focus:outline-none">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9m5.657-6.657a8 8 0 11-11.314 0" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );
