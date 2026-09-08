@@ -288,7 +288,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             {presenting && !selectedRemoteId ? (
                                 <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
                             ) : (
-                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} />
+                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} muted={spotlight?.muted} />
                             )}
                         </div>
                         <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
@@ -303,7 +303,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                                     className="aspect-video shrink-0 overflow-hidden rounded-xl text-left outline-none ring-0 transition hover:ring-2 hover:ring-emerald-400 focus-visible:ring-2 focus-visible:ring-emerald-300"
                                     title={`Show ${p.name} on main screen`}
                                 >
-                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} />
+                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} muted={p.muted} />
                                 </button>
                             ))}
                         </div>
@@ -316,6 +316,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             name={spotlight?.name || peer.name}
                             stream={spotlight?.stream}
                             showVideo={isVideo && !spotlight?.cameraOff}
+                            muted={spotlight?.muted}
                             note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
                         />
                         {status !== "ended" && (
@@ -439,7 +440,7 @@ function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boo
 
 // A single Google-Meet style tile: live video, or a themed avatar when the
 // camera is off / not yet connected.
-function MeetTile({ name, stream, showVideo, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; big?: boolean; note?: string }) {
+function MeetTile({ name, stream, showVideo, muted = false, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; muted?: boolean; big?: boolean; note?: string }) {
     const [mediaVersion, setMediaVersion] = useState(0);
 
     // A remote camera can be disabled while its MediaStream still contains a
@@ -481,6 +482,11 @@ function MeetTile({ name, stream, showVideo, big, note }: { name: string; stream
                 </div>
             )}
             <span className="absolute bottom-3 left-4 text-sm font-medium drop-shadow">{name}</span>
+            {muted && (
+                <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-[#ea4335]" title="Microphone muted">
+                    <MicOffIcon />
+                </span>
+            )}
             {note && <span className="absolute left-4 top-4 rounded-full bg-black/40 px-3 py-1 text-xs">{note}</span>}
         </div>
     );

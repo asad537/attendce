@@ -12,6 +12,7 @@ export interface RemoteParticipant {
   avatar_url?: string | null;
   stream: MediaStream;
   cameraOff: boolean;
+  muted: boolean;
 }
 
 export interface CallState {
@@ -66,6 +67,7 @@ interface PeerConn {
   pendingIce: RTCIceCandidateInit[];
   meta: { name: string; avatar_url?: string | null };
   cameraOff: boolean;
+  muted: boolean;
 }
 
 export interface UseCallOpts {
@@ -105,7 +107,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
   const bumpParticipants = useCallback(() => {
     const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
-      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff,
+      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff, muted: e.muted,
     }));
     setParticipants(list);
     setRemoteStream(list[0]?.stream || null);
@@ -183,7 +185,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (existing) return existing;
     const pc = new RTCPeerConnection(ICE);
     const stream = new MediaStream();
-    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false };
+    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false };
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
     pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => stream.addTrack(t)); bumpParticipants(); };
@@ -379,8 +381,15 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
   const toggleMute = useCallback(() => {
     const track = localRef.current?.getAudioTracks()[0];
-    if (track) { track.enabled = !track.enabled; setState(s => ({ ...s, muted: !track.enabled })); }
-  }, []);
+    if (track) {
+      track.enabled = !track.enabled;
+      const nextMuted = !track.enabled;
+      setState(s => ({ ...s, muted: nextMuted }));
+      // Audio tracks can remain technically live while muted, so tell every
+      // participant explicitly to show the same mute status on this tile.
+      peersRef.current.forEach((_entry, id) => sendSignal('mute', { muted: nextMuted }, id));
+    }
+  }, [sendSignal]);
   const toggleCam = useCallback(async () => {
     // `track.enabled = false` only sends a black frame; browsers keep the
     // physical camera reserved, leaving the camera light on. Release the track
@@ -568,10 +577,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     }
     if (statusRef.current === 'idle') return;
 
-    if (sig.type === 'camera') {
+    if (sig.type === 'camera' || sig.type === 'mute') {
       const entry = peersRef.current.get(sig.from.id);
       if (entry) {
-        entry.cameraOff = Boolean((sig.data as { off?: boolean } | null)?.off);
+        if (sig.type === 'camera') entry.cameraOff = Boolean((sig.data as { off?: boolean } | null)?.off);
+        else entry.muted = Boolean((sig.data as { muted?: boolean } | null)?.muted);
         bumpParticipants();
       }
     } else if (sig.type === 'offer') {
