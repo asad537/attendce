@@ -372,10 +372,64 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     const track = localRef.current?.getAudioTracks()[0];
     if (track) { track.enabled = !track.enabled; setState(s => ({ ...s, muted: !track.enabled })); }
   }, []);
-  const toggleCam = useCallback(() => {
-    const track = localRef.current?.getVideoTracks()[0];
-    if (track) { track.enabled = !track.enabled; setState(s => ({ ...s, camOff: !track.enabled })); }
-  }, []);
+  const toggleCam = useCallback(async () => {
+    // `track.enabled = false` only sends a black frame; browsers keep the
+    // physical camera reserved, leaving the camera light on. Release the track
+    // completely and obtain a fresh one when the user turns it back on.
+    const parkedCamera = screenTrackRef.current ? cameraTrackRef.current : null;
+    const track = parkedCamera || localRef.current?.getVideoTracks()[0];
+
+    if (track) {
+      if (screenTrackRef.current) {
+        // While presenting, the camera is parked outside localStream.
+        try { track.stop(); } catch { /* noop */ }
+        cameraTrackRef.current = null;
+      } else {
+        for (const entry of peersRef.current.values()) {
+          const sender = entry.pc.getSenders().find(s => s.track === track);
+          if (sender) { try { await sender.replaceTrack(null); } catch { /* noop */ } }
+        }
+        try { localRef.current?.removeTrack(track); } catch { /* noop */ }
+        try { track.stop(); } catch { /* noop */ }
+        if (localRef.current) setLocalStream(new MediaStream(localRef.current.getTracks()));
+      }
+      setState(s => ({ ...s, camOff: true }));
+      return;
+    }
+
+    let camera: MediaStream;
+    try {
+      camera = await navigator.mediaDevices.getUserMedia({ video: true });
+    } catch (err: any) {
+      toast.error(formatMediaError(err, 'video'));
+      return;
+    }
+    const nextTrack = camera.getVideoTracks()[0];
+    if (!nextTrack) return;
+
+    if (screenTrackRef.current) {
+      // Keep presenting, but retain the fresh camera for when sharing ends.
+      cameraTrackRef.current = nextTrack;
+    } else if (localRef.current) {
+      localRef.current.addTrack(nextTrack);
+      for (const [id, entry] of peersRef.current) {
+        const sender = entry.pc.getSenders().find(s => s.track?.kind === 'video')
+          || entry.pc.getTransceivers().find(t => !t.sender.track && t.receiver.track?.kind === 'video')?.sender;
+        try {
+          if (sender) {
+            await sender.replaceTrack(nextTrack);
+          } else {
+            entry.pc.addTrack(nextTrack, localRef.current);
+            const offer = await entry.pc.createOffer();
+            await entry.pc.setLocalDescription(offer);
+            sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
+          }
+        } catch { /* noop */ }
+      }
+      setLocalStream(new MediaStream(localRef.current.getTracks()));
+    }
+    setState(s => ({ ...s, camOff: false }));
+  }, [sendSignal]);
 
   // Swap the outgoing video track back to the camera (or nothing) and drop the
   // screen track. Uses replaceTrack, so no SDP renegotiation is needed.
