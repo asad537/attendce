@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyAccent, formatMoney, useSettings } from '../../contexts/SettingsContext';
@@ -11,15 +11,16 @@ const names: Record<string, string> = { USD: 'US Dollar', EUR: 'Euro', GBP: 'Bri
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { currency, accent, options, save } = useSettings();
+  const { currency, accent, userAccent, options, save } = useSettings();
   const canEdit = user?.role === 'ceo' || user?.role === 'manager';
   const [draftCurrency, setDraftCurrency] = useState(currency);
   const [draftAccent, setDraftAccent] = useState(accent);
   const [saving, setSaving] = useState(false);
-  const savedAccent = useRef(accent);
   useEffect(() => setDraftCurrency(currency), [currency]);
-  useEffect(() => { setDraftAccent(accent); savedAccent.current = accent; }, [accent]);
-  useEffect(() => () => applyAccent(savedAccent.current), []);
+  useEffect(() => setDraftAccent(accent), [accent]);
+  // Leaving this page must preserve a user's saved appearance. Previously the
+  // cleanup restored the organisation colour, so it looked old until reload.
+  useEffect(() => () => applyAccent(userAccent || accent), [accent, userAccent]);
   const dirty = draftCurrency !== currency || draftAccent !== accent;
   const onSave = async () => { setSaving(true); try { await save({ currency: draftCurrency, accent: draftAccent }); toast.success('Settings saved'); } catch (e) { toast.error(getErrorMessage(e)); applyAccent(accent); } finally { setSaving(false); } };
   const currencies = options?.currencies || CURRENCIES;
