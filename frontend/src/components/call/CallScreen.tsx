@@ -80,6 +80,21 @@ function Video({ stream, muted, className }: { stream: MediaStream | null; muted
     return <video ref={ref} autoPlay playsInline muted={muted} className={className} />;
 }
 
+// Voice calls do not render a video tile, so their incoming MediaStream still
+// needs an audio output element. Without this, WebRTC receives the microphone
+// track but the browser has nowhere to play it; starting screen share happens
+// to create a video element and incorrectly makes the audio seem to "start".
+function RemoteAudio({ stream }: { stream: MediaStream }) {
+    const ref = useRef<HTMLAudioElement>(null);
+    useEffect(() => {
+        if (ref.current) {
+            ref.current.srcObject = stream;
+            ref.current.play().catch(() => { /* browser will retry after user interaction */ });
+        }
+    }, [stream]);
+    return <audio ref={ref} autoPlay playsInline />;
+}
+
 // Compact incoming-call popup (shown while ringing, before the call is picked
 // up) — a small card rather than a full-screen takeover.
 export function IncomingCallCard({ call }: { call: ReturnType<typeof useCall> }) {
@@ -203,6 +218,9 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
 
     return (
         <div className="fixed inset-0 z-[60] flex flex-col bg-[#202124] text-white">
+            {/* A voice call has no visible media element; render one audio sink
+                per remote participant so their microphone plays immediately. */}
+            {!isVideo && remotes.map((participant) => <RemoteAudio key={participant.id} stream={participant.stream} />)}
             {/* Top bar: clock · meeting code + participant count */}
             <div className="flex items-center justify-between px-5 py-3 text-sm">
                 <div className="flex items-center gap-2 text-white/85">
