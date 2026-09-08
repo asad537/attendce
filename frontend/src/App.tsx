@@ -4,6 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DashboardLayout from './components/layout/DashboardLayout';
 import { PageLoader } from './components/common/LoadingSpinner';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Pages are lazy-loaded so each route ships its own small chunk instead of one
 // ~2 MB bundle — the app boots fast and only downloads a page when it's visited.
@@ -59,6 +60,7 @@ function App() {
   };
 
   return (
+    <ErrorBoundary>
     <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public */}
@@ -203,6 +205,7 @@ function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </Suspense>
+    </ErrorBoundary>
   );
 }
 
