@@ -281,8 +281,9 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                                 className={`grid h-14 w-14 place-items-center rounded-full transition ${sharingScreen ? "bg-white text-[#0c241b]" : "bg-white/15 text-white"}`}
                                 title={sharingScreen ? "Stop sharing screen" : "Share screen"}
                             >
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17h4.5m-2.25 0v3m-7.5-6h13.5A1.5 1.5 0 0021 12.5v-7A1.5 1.5 0 0019.5 4h-15A1.5 1.5 0 003 5.5v7A1.5 1.5 0 004.5 14z" />
+                                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                    {/* Google Meet "present now" icon (Material present_to_all) */}
+                                    <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
                                 </svg>
                             </button>
                         )}
