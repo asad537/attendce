@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
@@ -79,6 +80,8 @@ export default function CeoDashboard() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  // Keep the dashboard live (online status / attendance) without a reload.
+  useAutoRefresh(load);
 
   // Re-fetch the report stats whenever a range dropdown changes (retry once).
   useEffect(() => {

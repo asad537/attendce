@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/reportService';
 import { AppNotification } from '../../types';
@@ -33,21 +34,23 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await notificationService.getList();
       setNotifs(res.data);
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     load();
   }, []);
+  // Live notifications without a reload — refresh silently (no spinner flash).
+  useAutoRefresh(() => load(true));
 
   const markRead = async (id: number) => {
     await notificationService.markRead(id);

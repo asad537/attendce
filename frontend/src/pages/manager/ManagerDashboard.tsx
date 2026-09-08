@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { attendanceService } from '../../services/attendanceService';
 import { leaveService } from '../../services/leaveService';
 import { Attendance, Leave, TeamMemberStatus } from '../../types';
@@ -96,6 +97,7 @@ export default function ManagerDashboard({ executive = false }: { executive?: bo
     setLoading(false);
   }, []);
   useEffect(() => { load(); }, [load]);
+  useAutoRefresh(load);
 
   const PRESENT_SET = ['working', 'on_break', 'checked_out', 'work_from_home'];
   const stats = useMemo(() => ({
