@@ -54,7 +54,9 @@ class EmployeeSatisfactionRatingController extends Controller
      */
     public function companyOverall()
     {
-        $ratings = EmployeeSatisfactionRating::all();
+        // The CEO is not part of the workforce, so their rating (if any) never
+        // folds into the company-wide satisfaction average.
+        $ratings = EmployeeSatisfactionRating::whereNotIn('rated_by_id', User::where('role', 'ceo')->pluck('id'))->get();
 
         if ($ratings->isEmpty()) {
             return response()->json([
@@ -92,6 +94,9 @@ class EmployeeSatisfactionRatingController extends Controller
      */
     public function store(Request $request)
     {
+        // The CEO does not submit employee-satisfaction ratings.
+        abort_if($request->user()->isCeo(), 403, 'Not applicable to your role.');
+
         $validated = $request->validate([
             'compensation_benefits' => 'required|integer|min:1|max:5',
             'work_culture' => 'required|integer|min:1|max:5',

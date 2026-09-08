@@ -277,7 +277,9 @@ class AttendanceService
         $isHoliday = Holiday::isHoliday(today());
         if ($isHoliday) return 0;
 
-        $users = User::active()->whereDoesntHave('attendance', function ($q) use ($today) {
+        // The CEO does not check in, so never create attendance rows for them
+        // (those rows would otherwise leak into every attendance list/export).
+        $users = User::active()->where('role', '!=', 'ceo')->whereDoesntHave('attendance', function ($q) use ($today) {
             $q->whereDate('date', $today);
         })->get();
 

@@ -21,7 +21,10 @@ class AttendanceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user  = $request->user();
-        $query = Attendance::with(['user.department', 'breaks'])->orderByDesc('date');
+        $query = Attendance::with(['user.department', 'breaks'])
+            // The CEO's own attendance never shows up in the records list.
+            ->whereHas('user', fn ($q) => $q->where('role', '!=', 'ceo'))
+            ->orderByDesc('date');
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
@@ -118,7 +121,8 @@ class AttendanceController extends Controller
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
-        $query = User::with(['todayAttendance.breaks', 'department'])->active();
+        // The CEO administers but is not shown on the live team-status board.
+        $query = User::with(['todayAttendance.breaks', 'department'])->active()->where('role', '!=', 'ceo');
 
         if ($user->isTeamLead()) {
             $query->where(function ($q) use ($user) {

@@ -106,8 +106,9 @@ class ReportController extends Controller
         abort_if($auth->isEmployee(), 403, 'Forbidden.');
 
         // CEO sees the whole company; manager / team lead see their team.
+        // The CEO is never counted as workforce in any of these stats.
         $users = $auth->isCeo()
-            ? \App\Models\User::active()->get(['id', 'employment_type'])
+            ? \App\Models\User::active()->where('role', '!=', 'ceo')->get(['id', 'employment_type'])
             : \App\Models\User::active()->where('manager_id', $auth->id)->get(['id', 'employment_type']);
         $ids = $users->pluck('id')->all();
         $count = max(1, count($ids));
@@ -194,6 +195,7 @@ class ReportController extends Controller
                     ->whereYear('last_working_day', $y->year)
                     ->count();
                 $activeThisYear = \App\Models\User::where('status', 'active')
+                    ->where('role', '!=', 'ceo')
                     ->whereNotIn('id', function($query) use ($y) {
                         $query->select('user_id')
                               ->from('resignations')
@@ -210,6 +212,7 @@ class ReportController extends Controller
                     ->whereMonth('last_working_day', $m->month)
                     ->count();
                 $activeThisMonth = \App\Models\User::where('status', 'active')
+                    ->where('role', '!=', 'ceo')
                     ->whereNotIn('id', function($query) use ($m) {
                         $query->select('user_id')
                               ->from('resignations')
@@ -303,7 +306,10 @@ class ReportController extends Controller
         [$start, $end] = $this->validatedDateRange($request);
         $auth  = $request->user();
 
-        $query = Attendance::with('user')->forDateRange($start, $end)->orderBy('date')->orderBy('id');
+        $query = Attendance::with('user')->forDateRange($start, $end)
+            // Never export the CEO's own attendance rows.
+            ->whereHas('user', fn ($q) => $q->where('role', '!=', 'ceo'))
+            ->orderBy('date')->orderBy('id');
 
         if ($auth->isEmployee()) {
             $query->where('user_id', $auth->id);

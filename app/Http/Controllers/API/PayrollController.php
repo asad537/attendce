@@ -16,7 +16,8 @@ class PayrollController extends Controller
     {
         abort_unless($request->user()->isCeo(), 403);
         $month = Carbon::createFromFormat('Y-m', $request->get('month', now()->format('Y-m')))->startOfMonth();
-        $users = User::active()->with(['department:id,name', 'designation:id,title'])->orderBy('name')->get();
+        // The CEO is not a payroll line and is excluded from salary summaries.
+        $users = User::active()->where('role', '!=', 'ceo')->with(['department:id,name', 'designation:id,title'])->orderBy('name')->get();
         $payrolls = Payroll::whereDate('payroll_month', $month)->get()->keyBy('user_id');
         $overtime = Attendance::whereBetween('date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->selectRaw('user_id, SUM(overtime_minutes) as minutes')->groupBy('user_id')->pluck('minutes', 'user_id');
 

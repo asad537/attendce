@@ -25,7 +25,8 @@ class DepartmentController extends Controller
 
     public function show(Department $department): JsonResponse
     {
-        return response()->json(['department' => new DepartmentResource($department->load(['manager', 'employees']))]);
+        // The CEO is never listed among a department's members.
+        return response()->json(['department' => new DepartmentResource($department->load(['manager', 'employees' => fn ($q) => $q->where('role', '!=', 'ceo')]))]);
     }
 
     public function update(Request $request, Department $department): JsonResponse

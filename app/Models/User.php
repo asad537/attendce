@@ -148,6 +148,20 @@ class User extends Authenticatable
         return $query->where('role', $role);
     }
 
+    // The CEO administers the system but is never a listed/counted staff
+    // member, so exclude them from every employee list, count and report.
+    public function scopeNotCeo($query)
+    {
+        return $query->where('role', '!=', 'ceo');
+    }
+
+    // Active staff = active users minus the CEO. Use this for any employee
+    // directory, headcount, payroll row set, department roster, etc.
+    public function scopeStaff($query)
+    {
+        return $query->active()->where('role', '!=', 'ceo');
+    }
+
     // ─── Accessors ─────────────────────────────────────────────────
 
     /**

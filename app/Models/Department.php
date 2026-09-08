@@ -44,6 +44,7 @@ class Department extends Model
 
     public function getEmployeeCountAttribute(): int
     {
-        return $this->employees()->active()->count();
+        // The CEO is not counted as a department member.
+        return $this->employees()->active()->where('role', '!=', 'ceo')->count();
     }
 }

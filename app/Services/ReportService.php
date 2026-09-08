@@ -253,7 +253,8 @@ class ReportService
     public function dailySnapshot(): array
     {
         $today = today()->toDateString();
-        $users = User::active()->with(['todayAttendance'])->get();
+        // Exclude the CEO from the headcount snapshot (total/working/absent/…).
+        $users = User::active()->where('role', '!=', 'ceo')->with(['todayAttendance'])->get();
 
         $snapshot = [
             'date'          => $today,

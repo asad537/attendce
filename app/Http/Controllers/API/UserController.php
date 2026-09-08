@@ -25,6 +25,8 @@ class UserController extends Controller
         $auth  = $request->user();
         $query = User::with(['department', 'designation', 'shift', 'manager'])
             ->withTrashed(false)
+            // The CEO never appears in the staff directory / employee list.
+            ->where('role', '!=', 'ceo')
             ->orderBy('first_name')
             ->orderBy('last_name');
 
