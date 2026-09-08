@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Modal from '../../components/common/Modal';
 import { PageLoader } from '../../components/common/LoadingSpinner';
@@ -38,6 +38,7 @@ function fmtDateShort(value?: string | null) {
 
 export default function CeoProjects() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const canCreateProjects = ['ceo', 'manager', 'tl'].includes(user?.role || '');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -57,6 +58,11 @@ export default function CeoProjects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [projectMetrics, setProjectMetrics] = useState<Record<number, { total: number; done: number; members: number; progress: number }>>({});
+
+  useEffect(() => {
+    const status = new URLSearchParams(location.search).get('status');
+    if (status && status !== 'all') setViewMode('table');
+  }, [location.search]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -146,11 +152,13 @@ export default function CeoProjects() {
   if (loading) return <PageLoader />;
 
   // Filter projects
-  const filteredProjects = projects.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (p.project_lead?.name && p.project_lead.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const statusFilter = new URLSearchParams(location.search).get('status') || 'all';
+  const filteredProjects = projects.filter(p => {
+    const matchesStatus = statusFilter === 'all'
+      || (statusFilter === 'overdue' ? p.status !== 'completed' && !!p.due_date && new Date(p.due_date) < new Date() : p.status === statusFilter);
+    const query = searchQuery.toLowerCase();
+    return matchesStatus && (p.name.toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query)) || (p.project_lead?.name && p.project_lead.name.toLowerCase().includes(query)));
+  });
 
   // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
@@ -229,7 +237,7 @@ export default function CeoProjects() {
       {/* KPI Stats Row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Projects Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
+        <button type="button" onClick={() => navigate('/projects?status=all')} className="text-left bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:border-blue-300 hover:shadow-md transition">
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -242,10 +250,10 @@ export default function CeoProjects() {
               <span className="text-emerald-500 font-bold">↑ +12%</span> from last month
             </p>
           </div>
-        </div>
+        </button>
 
         {/* In Progress Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
+        <button type="button" onClick={() => navigate('/projects?status=in_progress')} className="text-left bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:border-indigo-300 hover:shadow-md transition">
           <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
             <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -258,10 +266,10 @@ export default function CeoProjects() {
               <span className="text-emerald-500 font-bold">↑ +2</span> from last month
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Completed Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
+        <button type="button" onClick={() => navigate('/projects?status=completed')} className="text-left bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:border-emerald-300 hover:shadow-md transition">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
             <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -274,10 +282,10 @@ export default function CeoProjects() {
               <span className="text-emerald-500 font-bold">↑ +5</span> from last month
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Overdue Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm">
+        <button type="button" onClick={() => navigate('/projects?status=overdue')} className="text-left bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm hover:border-red-300 hover:shadow-md transition">
           <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
             <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -290,7 +298,7 @@ export default function CeoProjects() {
               <span className="text-red-500 font-bold">↓ -1</span> from last month
             </p>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* View Toggles & Sort Options */}
