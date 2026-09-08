@@ -214,23 +214,36 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                 />
             )}
 
+            {/* Google-Meet style: while there's live remote video, the video
+                fills the screen and only a small name+timer chip sits top-left. */}
+            {hasRemoteVideo && !isGroup && (
+                <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-lg bg-black/40 px-3 py-1.5 text-sm font-medium backdrop-blur">
+                    <span>{peer.name}</span>
+                    <span className="text-white/60">·</span>
+                    <span className="tabular-nums text-white/80">{mmss}</span>
+                </div>
+            )}
+
             <div className="relative z-10 flex flex-1 flex-col items-center justify-between px-6 py-12">
                 <div className="flex flex-col items-center gap-4 pt-8">
-                    {!hasRemoteVideo &&
-                        (avatar ? (
-                            <img src={avatar} alt="" className="h-28 w-28 rounded-full object-cover ring-4 ring-white/15" />
-                        ) : (
-                            <span className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-[#34d399] to-[#047857] text-4xl font-bold ring-4 ring-white/15">
-                                {initials(peer.name)}
-                            </span>
-                        ))}
-                    <h2 className="text-2xl font-semibold drop-shadow">{isGroup ? "Group call" : peer.name}</h2>
-                    <p className="flex items-center gap-2 text-sm text-white/80 drop-shadow">
-                        {(status === "calling" || status === "connecting") && (
-                            <span className="h-2 w-2 animate-ping rounded-full bg-[#34d399]" />
-                        )}
-                        {isVideo ? "Video call" : "Voice call"} · {label}
-                    </p>
+                    {!hasRemoteVideo && (
+                        <>
+                            {avatar ? (
+                                <img src={avatar} alt="" className="h-28 w-28 rounded-full object-cover ring-4 ring-white/15" />
+                            ) : (
+                                <span className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-[#34d399] to-[#047857] text-4xl font-bold ring-4 ring-white/15">
+                                    {initials(peer.name)}
+                                </span>
+                            )}
+                            <h2 className="text-2xl font-semibold drop-shadow">{isGroup ? "Group call" : peer.name}</h2>
+                            <p className="flex items-center gap-2 text-sm text-white/80 drop-shadow">
+                                {(status === "calling" || status === "connecting") && (
+                                    <span className="h-2 w-2 animate-ping rounded-full bg-[#34d399]" />
+                                )}
+                                {isVideo ? "Video call" : "Voice call"} · {label}
+                            </p>
+                        </>
+                    )}
                     {error && <p className="max-w-xs rounded-lg bg-[#e94141]/90 px-3 py-2 text-center text-xs">{error}</p>}
                 </div>
 
