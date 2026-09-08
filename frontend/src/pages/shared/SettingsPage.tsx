@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { applyAccent, formatMoney, useSettings } from '../../contexts/SettingsContext';
@@ -16,11 +16,13 @@ export default function SettingsPage() {
   const [draftCurrency, setDraftCurrency] = useState(currency);
   const [draftAccent, setDraftAccent] = useState(accent);
   const [saving, setSaving] = useState(false);
+  const activeAppearance = useRef({ accent, userAccent });
   useEffect(() => setDraftCurrency(currency), [currency]);
   useEffect(() => setDraftAccent(accent), [accent]);
-  // Leaving this page must preserve a user's saved appearance. Previously the
-  // cleanup restored the organisation colour, so it looked old until reload.
-  useEffect(() => () => applyAccent(userAccent || accent), [accent, userAccent]);
+  useEffect(() => { activeAppearance.current = { accent, userAccent }; }, [accent, userAccent]);
+  // Run only when leaving the page. Dependency cleanup was restoring the old
+  // colour immediately after a save, until the dashboard was opened.
+  useEffect(() => () => applyAccent(activeAppearance.current.userAccent || activeAppearance.current.accent), []);
   const dirty = draftCurrency !== currency || draftAccent !== accent;
   const onSave = async () => { setSaving(true); try { await save({ currency: draftCurrency, accent: draftAccent }); toast.success('Settings saved'); } catch (e) { toast.error(getErrorMessage(e)); applyAccent(accent); } finally { setSaving(false); } };
   const currencies = options?.currencies || CURRENCIES;
