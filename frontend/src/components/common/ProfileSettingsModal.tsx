@@ -16,12 +16,15 @@ const ACCENT_HEX: Record<string, string> = {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  embedded?: boolean;
+  defaultTab?: 'education' | 'security' | 'documents' | 'appearance' | 'dashboard';
+  dashboardSettings?: React.ReactNode;
 }
 
-export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
+export default function ProfileSettingsModal({ isOpen, onClose, embedded = false, defaultTab = 'education', dashboardSettings }: Props) {
   const { user, refreshUser, logout } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents' | 'appearance'>('education');
+  const [activeTab, setActiveTab] = useState<'education' | 'security' | 'documents' | 'appearance' | 'dashboard'>(defaultTab);
   const { userAccent, accent, setUserAccent } = useSettings();
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState<File | null>(null);
@@ -99,7 +102,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen && !embedded) return null;
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -162,16 +165,15 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-      <div 
-        className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" 
-        onClick={onClose} 
-      />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 scale-100 opacity-100 ring-1 ring-gray-900/5 max-h-[90vh] flex flex-col">
+    <div className={embedded ? 'w-full' : 'fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6'}>
+      {!embedded && <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />}
+      <div className={embedded
+        ? 'relative bg-white rounded-2xl shadow-sm border border-gray-100 w-full overflow-hidden flex flex-col'
+        : 'relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 scale-100 opacity-100 ring-1 ring-gray-900/5 max-h-[90vh] flex flex-col'}>
         
         {/* Header styling with a subtle gradient background */}
         <div className="relative px-8 pt-8 pb-4 bg-gradient-to-b from-emerald-50/50 to-white shrink-0">
-          <div className="absolute top-4 right-4">
+          {!embedded && <div className="absolute top-4 right-4">
             <button 
               onClick={onClose} 
               className="p-2 text-gray-400 hover:text-gray-600 rounded-full  transition-colors focus:outline-none"
@@ -180,7 +182,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </div>
+          </div>}
           
           <div className="flex flex-col items-center">
             {/* Elegant Avatar Section */}
@@ -208,7 +210,8 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
             <p className="text-sm font-medium text-emerald-600">{user?.employee_id || 'Employee'}</p>
           </div>
 
-          <div className="flex justify-center gap-4 mt-6 border-b border-gray-100">
+          <div className="flex flex-wrap justify-center gap-4 mt-6 border-b border-gray-100">
+            {dashboardSettings && <button type="button" onClick={() => setActiveTab('dashboard')} className={`pb-2 px-2 text-sm font-semibold transition-colors ${activeTab === 'dashboard' ? 'text-emerald-600 border-b-2 border-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}>Dashboard Settings</button>}
             <button
               type="button"
               onClick={() => setActiveTab('education')}
@@ -241,6 +244,7 @@ export default function ProfileSettingsModal({ isOpen, onClose }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-8 pb-8 pt-6 overflow-y-auto min-h-[300px]">
+          {activeTab === 'dashboard' && dashboardSettings}
           
           {/* Educational Background Tab */}
           {activeTab === 'education' && (
