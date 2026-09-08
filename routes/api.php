@@ -19,6 +19,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\UserTicketController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\CallController;
+use App\Http\Controllers\API\GuestCallController;
 use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\EmployeeProfileController;
 use App\Http\Controllers\API\ResignationController;
@@ -78,6 +79,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/calls/log',                  [CallController::class, 'log']);
     Route::post('/calls/join',                 [CallController::class, 'join']);
     Route::post('/calls/leave',                [CallController::class, 'leave']);
+    // A signed-in participant mints a shareable guest link for their call.
+    Route::post('/guest-call/invite',          [GuestCallController::class, 'invite']);
 
     // Organisation settings (currency + theme accent)
     Route::get('/settings',                    [SettingController::class, 'index']);
@@ -204,3 +207,12 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // Audit Logs (CEO only)
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('can:view-audit-logs');
 });
+
+// ── Public guest-call endpoints ─────────────────────────────────────────────
+// No Sanctum auth: each request carries an encrypted, single-call, time-limited
+// token. Guests can reach nothing else in the API.
+Route::post('/guest-call/join',      [GuestCallController::class, 'join']);
+Route::post('/guest-call/signal',    [GuestCallController::class, 'signal']);
+Route::get('/guest-call/poll',       [GuestCallController::class, 'poll']);
+Route::post('/guest-call/heartbeat', [GuestCallController::class, 'heartbeat']);
+Route::post('/guest-call/leave',     [GuestCallController::class, 'leave']);
