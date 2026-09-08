@@ -129,9 +129,10 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
         hangup,
         toggleMute,
         toggleCam,
+        toggleScreenShare,
         addToCall,
     } = call;
-    const { peer, kind, status, muted, camOff, error } = state;
+    const { peer, kind, status, muted, camOff, sharingScreen, error } = state;
     const [seconds, setSeconds] = useState(0);
     const [showAdd, setShowAdd] = useState(false);
 
@@ -263,6 +264,17 @@ export default function CallScreen({ call }: { call: ReturnType<typeof useCall> 
                                 title={camOff ? "Turn camera on" : "Turn camera off"}
                             >
                                 <VideoIcon />
+                            </button>
+                        )}
+                        {isVideo && (status === "connected" || status === "connecting") && (
+                            <button
+                                onClick={toggleScreenShare}
+                                className={`grid h-14 w-14 place-items-center rounded-full transition ${sharingScreen ? "bg-white text-[#0c241b]" : "bg-white/15 text-white"}`}
+                                title={sharingScreen ? "Stop sharing screen" : "Share screen"}
+                            >
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17h4.5m-2.25 0v3m-7.5-6h13.5A1.5 1.5 0 0021 12.5v-7A1.5 1.5 0 0019.5 4h-15A1.5 1.5 0 003 5.5v7A1.5 1.5 0 004.5 14z" />
+                                </svg>
                             </button>
                         )}
                         <div className="relative">

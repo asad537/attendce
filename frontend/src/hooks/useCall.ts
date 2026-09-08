@@ -20,6 +20,7 @@ export interface CallState {
   muted: boolean;
   camOff: boolean;
   isGroup: boolean;
+  sharingScreen: boolean;
   error?: string | null;
 }
 
@@ -37,7 +38,7 @@ const ICE: RTCConfiguration = {
   ],
 };
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
-const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, isGroup: false, error: null };
+const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null };
 
 const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   if (sdpInit instanceof RTCSessionDescription) return sdpInit;
@@ -77,6 +78,8 @@ export function useCall(meId?: number) {
   const kindRef = useRef<'voice' | 'video'>('voice');
   const roleRef = useRef<'caller' | 'callee' | null>(null);
   const localRef = useRef<MediaStream | null>(null);
+  const screenTrackRef = useRef<MediaStreamTrack | null>(null);   // active screen-share track
+  const cameraTrackRef = useRef<MediaStreamTrack | null>(null);   // camera track parked while sharing
   const pendingInvite = useRef<{ room: string; kind: 'voice' | 'video'; from: Peer } | null>(null);
   const statusRef = useRef<CallStatus>('idle');
   const timerRef = useRef<number | undefined>(undefined);
@@ -106,6 +109,10 @@ export function useCall(meId?: number) {
     if (roomRef.current) callService.leave(roomRef.current);
     peersRef.current.forEach(e => { try { e.pc.close(); } catch { /* noop */ } });
     peersRef.current.clear();
+    try { screenTrackRef.current?.stop(); } catch { /* noop */ }
+    try { cameraTrackRef.current?.stop(); } catch { /* noop */ }
+    screenTrackRef.current = null;
+    cameraTrackRef.current = null;
     localRef.current?.getTracks().forEach(t => t.stop());
     localRef.current = null;
     roomRef.current = '';
@@ -272,7 +279,7 @@ export function useCall(meId?: number) {
     kindRef.current = kind;
     roleRef.current = 'caller';
     groupRef.current = false;
-    setState({ status: 'calling', peer, kind, muted: false, camOff: false, isGroup: false, error: null });
+    setState({ status: 'calling', peer, kind, muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null });
     try {
       await getMedia(kind);
       startHeartbeat();
@@ -343,6 +350,66 @@ export function useCall(meId?: number) {
     if (track) { track.enabled = !track.enabled; setState(s => ({ ...s, camOff: !track.enabled })); }
   }, []);
 
+  // Swap the outgoing video track back to the camera (or nothing) and drop the
+  // screen track. Uses replaceTrack, so no SDP renegotiation is needed.
+  const stopScreenShare = useCallback(() => {
+    const screen = screenTrackRef.current;
+    const cam = cameraTrackRef.current;
+    peersRef.current.forEach(e => {
+      const sender = e.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) { try { sender.replaceTrack(cam || null); } catch { /* noop */ } }
+    });
+    if (localRef.current) {
+      if (screen) { try { localRef.current.removeTrack(screen); } catch { /* noop */ } }
+      if (cam) { try { localRef.current.addTrack(cam); } catch { /* noop */ } }
+      setLocalStream(new MediaStream(localRef.current.getTracks()));
+    }
+    try { screen?.stop(); } catch { /* noop */ }
+    screenTrackRef.current = null;
+    cameraTrackRef.current = null;
+    setState(s => ({ ...s, sharingScreen: false }));
+  }, []);
+
+  // Share the screen with everyone in the call. Only available in video calls
+  // (there must already be an outgoing video sender to replace); voice calls
+  // have no video track, so we tell the user instead of renegotiating.
+  const toggleScreenShare = useCallback(async () => {
+    if (screenTrackRef.current) { stopScreenShare(); return; }
+    if (statusRef.current !== 'connected' && statusRef.current !== 'connecting') return;
+    const md = navigator.mediaDevices as any;
+    if (!md?.getDisplayMedia) { toast.error('Screen sharing is not supported in this browser.'); return; }
+    let screenTrack: MediaStreamTrack | null = null;
+    try {
+      const display: MediaStream = await md.getDisplayMedia({ video: true, audio: false });
+      screenTrack = display.getVideoTracks()[0] || null;
+    } catch { return; /* user cancelled the picker */ }
+    if (!screenTrack) return;
+
+    // Replace the camera track on every peer's existing video sender.
+    let replaced = false;
+    peersRef.current.forEach(e => {
+      const sender = e.pc.getSenders().find(s => s.track && s.track.kind === 'video');
+      if (sender) { try { sender.replaceTrack(screenTrack!); replaced = true; } catch { /* noop */ } }
+    });
+    if (!replaced) {
+      try { screenTrack.stop(); } catch { /* noop */ }
+      toast.error('Screen share is available in video calls.');
+      return;
+    }
+
+    cameraTrackRef.current = localRef.current?.getVideoTracks()[0] || null;
+    screenTrackRef.current = screenTrack;
+    // Reflect the shared screen in the local preview tile.
+    if (localRef.current) {
+      if (cameraTrackRef.current) { try { localRef.current.removeTrack(cameraTrackRef.current); } catch { /* noop */ } }
+      try { localRef.current.addTrack(screenTrack); } catch { /* noop */ }
+      setLocalStream(new MediaStream(localRef.current.getTracks()));
+    }
+    // The browser's own "Stop sharing" bar ends the track — revert cleanly.
+    screenTrack.onended = () => stopScreenShare();
+    setState(s => ({ ...s, sharingScreen: true }));
+  }, [stopScreenShare]);
+
   const handleSignal = useCallback(async (sig: CallSignal) => {
     if (sig.type === 'invite') {
       if (statusRef.current !== 'idle') {
@@ -355,7 +422,7 @@ export function useCall(meId?: number) {
       pendingInvite.current = { room: payload.call_id, kind: callKind, from: sig.from };
       primaryPeerRef.current = sig.from;
       kindRef.current = callKind;
-      setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, isGroup: false, error: null });
+      setState({ status: 'incoming', peer: sig.from, kind: callKind, muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null });
       // Safety net: if the cancel signal is ever missed, stop ringing anyway.
       clearTimer();
       timerRef.current = window.setTimeout(() => { if (statusRef.current === 'incoming') reset(); }, 50000);
@@ -430,5 +497,5 @@ export function useCall(meId?: number) {
 
   useEffect(() => () => cleanup(), [cleanup]);
 
-  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, addToCall };
+  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, addToCall };
 }
