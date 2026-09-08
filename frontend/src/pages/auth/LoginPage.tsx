@@ -271,6 +271,7 @@ export default function LoginPage() {
             <div className="grid grid-cols-1 gap-2 lg:gap-3">
               {[
                 { label: 'Chief Executive Officer', email: 'ceo@jmdsol.com', password: 'password', iconText: 'CEO' },
+                { label: 'Employee', email: 'carol@attendance.com', password: 'password', iconText: 'EMP' },
               ].map((d) => (
                 <button
                   key={d.email}
