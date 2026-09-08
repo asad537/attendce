@@ -395,8 +395,8 @@ export default function CeoProjects() {
                   {/* Project Name and Client */}
                   <div className="mt-4">
                     <h3 className="font-bold text-gray-900 text-base leading-tight hover:text-emerald-600 transition-colors">{p.name}</h3>
-                    <p className="text-xs text-gray-400 font-semibold mt-1">
-                      {['TechNova Solutions', 'BrightPath Marketing', 'GreenLeaf Organics', 'Visionary Labs', 'EduSmart Platform', 'FitLife Gym'][p.id % 6]}
+                    <p className="mt-1 line-clamp-2 text-xs font-medium text-gray-500">
+                      {p.description || 'No description'}
                     </p>
                   </div>
 
