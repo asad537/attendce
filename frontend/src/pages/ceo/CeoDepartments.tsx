@@ -19,6 +19,8 @@ const emptyDesig  = (): DesigForm => ({ title: '', description: '', department_i
 
 export default function CeoDepartments() {
   const { user } = useAuth();
+  // CEO and managers see every department and can add/manage them.
+  const canManageDepts = ['ceo', 'manager'].includes(user?.role || '');
   const [departments, setDepts]     = useState<Department[]>([]);
   const [designations, setDesigs]   = useState<Designation[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -57,10 +59,12 @@ export default function CeoDepartments() {
         departmentService.getAll(),
         designationService.getAll(),
       ]);
-      const filteredDepts = user?.role === 'ceo' ? depts : depts.filter(d => d.id === user?.department?.id);
+      // CEO and managers see every department; others see only their own.
+      const seesAll = ['ceo', 'manager'].includes(user?.role || '');
+      const filteredDepts = seesAll ? depts : depts.filter(d => d.id === user?.department?.id);
       setDepts(filteredDepts);
       setDesigs(desigs);
-      if (user?.role !== 'ceo' && user?.department?.id) {
+      if (!seesAll && user?.department?.id) {
         setExpanded(user.department.id);
       }
     } catch {
@@ -199,13 +203,13 @@ export default function CeoDepartments() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">
-            {user?.role === 'ceo' ? 'Departments' : `Department - ${user?.department?.name || ''}`}
+            {canManageDepts ? 'Departments' : `Department - ${user?.department?.name || ''}`}
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Manage {user?.role === 'ceo' ? 'departments and their' : 'your department and its'} designations (positions)
+            Manage {canManageDepts ? 'departments and their' : 'your department and its'} designations (positions)
           </p>
         </div>
-        {user?.role === 'ceo' && (
+        {canManageDepts && (
           <button
             onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
             className="btn-primary shrink-0"
@@ -266,7 +270,7 @@ export default function CeoDepartments() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-4">
-                    {user?.role === 'ceo' && (
+                    {canManageDepts && (
                       <div className="relative">
                         <button
                           onClick={ev => {

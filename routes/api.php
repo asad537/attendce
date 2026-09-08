@@ -158,10 +158,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Departments (CEO only via policy)
     Route::get('/departments',                [DepartmentController::class, 'index']);
-    Route::post('/departments',               [DepartmentController::class, 'store'])->middleware('can:manage-organization');
+    Route::post('/departments',               [DepartmentController::class, 'store'])->middleware('can:manage-departments');
     Route::get('/departments/{department}',   [DepartmentController::class, 'show']);
-    Route::put('/departments/{department}',   [DepartmentController::class, 'update'])->middleware('can:manage-organization');
-    Route::delete('/departments/{department}',[DepartmentController::class, 'destroy'])->middleware('can:manage-organization');
+    Route::put('/departments/{department}',   [DepartmentController::class, 'update'])->middleware('can:manage-departments');
+    Route::delete('/departments/{department}',[DepartmentController::class, 'destroy'])->middleware('can:manage-departments');
 
     // Designations
     Route::get('/designations',                   [DesignationController::class, 'index']);
