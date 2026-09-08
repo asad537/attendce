@@ -54,6 +54,7 @@ export default function ProjectTickets() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [projectName, setProjectName] = useState("Project");
+    const [projectStartDate, setProjectStartDate] = useState("");
     const [open, setOpen] = useState(false);
     const [detail, setDetail] = useState<Ticket | null>(null);
     const [editing, setEditing] = useState<Ticket | null>(null);
@@ -97,6 +98,7 @@ export default function ProjectTickets() {
             setCanManage(Boolean(m?.data?.can_manage));
             const currentProject = (Array.isArray(p) ? p : []).find((project) => project.id === Number(projectId));
             setProjectName(currentProject?.name || "Project");
+            setProjectStartDate(currentProject?.start_date?.slice(0, 10) || "");
         } catch (e) {
             toast.error(getErrorMessage(e));
         }
@@ -111,6 +113,10 @@ export default function ProjectTickets() {
 
     const save = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (projectStartDate && form.due_date && form.due_date < projectStartDate) {
+            toast.error("Ticket due date cannot be before the project start date.");
+            return;
+        }
         try {
             if (editing)
                 await api.put(`/tickets/${editing.id}`, {
@@ -562,7 +568,7 @@ export default function ProjectTickets() {
                             </option>
                         ))}
                     </select>
-                    <label className="label">Due date<input type="date" className="input mt-1" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
+                    <label className="label">Due date<input type="date" min={projectStartDate || undefined} className="input mt-1" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
                     <div className="flex justify-end gap-2">
                         <button
                             type="button"
@@ -799,7 +805,7 @@ export default function ProjectTickets() {
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
-                                        <input type="date" className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; setDetail({...detail, due_date}); api.put(`/tickets/${detail.id}`, { due_date }); load(); }} />
+                                        <input type="date" min={projectStartDate || undefined} className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; setDetail({...detail, due_date}); api.put(`/tickets/${detail.id}`, { due_date }).then(load).catch((err) => toast.error(getErrorMessage(err))); }} />
                                     </div>
                                     <div className="flex items-start">
                                         <span className="w-[120px] pt-1 text-[13px] font-medium text-gray-500">Progress</span>

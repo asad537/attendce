@@ -9,6 +9,7 @@ use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ProjectController extends Controller
 {
@@ -19,6 +20,15 @@ class ProjectController extends Controller
         return $user->isCeo()
             || (int) $project->created_by === (int) $user->id
             || $project->isLead($user->id);
+    }
+
+    private function ensureDueDateIsNotBeforeStart(?string $dueDate, ?string $startDate): void
+    {
+        if ($dueDate && $startDate && $dueDate < $startDate) {
+            throw ValidationException::withMessages([
+                'due_date' => ['The due date must be on or after the start date.'],
+            ]);
+        }
     }
 
     // Replace the project's lead/member rows. Only touches a role when its id
@@ -101,6 +111,7 @@ class ProjectController extends Controller
             'lead_ids' => 'nullable|array', 'lead_ids.*' => 'integer|exists:users,id',
             'member_ids' => 'nullable|array', 'member_ids.*' => 'integer|exists:users,id',
         ]);
+        $this->ensureDueDateIsNotBeforeStart($data['due_date'] ?? null, $data['start_date'] ?? null);
 
         $leadIds = $request->has('lead_ids') ? $data['lead_ids'] ?? [] : null;
         $memberIds = $request->has('member_ids') ? $data['member_ids'] ?? [] : null;
@@ -140,6 +151,7 @@ class ProjectController extends Controller
             'lead_ids' => 'nullable|array', 'lead_ids.*' => 'integer|exists:users,id',
             'member_ids' => 'nullable|array', 'member_ids.*' => 'integer|exists:users,id',
         ]);
+        $this->ensureDueDateIsNotBeforeStart($data['due_date'] ?? null, $data['start_date'] ?? ($project->start_date ? $project->start_date->toDateString() : null));
 
         $leadIds = $request->has('lead_ids') ? $data['lead_ids'] ?? [] : null;
         $memberIds = $request->has('member_ids') ? $data['member_ids'] ?? [] : null;

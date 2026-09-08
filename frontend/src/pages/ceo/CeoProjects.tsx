@@ -136,6 +136,9 @@ export default function CeoProjects() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Project name is required.');
+    if (form.start_date && form.due_date && form.due_date < form.start_date) {
+      return toast.error('Due date cannot be before the start date.');
+    }
     setSaving(true);
     try {
       const data = { ...form, name: form.name.trim(), description: form.description || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined, lead_ids: leadIds, member_ids: memberIds };
@@ -575,7 +578,7 @@ export default function CeoProjects() {
             </div>
             <div>
               <label className="label">Due date</label>
-              <input type="date" className="input" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
+              <input type="date" min={form.start_date || undefined} className="input" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
