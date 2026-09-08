@@ -189,178 +189,173 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 : status === "connected"
                   ? mmss
                   : "Call ended";
-    const avatar = peer.avatar_url || peer.avatar;
+    const clock = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const rawCode = getCallId ? getCallId() : "";
+    const code = rawCode ? rawCode.slice(0, 12) : "call";
+    const remotes = participants;
+    const totalCount = participants.length + 1;
+    void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-gradient-to-b from-[#0c241b] to-[#04120d] text-white">
-            {!isGroup &&
-                remoteStream &&
-                (hasRemoteVideo ? (
-                    <Video stream={remoteStream} className="absolute inset-0 h-full w-full bg-black object-cover" />
+        <div className="fixed inset-0 z-[60] flex flex-col bg-[#202124] text-white">
+            {/* Top bar: clock · meeting code + participant count */}
+            <div className="flex items-center justify-between px-5 py-3 text-sm">
+                <div className="flex items-center gap-2 text-white/85">
+                    <span className="tabular-nums">{clock}</span>
+                    <span className="text-white/30">|</span>
+                    <span className="font-medium tracking-wide">{code}</span>
+                </div>
+                <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {totalCount}
+                </div>
+            </div>
+
+            {/* Stage */}
+            <div className="relative min-h-0 flex-1 px-3 pb-1">
+                {error && <div className="absolute left-1/2 top-2 z-30 -translate-x-1/2 rounded-lg bg-[#e94141]/90 px-3 py-2 text-center text-xs">{error}</div>}
+
+                {remotes.length <= 1 ? (
+                    <MeetTile
+                        big
+                        name={remotes[0]?.name || peer.name}
+                        stream={remotes[0]?.stream}
+                        showVideo={isVideo}
+                        note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
+                    />
                 ) : (
-                    <Video stream={remoteStream} className="hidden" />
-                ))}
-
-            {isGroup && (
-                <div className="absolute inset-0 grid gap-1 bg-black p-1 pb-28 sm:grid-cols-2">
-                    {participants.map((p) => (
-                        <div key={p.id} className="relative flex items-center justify-center overflow-hidden rounded-xl bg-[#0c241b]">
-                            {isVideo ? (
-                                <Video stream={p.stream} className="h-full w-full object-cover" />
-                            ) : p.avatar_url ? (
-                                <img src={p.avatar_url} alt="" className="h-20 w-20 rounded-full object-cover ring-2 ring-white/20" />
-                            ) : (
-                                <span className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[#34d399] to-[#047857] text-2xl font-bold ring-2 ring-white/20">
-                                    {initials(p.name)}
-                                </span>
-                            )}
-                            <span className="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-0.5 text-xs">{p.name}</span>
-                        </div>
-                    ))}
-                    {participants.length === 0 && (
-                        <div className="col-span-full grid place-items-center text-sm text-white/60">Waiting for others to join…</div>
-                    )}
-                </div>
-            )}
-
-            {isVideo && localStream && status !== "incoming" && (
-                <Video
-                    stream={localStream}
-                    muted
-                    className="absolute right-4 top-4 z-10 h-40 w-28 rounded-xl border-2 border-white/25 object-cover shadow-lg sm:h-48 sm:w-36"
-                />
-            )}
-
-            {/* Google-Meet style: while there's live remote video, the video
-                fills the screen and only a small name+timer chip sits top-left. */}
-            {hasRemoteVideo && !isGroup && (
-                <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-lg bg-black/40 px-3 py-1.5 text-sm font-medium backdrop-blur">
-                    <span>{peer.name}</span>
-                    <span className="text-white/60">·</span>
-                    <span className="tabular-nums text-white/80">{mmss}</span>
-                </div>
-            )}
-
-            <div className="relative z-10 flex flex-1 flex-col items-center justify-between px-6 py-12">
-                <div className="flex flex-col items-center gap-4 pt-8">
-                    {!hasRemoteVideo && (
-                        <>
-                            {avatar ? (
-                                <img src={avatar} alt="" className="h-28 w-28 rounded-full object-cover ring-4 ring-white/15" />
-                            ) : (
-                                <span className="grid h-28 w-28 place-items-center rounded-full bg-gradient-to-br from-[#34d399] to-[#047857] text-4xl font-bold ring-4 ring-white/15">
-                                    {initials(peer.name)}
-                                </span>
-                            )}
-                            <h2 className="text-2xl font-semibold drop-shadow">{isGroup ? "Group call" : peer.name}</h2>
-                            <p className="flex items-center gap-2 text-sm text-white/80 drop-shadow">
-                                {(status === "calling" || status === "connecting") && (
-                                    <span className="h-2 w-2 animate-ping rounded-full bg-[#34d399]" />
-                                )}
-                                {isVideo ? "Video call" : "Voice call"} · {label}
-                            </p>
-                        </>
-                    )}
-                    {error && <p className="max-w-xs rounded-lg bg-[#e94141]/90 px-3 py-2 text-center text-xs">{error}</p>}
-                </div>
-
-                {status === "incoming" ? (
-                    <div className="flex items-center gap-12">
-                        <button onClick={reject} className="flex flex-col items-center gap-2">
-                            <span className="grid h-16 w-16 place-items-center rounded-full bg-[#e94141] shadow-lg transition hover:bg-[#d12f2f]">
-                                <span className="rotate-[135deg]"><PhoneIcon /></span>
-                            </span>
-                            <small className="text-white/70">Decline</small>
-                        </button>
-                        <button onClick={accept} className="flex flex-col items-center gap-2">
-                            <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500 shadow-lg transition hover:bg-emerald-600">
-                                {isVideo ? <VideoIcon /> : <PhoneIcon />}
-                            </span>
-                            <small className="text-white/70">Accept</small>
-                        </button>
+                    <div className="grid h-full w-full auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2">
+                        {remotes.map((p) => (
+                            <MeetTile key={p.id} name={p.name} stream={p.stream} showVideo={isVideo} />
+                        ))}
                     </div>
-                ) : (
-                    <div className="flex items-center gap-5">
-                        <button
-                            onClick={toggleMute}
-                            className={`grid h-14 w-14 place-items-center rounded-full transition ${muted ? "bg-white text-[#0c241b]" : "bg-white/15 text-white"}`}
-                            title={muted ? "Unmute" : "Mute"}
-                        >
-                            {muted ? <MicOffIcon /> : <MicIcon />}
-                        </button>
-                        {isVideo ? (
-                            <button
-                                onClick={toggleCam}
-                                className={`grid h-14 w-14 place-items-center rounded-full transition ${camOff ? "bg-white text-[#0c241b]" : "bg-white/15"}`}
-                                title={camOff ? "Turn camera on" : "Turn camera off"}
-                            >
-                                <VideoIcon />
-                            </button>
-                        ) : (status === "connected" || status === "connecting") && (
-                            <button
-                                onClick={switchToVideo}
-                                className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-white transition"
-                                title="Switch to video call"
-                            >
-                                <VideoIcon />
-                            </button>
+                )}
+
+                {/* Self view — bottom-right */}
+                {status !== "ended" && (
+                    <div className="absolute bottom-4 right-6 z-20 aspect-video w-40 overflow-hidden rounded-xl bg-[#3c4043] shadow-lg ring-1 ring-black/40 sm:w-56">
+                        {isVideo && !camOff && localStream ? (
+                            <Video stream={localStream} muted className="h-full w-full object-cover" />
+                        ) : (
+                            <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#3f4b57,#242a30)]">
+                                <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-sm font-semibold">You</span>
+                            </div>
                         )}
-                        {(status === "connected" || status === "connecting") && (
-                            <button
-                                onClick={toggleScreenShare}
-                                className={`grid h-14 w-14 place-items-center rounded-full transition ${sharingScreen ? "bg-white text-[#0c241b]" : "bg-white/15 text-white"}`}
-                                title={sharingScreen ? "Stop sharing screen" : "Share screen"}
-                            >
-                                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                    {/* Google Meet "present now" icon (Material present_to_all) */}
-                                    <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
-                                </svg>
-                            </button>
+                        <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">You</span>
+                        {muted && (
+                            <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#ea4335]">
+                                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-.11 1.23l1.53 1.53A8.9 8.9 0 0021 11h-2zM4.27 3L3 4.27l6 6V11a3 3 0 003 3c.23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.42-2.31.42a5 5 0 01-5-5H5a7 7 0 007 7c1.28 0 2.49-.35 3.53-.95L19.73 21 21 19.73 4.27 3zM12 4a3 3 0 013 3v3.18l1.98 1.98A5 5 0 0017 7a5 5 0 00-5-5 4.94 4.94 0 00-2.02.44L12 4z" /></svg>
+                            </span>
                         )}
-                        {!guest && <div className="relative">
-                            <button
-                                onClick={() => setShowAdd((v) => !v)}
-                                className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-2xl transition"
-                                title="Add someone"
-                            >
-                                +
-                            </button>
-                            {showAdd && (
-                                <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#0c241b] p-1 shadow-xl">
-                                    <button
-                                        onClick={copyGuestLink}
-                                        className="mb-1 flex w-full items-center gap-2 rounded-xl bg-emerald-600/20 px-3 py-2 text-left text-sm font-medium text-emerald-300 hover:bg-emerald-600/30"
-                                    >
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
-                                        Invite guest (copy link)
-                                    </button>
-                                    <p className="px-3 py-2 text-xs font-semibold text-white/50">Add to call</p>
-                                    {addable.length === 0 ? (
-                                        <p className="px-3 py-2 text-xs text-white/40">No one else to add.</p>
-                                    ) : (
-                                        addable.map((p) => (
-                                            <button
-                                                key={p.id}
-                                                onClick={() => {
-                                                    addToCall(p);
-                                                    setShowAdd(false);
-                                                }}
-                                                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-white/10"
-                                            >
-                                                <Avatar user={p} />
-                                                <span className="truncate">{p.name}</span>
-                                            </button>
-                                        ))
-                                    )}
-                                </div>
-                            )}
-                        </div>}
-                        <button onClick={hangup} className="grid h-16 w-16 place-items-center rounded-full bg-[#e94141] shadow-lg transition" title="End call">
-                            <span className="rotate-[135deg]"><PhoneIcon /></span>
-                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Control bar — Google Meet style pills */}
+            <div className="flex items-center justify-center gap-3 px-4 pb-5 pt-2">
+                <button
+                    onClick={toggleMute}
+                    className={`grid h-12 w-12 place-items-center rounded-full transition ${muted ? "bg-[#ea4335] text-white hover:bg-[#d33b2c]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                    title={muted ? "Turn on microphone" : "Turn off microphone"}
+                >
+                    {muted ? <MicOffIcon /> : <MicIcon />}
+                </button>
+
+                {isVideo ? (
+                    <button
+                        onClick={toggleCam}
+                        className={`grid h-12 w-12 place-items-center rounded-full transition ${camOff ? "bg-[#ea4335] text-white hover:bg-[#d33b2c]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                        title={camOff ? "Turn on camera" : "Turn off camera"}
+                    >
+                        <VideoIcon />
+                    </button>
+                ) : (status === "connected" || status === "connecting") && (
+                    <button
+                        onClick={switchToVideo}
+                        className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-white transition hover:bg-[#4a4d51]"
+                        title="Turn on camera (switch to video)"
+                    >
+                        <VideoIcon />
+                    </button>
+                )}
+
+                {(status === "connected" || status === "connecting") && (
+                    <button
+                        onClick={toggleScreenShare}
+                        className={`grid h-12 w-12 place-items-center rounded-full transition ${sharingScreen ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                        title={sharingScreen ? "Stop presenting" : "Present now"}
+                    >
+                        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
+                        </svg>
+                    </button>
+                )}
+
+                {!guest && <div className="relative">
+                    <button
+                        onClick={() => setShowAdd((v) => !v)}
+                        className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-2xl text-white transition hover:bg-[#4a4d51]"
+                        title="Add people"
+                    >
+                        +
+                    </button>
+                    {showAdd && (
+                        <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2d30] p-1 shadow-xl">
+                            <button
+                                onClick={copyGuestLink}
+                                className="mb-1 flex w-full items-center gap-2 rounded-xl bg-emerald-600/20 px-3 py-2 text-left text-sm font-medium text-emerald-300 hover:bg-emerald-600/30"
+                            >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                                Invite guest (copy link)
+                            </button>
+                            <p className="px-3 py-2 text-xs font-semibold text-white/50">Add to call</p>
+                            {addable.length === 0 ? (
+                                <p className="px-3 py-2 text-xs text-white/40">No one else to add.</p>
+                            ) : (
+                                addable.map((p) => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => { addToCall(p); setShowAdd(false); }}
+                                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-white/10"
+                                    >
+                                        <Avatar user={p} />
+                                        <span className="truncate">{p.name}</span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>}
+
+                <button
+                    onClick={hangup}
+                    className="grid h-12 w-16 place-items-center rounded-full bg-[#ea4335] text-white shadow-lg transition hover:bg-[#d33b2c]"
+                    title="Leave call"
+                >
+                    <span className="rotate-[135deg]"><PhoneIcon /></span>
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// A single Google-Meet style tile: live video, or a themed avatar when the
+// camera is off / not yet connected.
+function MeetTile({ name, stream, showVideo, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; big?: boolean; note?: string }) {
+    const hasVideo = showVideo && !!stream && stream.getVideoTracks().length > 0;
+    return (
+        <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#3c4043]">
+            {hasVideo ? (
+                <Video stream={stream!} className="h-full w-full object-cover" />
+            ) : (
+                <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#5b4636,#241d18)]">
+                    <span className={`grid place-items-center rounded-full bg-black/30 font-semibold ${big ? "h-28 w-28 text-4xl" : "h-16 w-16 text-2xl"}`}>
+                        {initials(name)}
+                    </span>
+                </div>
+            )}
+            <span className="absolute bottom-3 left-4 text-sm font-medium drop-shadow">{name}</span>
+            {note && <span className="absolute left-4 top-4 rounded-full bg-black/40 px-3 py-1 text-xs">{note}</span>}
         </div>
     );
 }
