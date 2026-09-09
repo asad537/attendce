@@ -535,9 +535,11 @@ function StatCard({ title, value, suffix, message }: { title: string, value: str
         <span className="text-3xl font-bold text-gray-900">{value}</span>
         <span className="text-xs font-semibold text-gray-400">{suffix}</span>
       </div>
-      <div className="bg-emerald-50 text-emerald-700 text-[11px] font-semibold px-4 py-2.5 rounded-xl text-center">
+      {/* Plain caption (not a pill) so it reads as status text, not a button. */}
+      <p className="flex items-center gap-2 border-t border-gray-100 pt-3 text-xs font-medium text-gray-500">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
         {message}
-      </div>
+      </p>
     </div>
   );
 }
