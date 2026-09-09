@@ -223,8 +223,12 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const room = new Room({
       adaptiveStream: true,   // server sends each viewer only the size they render
       dynacast: true,         // pause layers nobody is watching
-      videoCaptureDefaults: { resolution: VideoPresets.h720.resolution },
-      publishDefaults: { simulcast: true },
+      videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
+      publishDefaults: {
+        simulcast: true,
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+        videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 30 },
+      },
     });
     roomRef.current = room;
 
