@@ -194,6 +194,7 @@ class GuestCallController extends Controller
     {
         abort_unless(\App\Services\LiveKitService::configured(), 503, 'Calls are not configured (LiveKit).');
         [$guestId, $callId] = $this->session($request);
+        CallRoom::ensureActive($callId);
         $name = optional(User::find($guestId))->name ?: 'Guest';
         return response()->json([
             'url' => \App\Services\LiveKitService::url(),

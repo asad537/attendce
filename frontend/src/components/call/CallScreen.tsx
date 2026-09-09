@@ -352,7 +352,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     void hasRemoteVideo; void mmss; void label; // (kept for signature; Meet layout derives its own)
 
     return (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-[#202124] text-white">
+        <div className="call-shell fixed inset-0 z-[60] flex flex-col bg-[#202124] text-white">
             {/* Keep exactly one audio sink per remote participant. Video
                 elements are always muted, preventing duplicate playback/echo
                 and ensuring audio continues when their camera is turned off. */}
@@ -464,11 +464,15 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 </div>
             )}
             {/* Top bar: clock · meeting code + participant count */}
-            <div className="flex items-center justify-between px-5 py-3 text-sm">
-                <div className="flex items-center gap-2 text-white/85">
+            <div className="relative flex items-center justify-between px-5 py-3 text-sm">
+                <div className="hidden items-center gap-2 text-white/85 sm:flex">
                     <span className="tabular-nums">{clock}</span>
                     <span className="text-white/30">|</span>
                     <span className="font-medium tracking-wide">{code}</span>
+                </div>
+                <div className="absolute left-1/2 flex -translate-x-1/2 flex-col items-center sm:hidden">
+                    <span className="max-w-[13rem] truncate text-base font-semibold">{isGroup ? "Group call" : peer.name}</span>
+                    <span className="text-xs text-white/60">{clock} · {totalCount} participants</span>
                 </div>
                 <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -480,6 +484,23 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
             <div className="relative min-h-0 flex-1 px-3 pb-1">
                 {error && <div className="absolute left-1/2 top-2 z-30 -translate-x-1/2 rounded-lg bg-[#e94141]/90 px-3 py-2 text-center text-xs">{error}</div>}
 
+                <div className="call-mobile-grid grid h-full w-full grid-cols-2 auto-rows-[minmax(170px,1fr)] gap-2 overflow-y-auto pb-3 md:hidden">
+                    {remotes.map((p) => (
+                        <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setSelectedRemoteId(p.id)}
+                            className="aspect-[0.9] min-h-0 overflow-hidden rounded-xl p-0 text-left"
+                            aria-label={`Show ${p.name} on main screen`}
+                        >
+                            <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} muted={p.muted} handUp={p.handUp} />
+                        </button>
+                    ))}
+                    <div className="aspect-[0.9] min-h-0">
+                        <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} sharingScreen={presenting} />
+                    </div>
+                </div>
+                <div className="hidden h-full min-h-0 md:block">
                 {filmstripMode ? (
                     /* Spotlight + right filmstrip (group call / someone presenting). */
                     <div className="flex h-full w-full gap-2">
@@ -530,6 +551,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         )}
                     </>
                 )}
+                </div>
             </div>
 
             {/* Live captions — one line per recent speaker, above the bar. */}
@@ -546,12 +568,12 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
             {/* Control bar — exact Google Meet look: dark strip, big rounded
                 container, mic/camera as circles inside pills (blue dots / chevron),
                 squircle buttons, pink off-states, blue active states, red Leave. */}
-            <div className="flex items-center justify-center bg-[#1a1a1a] px-4 py-3">
+            <div className="call-controls flex items-center justify-center overflow-x-auto bg-[#1a1a1a] px-3 py-3">
                 <div className="flex items-center gap-2 rounded-[32px] bg-[#242526] px-3 py-2">
 
                     {/* Mic pill: [ • • • | mic ] */}
                     <div className="flex items-center rounded-full bg-[#3c4043]">
-                        <span className="grid h-14 w-11 place-items-center select-none" aria-hidden="true"><BlueDots /></span>
+                        <span className="mic-dots grid h-14 w-11 place-items-center select-none" aria-hidden="true"><BlueDots /></span>
                         <button
                             onClick={toggleMute}
                             className={`grid h-14 w-14 place-items-center transition rounded-full ${muted ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
@@ -582,7 +604,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleScreenShare}
-                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${sharingScreen ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                            className={`mobile-hide-control grid h-14 w-14 place-items-center transition rounded-[24px] ${sharingScreen ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={sharingScreen ? "Stop presenting" : "Present now"}
                         >
                             <Mat d={MAT.present} />
@@ -591,7 +613,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
 
                     {/* Reactions */}
                     {(status === "connected" || status === "connecting") && (
-                        <div className="relative">
+                        <div className="relative mobile-hide-control">
                             <button
                                 onClick={() => setShowEmoji((v) => !v)}
                                 className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showEmoji ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
@@ -613,7 +635,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleCaptions}
-                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${captionsOn ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                            className={`mobile-hide-control grid h-14 w-14 place-items-center transition rounded-[24px] ${captionsOn ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={captionsOn ? "Turn off captions" : "Turn on captions"}
                         >
                             <Mat d={MAT.cc} />
@@ -624,7 +646,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleHand}
-                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${handRaised ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                            className={`mobile-hide-control grid h-14 w-14 place-items-center transition rounded-[24px] ${handRaised ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={handRaised ? "Lower hand" : "Raise hand"}
                         >
                             <HandIcon />
@@ -632,7 +654,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     )}
 
                     {/* More (⋮) — add people / guest link */}
-                    {!guest && <div className="relative">
+                    {!guest && <div className="relative mobile-more">
                         <button
                             onClick={() => setShowAdd((v) => !v)}
                             className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showAdd ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
@@ -671,7 +693,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {/* Leave call — Meet red capsule with the call_end handset */}
                     <button
                         onClick={hangup}
-                        className="ml-2 grid h-14 w-[100px] place-items-center rounded-full bg-[#ea4335] text-white transition hover:bg-[#d33b2c]"
+                        className="call-end ml-2 grid h-14 w-[100px] place-items-center rounded-full bg-[#ea4335] text-white transition hover:bg-[#d33b2c]"
                         title="Leave call"
                     >
                         <Mat d={MAT.callEnd} className="h-6 w-6" />

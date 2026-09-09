@@ -41,6 +41,25 @@
   }
 }
 
+/* Compact WhatsApp/Meet-style call layout on phones. */
+@media (max-width: 767px) {
+  .call-shell {
+    background-color: #07141b;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(36, 104, 107, .12) 0 2px, transparent 3px),
+      radial-gradient(circle at 80% 70%, rgba(36, 104, 107, .10) 0 2px, transparent 3px);
+    background-size: 44px 44px, 58px 58px;
+  }
+
+  .call-controls { scrollbar-width: none; }
+  .call-controls::-webkit-scrollbar { display: none; }
+  .call-controls > div { flex-shrink: 0; gap: 4px; padding: 6px; }
+  .call-controls button { height: 48px; width: 48px; }
+  .call-controls .mic-dots { display: none; }
+  .call-controls .mobile-hide-control { display: none; }
+  .call-controls .call-end { width: 64px; }
+}
+
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\CallParticipant;
 use App\Models\CallSignal;
+use App\Models\CallRoom;
 use App\Services\LiveKitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class LiveKitController extends Controller
         $data = $request->validate(['call_id' => 'required|string|max:40']);
         $callId = $data['call_id'];
         $user = $request->user();
+        CallRoom::ensureActive($callId);
 
         $isParty = CallParticipant::where('call_id', $callId)->where('user_id', $user->id)->exists()
             || CallSignal::where('call_id', $callId)

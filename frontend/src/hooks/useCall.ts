@@ -511,22 +511,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   }, [sendSignal, reset]);
 
   const hangup = useCallback(async () => {
-    if (roleRef.current === 'caller' && roomRef.current && svc.endForAll) {
-      try {
-        await svc.endForAll(roomRef.current);
-        logCall(statusRef.current === 'calling' ? 'cancelled' : 'ended');
-        finish();
-      } catch {
-        toast.error('Could not end the call for everyone. Please try again.');
-      }
-      return;
-    }
+    // Leaving is local: the host must not terminate the shared room.
     const calling = statusRef.current === 'calling';
-    peersRef.current.forEach((_e, id) => sendSignal(calling ? 'cancel' : 'hangup', null, id));
-    if (calling && primaryPeerRef.current) sendSignal('cancel', null, primaryPeerRef.current.id);
     logCall(calling ? 'cancelled' : 'ended');
     finish();
-  }, [sendSignal, finish, logCall, svc]);
+  }, [finish, logCall]);
 
   // Invite another user into the current call — turns it into a group call.
   const addToCall = useCallback((peer: Peer) => {

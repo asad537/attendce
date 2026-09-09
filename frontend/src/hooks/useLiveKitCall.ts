@@ -254,8 +254,7 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     });
     room.on(RoomEvent.ParticipantDisconnected, () => {
       sync();
-      // A 1:1 call ends when the only other person leaves.
-      if (roomRef.current && roomRef.current.remoteParticipants.size === 0 && !groupRef.current && statusRef.current !== 'idle') finish();
+      // A participant may leave while the remaining participants continue.
     });
     room.on(RoomEvent.TrackSubscribed, (track) => {
       // Someone turned their camera / screen on: make sure our UI shows video.
@@ -344,12 +343,10 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
 
   const hangup = useCallback(() => {
     const calling = statusRef.current === 'calling';
-    const room = roomRef.current;
-    room?.remoteParticipants.forEach(p => sendSignal(calling ? 'cancel' : 'hangup', null, numericId(p.identity)));
-    if (calling && primaryPeerRef.current) sendSignal('cancel', null, primaryPeerRef.current.id);
+    // Leaving is local: the host must not terminate the shared room.
     logCall(calling ? 'cancelled' : 'ended');
     finish();
-  }, [sendSignal, finish, logCall]);
+  }, [finish, logCall]);
 
   const addToCall = useCallback((peer: Peer) => {
     if (statusRef.current === 'idle' || !roomIdRef.current) return;
