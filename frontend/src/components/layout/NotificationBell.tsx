@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../../services/reportService';
 import { AppNotification } from '../../types';
@@ -101,13 +102,35 @@ export default function NotificationBell() {
     return () => window.removeEventListener('pointerdown', enableSound);
   }, []);
 
+  // The panel is portalled to <body> (see below), so it lives outside `ref` —
+  // count clicks inside it as "inside" too.
+  const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Anchor the fixed panel just under the bell. Rendering it in a portal with
+  // position:fixed escapes the header's transform/stacking context, so it
+  // always overlays page content (search bar, dropdowns) on every page.
+  const [panelPos, setPanelPos] = useState({ top: 0, right: 0 });
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = ref.current?.getBoundingClientRect();
+      if (!r) return;
+      setPanelPos({ top: r.bottom + 12, right: Math.max(8, window.innerWidth - r.right) });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => { window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); };
+  }, [open]);
 
   const markRead = async (id: number) => {
     await notificationService.markRead(id);
@@ -150,8 +173,8 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-3 w-[420px] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 z-50">
+      {open && createPortal(
+        <div ref={panelRef} style={{ position: 'fixed', top: panelPos.top, right: panelPos.right }} className="w-[420px] max-w-[calc(100vw-16px)] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 z-[1000]">
           <div className="absolute -top-2 right-[18px] w-4 h-4 bg-white border-t border-l border-gray-100 transform rotate-45" />
           
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 relative z-10 bg-white rounded-t-2xl">
@@ -208,7 +231,7 @@ export default function NotificationBell() {
                       <div className="flex-1 min-w-0 pt-0.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <span className={`w-2 h-2 rounded-full shrink-0 ${typeDot[n.type] || 'bg-orange-400'}`}></span>
+                            {!n.is_read && <span className={`w-2 h-2 rounded-full shrink-0 ${typeDot[n.type] || 'bg-orange-400'}`}></span>}
                             <h4 className="font-bold text-gray-900 text-[14px] truncate">{n.title}</h4>
                           </div>
                           {!n.is_read && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 ml-2"></span>}
@@ -251,7 +274,8 @@ export default function NotificationBell() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -128,7 +128,7 @@ export default function NotificationsPage() {
                     <div className="flex-1 min-w-0 pt-0.5">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2.5">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${typeDot[n.type] || 'bg-orange-400'}`}></span>
+                          {!n.is_read && <span className={`w-2 h-2 rounded-full shrink-0 ${typeDot[n.type] || 'bg-orange-400'}`}></span>}
                           <h4 className="font-bold text-gray-900 text-[15px]">{n.title}</h4>
                         </div>
                         {!n.is_read && <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-2"></span>}
