@@ -708,7 +708,7 @@ export default function EmployeeDetails() {
           </div>
 
           {/* Payroll Summary */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          {stats?.payroll != null && <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-gray-900 text-lg">Payroll Summary</h3>
               <button className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -726,7 +726,7 @@ export default function EmployeeDetails() {
               </div>
             </div>
 
-            {!stats?.payroll.has_record ? (
+            {!stats.payroll.has_record ? (
               <div className="text-center text-sm text-gray-400 py-6">No payroll record set for this employee.</div>
             ) : (
               <div className="space-y-5">
@@ -758,7 +758,7 @@ export default function EmployeeDetails() {
               </div>
             )}
 
-          </div>
+          </div>}
 
         </div>
       </div>

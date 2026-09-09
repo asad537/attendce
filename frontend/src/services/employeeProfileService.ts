@@ -5,7 +5,7 @@ export interface ProfileStats {
   performance: { current: number; delta: number; monthly: { name: string; value: number }[] };
   hours_week: { total_minutes: number; days: { day: string; minutes: number; active: boolean }[] };
   calendar: { month: string; days: { day: number; status: 'present' | 'late' | 'leave' | 'absent' | null }[]; counts: { present: number; late: number; on_leave: number; absent: number } };
-  payroll: { has_record: boolean; month: string | null; base_salary: number; allowances: number; incentives: number; deductions: number; overtime_rate: number; total: number };
+  payroll: { has_record: boolean; month: string | null; base_salary: number; allowances: number; incentives: number; deductions: number; overtime_rate: number; total: number } | null;
 }
 
 export interface InternalNote { id: number; title: string; body: string; author: string; created_at: string }
