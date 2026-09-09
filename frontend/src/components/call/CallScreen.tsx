@@ -553,12 +553,9 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         </button>
                     </div>
 
-                    {/* Camera pill: [ ^ | camera ] */}
+                    {/* Camera */}
                     {isVideo ? (
                         <div className="flex items-center rounded-full bg-[#3c4043]">
-                            <span className="grid h-14 w-11 place-items-center text-white/70 select-none" aria-hidden="true">
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7" /></svg>
-                            </span>
                             <button
                                 onClick={toggleCam}
                                 className={`grid h-14 w-14 place-items-center transition rounded-full ${camOff ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
