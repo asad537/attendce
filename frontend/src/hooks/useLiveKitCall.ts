@@ -240,8 +240,8 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
         // Keep low layers for thumbnails, but publish a real HD layer for the
         // spotlight tile; without h720 LiveKit can only deliver a soft 360p
         // image even when the camera capture is 1080p.
-        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720],
-        videoEncoding: { maxBitrate: 3_500_000, maxFramerate: 30 },
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720, VideoPresets.h1080],
+        videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 },
       },
     });
     roomRef.current = room;
