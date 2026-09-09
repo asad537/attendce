@@ -20,6 +20,7 @@ use App\Http\Controllers\API\UserTicketController;
 use App\Http\Controllers\API\MessageController;
 use App\Http\Controllers\API\CallController;
 use App\Http\Controllers\API\GuestCallController;
+use App\Http\Controllers\API\LiveKitController;
 use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\EmployeeProfileController;
 use App\Http\Controllers\API\ResignationController;
@@ -81,6 +82,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::post('/calls/leave',                [CallController::class, 'leave']);
     // A signed-in participant mints a shareable guest link for their call.
     Route::post('/guest-call/invite',          [GuestCallController::class, 'invite']);
+    // LiveKit (SFU) room token for a call the user is a party to.
+    Route::post('/livekit/token',              [LiveKitController::class, 'token']);
 
     // Organisation settings (currency + theme accent)
     Route::get('/settings',                    [SettingController::class, 'index']);
@@ -217,3 +220,4 @@ Route::post('/guest-call/signal',    [GuestCallController::class, 'signal']);
 Route::get('/guest-call/poll',       [GuestCallController::class, 'poll']);
 Route::post('/guest-call/heartbeat', [GuestCallController::class, 'heartbeat']);
 Route::post('/guest-call/leave',     [GuestCallController::class, 'leave']);
+Route::post('/guest-call/livekit-token', [GuestCallController::class, 'livekitToken']);

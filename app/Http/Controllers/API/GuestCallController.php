@@ -189,6 +189,19 @@ class GuestCallController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    /** Guest gets a LiveKit token for THEIR call room (same scoped session token). */
+    public function livekitToken(Request $request): JsonResponse
+    {
+        abort_unless(\App\Services\LiveKitService::configured(), 503, 'Calls are not configured (LiveKit).');
+        [$guestId, $callId] = $this->session($request);
+        $name = optional(User::find($guestId))->name ?: 'Guest';
+        return response()->json([
+            'url' => \App\Services\LiveKitService::url(),
+            'token' => \App\Services\LiveKitService::token('g' . $guestId, $name, $callId),
+            'identity' => 'g' . $guestId,
+        ]);
+    }
+
     // ── helpers ────────────────────────────────────────────────────────────
 
     /** Decrypt + validate a token of the given kind; aborts on tamper/expiry. */

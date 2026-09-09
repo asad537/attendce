@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, ReactNode } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 import { useCall } from "../hooks/useCall";
+import { useCallEngine } from "../hooks/callEngine";
 import CallScreen, { IncomingCallCard } from "../components/call/CallScreen";
 import { startRinging, stopRinging, unlockAudio } from "../lib/ringtone";
 
@@ -10,7 +11,7 @@ const CallContext = createContext<CallApi | null>(null);
 
 export function CallProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
-    const call = useCall(user?.id);
+    const call = useCallEngine(user?.id);
     const status = call.state.status;
     const peer = call.state.peer;
 

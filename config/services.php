@@ -14,6 +14,12 @@ return [
     |
     */
 
+    'livekit' => [
+        'url'    => env('LIVEKIT_URL'),        // e.g. wss://your-project.livekit.cloud  (local: ws://127.0.0.1:7880)
+        'key'    => env('LIVEKIT_API_KEY'),
+        'secret' => env('LIVEKIT_API_SECRET'),
+    ],
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),

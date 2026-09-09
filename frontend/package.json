@@ -16,6 +16,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "laravel-echo": "^2.4.0",
+    "livekit-client": "^2.22.3",
     "prop-types": "^15.8.1",
     "pusher-js": "^8.6.0",
     "react": "^19.2.8",

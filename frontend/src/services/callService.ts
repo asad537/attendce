@@ -33,6 +33,11 @@ export const callService = {
   async endForAll(call_id: string): Promise<void> {
     await api.post('/calls/leave', { call_id, end_for_all: true });
   },
+  // LiveKit room token for a call the signed-in user is a party to.
+  async livekitToken(call_id: string, kind: 'voice' | 'video' = 'voice'): Promise<{ url: string; token: string; identity: string }> {
+    const res = await api.post('/livekit/token', { call_id, kind });
+    return res.data;
+  },
   // Mint a shareable link that lets an external guest join THIS call.
   async inviteGuest(call_id: string): Promise<{ path: string; token: string; expires_in: number }> {
     const res = await api.post('/guest-call/invite', { call_id });
@@ -80,6 +85,10 @@ export function makeGuestTransport(guestToken: string): CallTransport {
 }
 
 export const guestCallService = {
+  async livekitToken(guest_token: string): Promise<{ url: string; token: string; identity: string }> {
+    const res = await api.post('/guest-call/livekit-token', { guest_token });
+    return res.data;
+  },
   async join(payload: { token: string; name: string }): Promise<{ guest: { id: number; name: string }; call_id: string; guest_token: string }> {
     const res = await api.post('/guest-call/join', payload);
     return res.data;

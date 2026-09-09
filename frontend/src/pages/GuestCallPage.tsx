@@ -1,14 +1,18 @@
 import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { guestCallService, makeGuestTransport } from "../services/callService";
-import { useCall } from "../hooks/useCall";
+import { useCallEngine } from "../hooks/callEngine";
 import CallScreen from "../components/call/CallScreen";
 
 // The live guest call — mounted only after a successful join, so useCall runs
 // once with the guest transport + auto-join for this specific call.
 function GuestCall({ guestId, callId, guestToken, kind }: { guestId: number; callId: string; guestToken: string; kind: "voice" | "video" }) {
     const transport = useMemo(() => makeGuestTransport(guestToken), [guestToken]);
-    const call = useCall(guestId, { transport, autoJoin: { callId, kind, peerName: "Meeting" } });
+    const call = useCallEngine(guestId, {
+        transport,
+        autoJoin: { callId, kind, peerName: "Meeting" },
+        getToken: () => guestCallService.livekitToken(guestToken),
+    });
     return <CallScreen call={call} guest />;
 }
 
