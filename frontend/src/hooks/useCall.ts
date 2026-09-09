@@ -48,6 +48,15 @@ const CALL_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
 };
 
+// Ask for a crisp 720p (up to 1080p) front camera at 30fps so remote video
+// isn't grainy. `ideal` degrades gracefully on weaker cameras/networks.
+const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  width: { ideal: 1280, max: 1920 },
+  height: { ideal: 720, max: 1080 },
+  frameRate: { ideal: 30, max: 30 },
+  facingMode: 'user',
+};
+
 const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   if (sdpInit instanceof RTCSessionDescription) return sdpInit;
   let type: RTCSdpType = 'offer';
@@ -269,7 +278,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     let lastError: any = null;
     try {
       stream = await getUserMediaPromised(kind === 'video'
-        ? { audio: CALL_AUDIO_CONSTRAINTS, video: true }
+        ? { audio: CALL_AUDIO_CONSTRAINTS, video: CALL_VIDEO_CONSTRAINTS }
         : { audio: CALL_AUDIO_CONSTRAINTS, video: false });
     } catch (err1) {
       lastError = err1;
@@ -428,7 +437,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
     let camera: MediaStream;
     try {
-      camera = await navigator.mediaDevices.getUserMedia({ video: true });
+      camera = await navigator.mediaDevices.getUserMedia({ video: CALL_VIDEO_CONSTRAINTS });
     } catch (err: any) {
       toast.error(formatMediaError(err, 'video'));
       return;
@@ -539,7 +548,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (statusRef.current !== 'connected' && statusRef.current !== 'connecting') return;
     let camTrack: MediaStreamTrack | null = null;
     try {
-      const cam = await navigator.mediaDevices.getUserMedia({ video: true });
+      const cam = await navigator.mediaDevices.getUserMedia({ video: CALL_VIDEO_CONSTRAINTS });
       camTrack = cam.getVideoTracks()[0] || null;
     } catch (err: any) {
       toast.error(formatMediaError(err, 'video'));
