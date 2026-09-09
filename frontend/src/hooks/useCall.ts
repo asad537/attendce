@@ -261,6 +261,10 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     const stream = new MediaStream();
     const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false, handUp: false };
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
+    const hasVideo = !!localRef.current?.getVideoTracks().length;
+    if (kindRef.current === 'video' && !hasVideo) {
+      try { pc.addTransceiver('video', { direction: 'recvonly' }); } catch { /* noop */ }
+    }
     preferVideoCodecs(pc);   // before any offer/answer is built
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
     pc.ontrack = e => {
@@ -271,10 +275,12 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         r.playoutDelayHint = 0;
         r.jitterBufferTarget = 0;
       } catch { /* noop */ }
-      if (e.track) stream.addTrack(e.track);
-      if (e.streams[0]) {
-        e.streams[0].getTracks().forEach(t => stream.addTrack(t));
-      }
+      try { if (e.track) stream.addTrack(e.track); } catch { /* noop */ }
+      try {
+        if (e.streams[0]) {
+          e.streams[0].getTracks().forEach(t => { try { stream.addTrack(t); } catch { /* noop */ } });
+        }
+      } catch { /* noop */ }
       entry.stream = new MediaStream(stream.getTracks());
       bumpParticipants();
     };
