@@ -315,7 +315,7 @@ export default function EmployeeDetails() {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-gray-900 text-lg">Personal Info</h3>
-              <button className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button className="hidden">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                 </svg>
@@ -327,7 +327,7 @@ export default function EmployeeDetails() {
                 <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500 font-medium">Gender</p>
                   <p className="text-sm font-semibold text-gray-900 capitalize">{user.gender || '—'}</p>
                 </div>
@@ -365,9 +365,9 @@ export default function EmployeeDetails() {
                 <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500 font-medium">Address</p>
-                  <p className="text-sm font-semibold text-gray-900 leading-snug pr-2">{user.address || '—'}</p>
+                  <p className="max-w-full break-words whitespace-normal text-sm font-semibold leading-snug text-gray-900 pr-2">{user.address || '—'}</p>
                 </div>
               </div>
             </div>
@@ -597,7 +597,7 @@ export default function EmployeeDetails() {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
              <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-gray-900 text-lg">Internal Notes</h3>
-              <button className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button className="hidden">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                 </svg>
@@ -711,7 +711,7 @@ export default function EmployeeDetails() {
           {stats?.payroll != null && <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-gray-900 text-lg">Payroll Summary</h3>
-              <button className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button className="hidden">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                 </svg>
