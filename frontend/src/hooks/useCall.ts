@@ -84,11 +84,11 @@ async function boostVideoSenders(pc: RTCPeerConnection, peerCount = 1) {
     try {
       const params = sender.getParameters();
       if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-      params.encodings[0].maxBitrate = Math.max(250_000, Math.floor(MAX_VIDEO_BITRATE / Math.max(1, peerCount)));
+      params.encodings[0].maxBitrate = peerCount <= 1 ? 4_000_000 : Math.max(250_000, Math.floor(MAX_VIDEO_BITRATE / Math.max(1, peerCount)));
       params.encodings[0].maxFramerate = peerCount >= 4 ? 15 : 30;
       // Share the upload budget across peers and reduce group-call encoder load.
       params.encodings[0].scaleResolutionDownBy = peerCount >= 6 ? 2 : 1;
-      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = 'balanced';
+      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = peerCount <= 1 ? 'maintain-resolution' : 'balanced';
       await sender.setParameters(params);
     } catch { /* setParameters can race the negotiation; ignore */ }
   }
@@ -168,6 +168,15 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
   const bumpParticipants = useCallback(() => {
     peersRef.current.forEach(({ pc }) => { void boostVideoSenders(pc, peersRef.current.size); });
+    // 1:1 → let the camera run HD; groups → keep the light 360p capture.
+    const cam = localRef.current?.getVideoTracks().find(t => t !== screenTrackRef.current);
+    if (cam) {
+      const solo = peersRef.current.size <= 1;
+      cam.applyConstraints(solo
+        ? { width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 }, frameRate: { ideal: 30, max: 30 } }
+        : { width: { ideal: 640, max: 640 }, height: { ideal: 360, max: 360 }, frameRate: { ideal: 20, max: 20 } }
+      ).catch(() => { /* unsupported → encoder scaling still applies */ });
+    }
     const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
       id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff, muted: e.muted, handUp: e.handUp,
     }));
@@ -224,6 +233,26 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (!toId || !roomRef.current) return;
     svc.signal({ call_id: roomRef.current, to_user_id: toId, type, data }).catch(() => { /* noop */ });
   }, []);
+
+  // Renegotiate ONLY when the pair is stable; otherwise wait and retry.
+  // Firing an offer mid-negotiation (e.g. switching to video the moment someone
+  // joins) threw and silently left that one pair without video.
+  const safeOffer = async (id: number, entry: PeerConn, kind: 'voice' | 'video', attempt = 0): Promise<void> => {
+    const pc = entry.pc;
+    if (pc.signalingState === 'closed') return;
+    if (pc.signalingState !== 'stable') {
+      if (attempt < 12) window.setTimeout(() => { void safeOffer(id, entry, kind, attempt + 1); }, 350);
+      return;
+    }
+    try {
+      const offer = await pc.createOffer();
+      if (pc.signalingState !== 'stable') return;   // raced with an incoming offer; glare handling takes over
+      await pc.setLocalDescription(offer);
+      sendSignal('offer', { sdp: { type: pc.localDescription?.type || 'offer', sdp: pc.localDescription?.sdp }, kind }, id);
+    } catch {
+      if (attempt < 12) window.setTimeout(() => { void safeOffer(id, entry, kind, attempt + 1); }, 350);
+    }
+  };
 
   const logCall = useCallback((outcome: 'ended' | 'missed' | 'declined' | 'cancelled') => {
     if (loggedRef.current || groupRef.current || !primaryPeerRef.current) return;
@@ -570,9 +599,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
             await sender.replaceTrack(nextTrack);
           } else {
             entry.pc.addTrack(nextTrack, localRef.current);
-            const offer = await entry.pc.createOffer();
-            await entry.pc.setLocalDescription(offer);
-            sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
+            await safeOffer(id, entry, 'video');
           }
         } catch { /* noop */ }
       }
@@ -644,9 +671,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     for (const [id, e] of toRenegotiate) {
       try {
         preferVideoCodecs(e.pc);
-        const offer = await e.pc.createOffer();
-        await e.pc.setLocalDescription(offer);
-        sendSignal('offer', { sdp: { type: e.pc.localDescription?.type || 'offer', sdp: e.pc.localDescription?.sdp }, kind: 'video' }, id);
+        await safeOffer(id, e, 'video');
         void boostVideoSenders(e.pc);
       } catch { /* noop */ }
     }
@@ -683,9 +708,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       try {
         entry.pc.addTrack(camTrack, localRef.current!);
         preferVideoCodecs(entry.pc);
-        const offer = await entry.pc.createOffer();
-        await entry.pc.setLocalDescription(offer);
-        sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
+        await safeOffer(id, entry, 'video');
         void boostVideoSenders(entry.pc);
       } catch { /* noop */ }
     }
@@ -814,6 +837,13 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       }
       const raw = data?.sdp || sig.data;
       const entry = createPeer(sig.from.id, sig.from as any);
+      if (entry.pc.signalingState !== 'stable') {
+        // Glare: both sides offered at once. The polite peer (NOT the designated
+        // offerer for this pair) rolls back and takes the other offer; the
+        // impolite peer ignores it and its safeOffer retry will win later.
+        if (iAmOfferer(sig.from.id)) return;
+        try { await entry.pc.setLocalDescription({ type: 'rollback' } as RTCSessionDescriptionInit); } catch { /* noop */ }
+      }
       await entry.pc.setRemoteDescription(cleanSdp(raw));
       entry.remoteSet = true;
       for (const c of entry.pendingIce) { try { await entry.pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* noop */ } }
