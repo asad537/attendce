@@ -14,9 +14,7 @@ class UserPolicy
     public function view(User $auth, User $target): bool
     {
         if ($auth->isCeo()) return true;
-        // Managers can open every employee/TL profile shown in their My Team
-        // list. They still cannot edit people outside their direct reports
-        // (that restriction remains in update/delete below).
+        // Managers administer every employee/TL profile listed in My Team.
         if ($auth->isManager()) {
             return $target->id === $auth->id || in_array($target->role, ['employee', 'tl'], true);
         }
@@ -41,7 +39,7 @@ class UserPolicy
     /**
      * Who can update a user:
      * - CEO     → anyone
-     * - Manager → their own direct reports (tl / employee) + themselves
+     * - Manager → any employee / team lead + themselves
      * - TL      → their own direct reports (employee) + themselves
      * - Anyone  → themselves
      */
@@ -49,7 +47,7 @@ class UserPolicy
     {
         if ($auth->isCeo()) return true;
         if ($auth->isManager()) {
-            return $target->id === $auth->id || $target->manager_id === $auth->id;
+            return $target->id === $auth->id || in_array($target->role, ['tl', 'employee'], true);
         }
         if ($auth->isTl()) {
             return $target->id === $auth->id || $target->manager_id === $auth->id;
@@ -60,7 +58,7 @@ class UserPolicy
     /**
      * Who can delete a user:
      * - CEO     → anyone except themselves
-     * - Manager → their own direct reports (tl / employee), not themselves
+     * - Manager → any employee / team lead, not themselves
      * - TL      → their own direct report employees, not themselves
      */
     public function delete(User $auth, User $target): bool
@@ -70,9 +68,7 @@ class UserPolicy
         if ($auth->isCeo()) return true;
 
         if ($auth->isManager()) {
-            // manager can delete their direct TLs and employees
-            return $target->manager_id === $auth->id
-                && in_array($target->role, ['tl', 'employee']);
+            return in_array($target->role, ['tl', 'employee'], true);
         }
 
         if ($auth->isTl()) {

@@ -207,13 +207,14 @@ class UserController extends Controller
             }
         }
 
-        // Managers and TLs may administer only lower roles within their own team.
+        // Managers may administer any employee/TL listed in My Team. Team
+        // leads remain limited to their direct employee reports.
         if (!$actor->isCeo() && $actor->id !== $user->id) {
             $allowedRoles = $actor->isManager() ? ['employee', 'tl'] : ['employee'];
             if (isset($data['role']) && !in_array($data['role'], $allowedRoles, true)) {
                 return response()->json(['message' => 'You cannot assign that role.'], 403);
             }
-            if (array_key_exists('manager_id', $data) && (int) $data['manager_id'] !== (int) $actor->id) {
+            if ($actor->isTl() && array_key_exists('manager_id', $data) && (int) $data['manager_id'] !== (int) $actor->id) {
                 return response()->json(['message' => 'You cannot move this user outside your team.'], 403);
             }
         }
