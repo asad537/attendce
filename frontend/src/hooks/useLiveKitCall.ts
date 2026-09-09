@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Room, RoomEvent, Track, VideoPresets } from 'livekit-client';
+import type { AudioCaptureOptions } from 'livekit-client';
 import type { RemoteParticipant as LKRemote, Participant as LKParticipant } from 'livekit-client';
 import { callService, CallSignal, CallTransport } from '../services/callService';
 import { MessageUser } from '../services/messageService';
@@ -30,6 +31,12 @@ export interface UseLiveKitCallOpts {
 
 const randomId = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const idleState: CallState = { status: 'idle', peer: null, kind: 'voice', muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null };
+const CLEAN_MIC: AudioCaptureOptions = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  channelCount: 1,
+};
 // Identities are "u<id>" for users and "g<id>" for guests.
 const numericId = (identity: string) => Number(identity.replace(/^[ug]/, '')) || 0;
 // A remote screen-share is shown as its own "(presenting)" tile.
@@ -223,6 +230,7 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const room = new Room({
       adaptiveStream: true,   // server sends each viewer only the size they render
       dynacast: true,         // pause layers nobody is watching
+      audioCaptureDefaults: CLEAN_MIC,
       videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
       publishDefaults: {
         simulcast: true,
@@ -260,7 +268,7 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     room.on(RoomEvent.Disconnected, () => { if (statusRef.current !== 'idle' && statusRef.current !== 'ended') finish(); });
 
     await room.connect(url, token);
-    try { await room.localParticipant.setMicrophoneEnabled(true); } catch (err) { toast.error('Microphone access blocked. Check browser permissions.'); }
+    try { await room.localParticipant.setMicrophoneEnabled(true, CLEAN_MIC); } catch (err) { toast.error('Microphone access blocked. Check browser permissions.'); }
     if (kind === 'video') { try { await room.localParticipant.setCameraEnabled(true); } catch { toast.error('Camera not available — continuing with audio.'); } }
 
     if (room.remoteParticipants.size > 0) {
@@ -351,7 +359,7 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
   // ── Media controls ──────────────────────────────────────────────────────
   const toggleMute = useCallback(() => {
     const lp = roomRef.current?.localParticipant; if (!lp) return;
-    lp.setMicrophoneEnabled(!lp.isMicrophoneEnabled).then(sync).catch(() => { /* noop */ });
+    lp.setMicrophoneEnabled(!lp.isMicrophoneEnabled, CLEAN_MIC).then(sync).catch(() => { /* noop */ });
   }, [sync]);
   const toggleCam = useCallback(() => {
     const lp = roomRef.current?.localParticipant; if (!lp) return;

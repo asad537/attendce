@@ -21,10 +21,10 @@ function beep(incoming: boolean): void {
     const osc = ctx!.createOscillator();
     const gain = ctx!.createGain();
     osc.type = 'sine';
-    osc.frequency.value = incoming ? 660 : 440;
+    osc.frequency.value = incoming ? 620 : 480;
     const t = ctx!.currentTime + o;
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(incoming ? 0.3 : 0.12, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(incoming ? 0.16 : 0.07, t + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
     osc.connect(gain);
     gain.connect(ctx!.destination);
