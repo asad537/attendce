@@ -353,6 +353,9 @@ export default function InboxPage() {
     const { user: me } = useAuth();
     const queryClient = useQueryClient();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);        // the messages scroll area
+    const atBottomRef = useRef(true);                      // only auto-scroll when already at the bottom
+    const prevThreadCountRef = useRef(0);                  // detect genuinely-new messages
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState<"all" | "unread" | "recent" | "new">(
         "all",
@@ -429,9 +432,25 @@ export default function InboxPage() {
         return groups;
     }, [visibleMessages]);
 
+    // Auto-scroll to the newest message only when the user is already at the
+    // bottom, so scrolling up to read history is never yanked back down. A
+    // thread switch always jumps to the bottom.
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        const count = threadMessages.length;
+        const grew = count > prevThreadCountRef.current;
+        prevThreadCountRef.current = count;
+        if (grew && atBottomRef.current) {
+            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
     }, [threadMessages]);
+
+    // On opening a conversation, jump straight to the latest message.
+    useEffect(() => {
+        atBottomRef.current = true;
+        prevThreadCountRef.current = threadMessages.length;
+        bottomRef.current?.scrollIntoView();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedUserId]);
 
     const invalidate = () => {
         queryClient.invalidateQueries({
@@ -920,7 +939,14 @@ export default function InboxPage() {
                                     </>
                                 )}
                             </header>
-                            <div className="flex-1 overflow-y-auto bg-[#f8fafc] bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px] p-4 sm:px-7">
+                            <div
+                                ref={scrollRef}
+                                onScroll={(e) => {
+                                    const el = e.currentTarget;
+                                    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+                                }}
+                                className="flex-1 overflow-y-auto [overflow-anchor:none] bg-[#f8fafc] bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:20px_20px] p-4 sm:px-7"
+                            >
                                 {threadLoading ? (
                                     <p className="text-center text-sm text-[#7f8c87]">
                                         Loading chat…

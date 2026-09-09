@@ -185,6 +185,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const [showEmoji, setShowEmoji] = useState(false);
     const [showChat, setShowChat] = useState(false);
     const [chatText, setChatText] = useState("");
+    const chatBodyRef = useRef<HTMLDivElement>(null);
+    const chatAtBottomRef = useRef(true);   // only auto-scroll when already at the bottom
     const [showReady, setShowReady] = useState(!guest);   // Meet-style "meeting's ready" card
     const [readyLink, setReadyLink] = useState("");
 
@@ -200,6 +202,13 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
             .catch(() => { /* retry on a later status tick */ });
         return () => { cancelled = true; };
     }, [guest, readyLink, state.status, getCallId]);
+
+    // Keep the chat pinned to the newest message only while the user is already
+    // at the bottom — scrolling up to read history is never yanked back down.
+    useEffect(() => {
+        const el = chatBodyRef.current;
+        if (el && chatAtBottomRef.current) el.scrollTop = el.scrollHeight;
+    }, [messages.length, showChat]);
 
     const REACTION_EMOJIS = ["💖", "👍", "🎉", "👏", "😂", "😮", "😢", "🤔", "👎"];
     const copyReadyLink = async () => {
@@ -353,7 +362,14 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         <h3 className="font-semibold">In-call messages</h3>
                         <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-gray-600" title="Close">✕</button>
                     </header>
-                    <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                    <div
+                        ref={chatBodyRef}
+                        onScroll={(e) => {
+                            const el = e.currentTarget;
+                            chatAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+                        }}
+                        className="flex-1 space-y-3 overflow-y-auto px-4 py-3 [overflow-anchor:none]"
+                    >
                         {messages.length === 0 ? (
                             <p className="mt-6 text-center text-sm text-gray-400">Messages sent during the call appear here.</p>
                         ) : (
