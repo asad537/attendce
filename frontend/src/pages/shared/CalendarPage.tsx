@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,12 +7,19 @@ import { confirmDialog } from '../../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 export default function CalendarPage() {
-  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [searchParams] = useSearchParams();
+  const requestedDate = searchParams.get('date');
+  const [calendarDate, setCalendarDate] = useState(() => requestedDate ? parseISO(requestedDate) : new Date());
   const { events, addEvent, editEvent, deleteEvent, categories, addCategory, editCategory, deleteCategory } = useCalendarEvents();
   const { user } = useAuth();
   const canManageCats = ['ceo', 'manager', 'tl'].includes(user?.role || '');
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => requestedDate ? parseISO(requestedDate) : new Date());
+  useEffect(() => {
+    if (!requestedDate) return;
+    const date = parseISO(requestedDate);
+    if (!Number.isNaN(date.getTime())) { setCalendarDate(date); setSelectedDate(date); }
+  }, [requestedDate]);
   const [showFilters, setShowFilters] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
 

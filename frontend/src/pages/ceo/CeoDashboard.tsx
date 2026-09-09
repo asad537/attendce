@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { useCalendarEvents } from '../../hooks/useCalendarEvents';
@@ -41,6 +42,7 @@ const makeEndLabel = (bg: string, fg: string, lastIndex: number) => (props: any)
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isToday, parseISO } from 'date-fns';
 
 export default function CeoDashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   
   const [attendance, setAttendance] = useState<Attendance | null>(null);
@@ -199,10 +201,10 @@ export default function CeoDashboard() {
                 
                 if (!isCurrentMonth) {
                   dayContent = <div className="text-gray-300">{format(day, 'd')}</div>;
-                } else if (isCurrentDay) {
+                } else if (isCurrentDay && !hasEvents) {
                   dayContent = <div className={`${bgClass} bg-emerald-900 text-white`}>{format(day, 'd')}</div>;
                 } else if (hasEvents) {
-                  dayContent = <div className={`${bgClass} bg-emerald-400 text-white shadow-md shadow-emerald-200 hover:bg-emerald-300`} title="Has events">{format(day, 'd')}</div>;
+                  dayContent = <button type="button" onClick={() => navigate(`/calendar?date=${dayStr}`)} className={`${bgClass} bg-emerald-400 text-white shadow-md shadow-emerald-200 hover:bg-emerald-300`} title="Open calendar events">{format(day, 'd')}</button>;
                 } else {
                   dayContent = <div className={`${bgClass} hover:bg-emerald-50 text-gray-700`}>{format(day, 'd')}</div>;
                 }
