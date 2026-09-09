@@ -483,14 +483,14 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     <div className="flex h-full w-full gap-2">
                         <div className="min-w-0 flex-1">
                             {presenting && !selectedRemoteId ? (
-                                <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
+                                <PresentingTile onStop={toggleScreenShare} />
                             ) : (
                                 <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} muted={spotlight?.muted} handUp={spotlight?.handUp} />
                             )}
                         </div>
                         <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
                             <div className="aspect-video shrink-0">
-                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} />
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} sharingScreen={presenting} />
                             </div>
                             {(presenting && !selectedRemoteId ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
                                 <button
@@ -508,17 +508,21 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 ) : (
                     /* 1:1 — big main tile + picture-in-picture self view. */
                     <>
-                        <MeetTile
-                            big
-                            name={spotlight?.name || peer.name}
-                            stream={spotlight?.stream}
-                            showVideo={isVideo && !spotlight?.cameraOff}
-                            muted={spotlight?.muted} handUp={spotlight?.handUp}
-                            note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
-                        />
+                        {presenting && !selectedRemoteId ? (
+                            <PresentingTile onStop={toggleScreenShare} />
+                        ) : (
+                            <MeetTile
+                                big
+                                name={spotlight?.name || peer.name}
+                                stream={spotlight?.stream}
+                                showVideo={isVideo && !spotlight?.cameraOff}
+                                muted={spotlight?.muted} handUp={spotlight?.handUp}
+                                note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
+                            />
+                        )}
                         {status !== "ended" && (
                             <div className="absolute bottom-4 right-6 z-20 aspect-video w-40 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/40 sm:w-56">
-                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} />
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} sharingScreen={presenting} />
                             </div>
                         )}
                     </>
@@ -675,19 +679,42 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     );
 }
 
+// Google Meet-style card displayed to the presenter on their main stage so they don't see a mirror-hall loop of their own screen.
+function PresentingTile({ onStop }: { onStop: () => void }) {
+    return (
+        <div className="grid h-full w-full place-items-center rounded-2xl bg-[#3c4043] p-6">
+            <div className="flex flex-col items-center text-center max-w-sm">
+                <div className="grid h-20 w-20 place-items-center rounded-full bg-[#1a73e8]/20 text-[#8ab4f8] mb-4">
+                    <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 className="text-xl font-medium text-white mb-1">You're presenting to everyone</h3>
+                <p className="text-sm text-white/70 mb-6">Everyone in the call can see what's on your screen.</p>
+                <button
+                    onClick={onStop}
+                    className="inline-flex items-center gap-2 rounded-full bg-[#1a73e8] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-[#1666cc] shadow-md"
+                >
+                    Stop presenting
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // The local user's own tile ("You"), reused in the filmstrip and as the 1:1
 // picture-in-picture. Shows a mic-muted badge like Meet.
-function SelfTile({ muted, showVideo, stream, handUp = false }: { muted: boolean; showVideo: boolean; stream: MediaStream | null; handUp?: boolean }) {
+function SelfTile({ muted, showVideo, stream, handUp = false, sharingScreen = false }: { muted: boolean; showVideo: boolean; stream: MediaStream | null; handUp?: boolean; sharingScreen?: boolean }) {
     return (
         <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#3c4043]">
-            {showVideo && stream ? (
+            {showVideo && stream && !sharingScreen ? (
                 <Video stream={stream} muted mirror className="h-full w-full object-cover" />
             ) : (
                 <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#3f4b57,#242a30)]">
                     <span className="grid h-14 w-14 place-items-center rounded-full bg-white/15 text-sm font-semibold">You</span>
                 </div>
             )}
-            <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">You</span>
+            <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">{sharingScreen ? "You (Presenting)" : "You"}</span>
             {handUp && <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-[#a8c7fa] text-base shadow" title="Hand raised">✋</span>}
             {muted && (
                 <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#ea4335]">

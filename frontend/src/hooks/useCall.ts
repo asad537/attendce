@@ -49,12 +49,11 @@ const CALL_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
 };
 
-// Ask for a crisp 720p (up to 1080p) front camera at 30fps so remote video
-// isn't grainy. `ideal` degrades gracefully on weaker cameras/networks.
+// Flexible video constraints that work on all webcams (720p/1080p/480p) without OverconstrainedError
 const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  width: { ideal: 1920, max: 1920 },
-  height: { ideal: 1080, max: 1080 },
-  frameRate: { ideal: 30, max: 30 },
+  width: { ideal: 1280 },
+  height: { ideal: 720 },
+  frameRate: { ideal: 30 },
   facingMode: 'user',
 };
 
@@ -351,13 +350,24 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     };
     let stream: MediaStream | null = null;
     let lastError: any = null;
-    try {
-      stream = await getUserMediaPromised(kind === 'video'
-        ? { audio: CALL_AUDIO_CONSTRAINTS, video: CALL_VIDEO_CONSTRAINTS }
-        : { audio: CALL_AUDIO_CONSTRAINTS, video: false });
-    } catch (err1) {
-      lastError = err1;
-      try { stream = await getUserMediaPromised({ audio: true }); } catch (err2) { lastError = err2 || err1; }
+    if (kind === 'video') {
+      try {
+        stream = await getUserMediaPromised({ audio: CALL_AUDIO_CONSTRAINTS, video: CALL_VIDEO_CONSTRAINTS });
+      } catch (err1) {
+        lastError = err1;
+        try {
+          stream = await getUserMediaPromised({ audio: CALL_AUDIO_CONSTRAINTS, video: true });
+        } catch (err2) {
+          lastError = err2;
+        }
+      }
+    }
+    if (!stream) {
+      try {
+        stream = await getUserMediaPromised({ audio: CALL_AUDIO_CONSTRAINTS, video: false });
+      } catch (err3) {
+        try { stream = await getUserMediaPromised({ audio: true }); } catch (err4) { lastError = err4 || err3 || lastError; }
+      }
     }
     if (!stream) throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
     // Hint the encoder to keep the picture sharp rather than smooth.
