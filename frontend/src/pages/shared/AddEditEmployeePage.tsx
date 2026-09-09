@@ -76,7 +76,8 @@ export default function AddEditEmployeePage() {
       ]);
       
       let allowedDepts = deptsRes;
-      if (authRole !== 'ceo' && authUser?.department?.id) {
+      // CEO and managers may place an employee in any department; team leads are limited to their own.
+      if (authRole !== 'ceo' && authRole !== 'manager' && authUser?.department?.id) {
         allowedDepts = deptsRes.filter((d: Department) => d.id === authUser.department?.id);
       }
       
