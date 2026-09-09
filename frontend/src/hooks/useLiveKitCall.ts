@@ -273,7 +273,9 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     groupRef.current = false;
     setState({ status: 'calling', peer, kind, muted: false, camOff: false, isGroup: false, sharingScreen: false, error: null });
     try {
-      sendSignal('invite', { call_id: roomIdRef.current, kind }, peer.id);
+      // The room token is only issued to a party of the call, and "party" is
+      // proven by the invite row — so persist the invite BEFORE asking for it.
+      await svc.signal({ call_id: roomIdRef.current, to_user_id: peer.id, type: 'invite', data: { call_id: roomIdRef.current, kind } });
       await connectRoom(kind);
       timerRef.current = window.setTimeout(() => {
         if (statusRef.current === 'calling') { logCall('missed'); sendSignal('cancel', null, peer.id); finish(); }
