@@ -43,19 +43,12 @@ class UserController extends Controller
             ]);
         }
 
-        // Managers and TLs see their own direct reports + themselves
-        if ($auth->isManager() || $auth->isTl()) {
+        // Team leads see their own direct reports + themselves. Managers (like
+        // the CEO) see the whole organisation, so My Team lists everyone —
+        // including people the CEO added who don't report to them directly.
+        if ($auth->isTl()) {
             $query->where(function ($q) use ($auth) {
                 $q->where('manager_id', $auth->id)->orWhere('id', $auth->id);
-                
-                // Managers should also see employees reporting to their Team Leads
-                if ($auth->isManager()) {
-                    $q->orWhereIn('manager_id', function ($subQuery) use ($auth) {
-                        $subQuery->select('id')
-                                 ->from('users')
-                                 ->where('manager_id', $auth->id);
-                    });
-                }
             });
         }
 
