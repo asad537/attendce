@@ -57,6 +57,24 @@ const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
   facingMode: 'user',
 };
 
+// The default WebRTC video bitrate is low, so a stream that looks fine in a
+// small tile turns blocky when blown up to the main stage. Lift the encoder's
+// ceiling so the spotlight view stays sharp (the encoder still adapts down on
+// weak networks).
+const MAX_VIDEO_BITRATE = 3_000_000; // 3 Mbps
+async function boostVideoSenders(pc: RTCPeerConnection) {
+  for (const sender of pc.getSenders()) {
+    if (sender.track?.kind !== 'video') continue;
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+      params.encodings[0].maxBitrate = MAX_VIDEO_BITRATE;
+      params.encodings[0].maxFramerate = 30;
+      await sender.setParameters(params);
+    } catch { /* setParameters can race the negotiation; ignore */ }
+  }
+}
+
 const cleanSdp = (sdpInit: any): RTCSessionDescription => {
   if (sdpInit instanceof RTCSessionDescription) return sdpInit;
   let type: RTCSdpType = 'offer';
@@ -221,6 +239,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         clearTimer();
         connectedAtRef.current = connectedAtRef.current || Date.now();
         setState(s => (s.status === 'connected' ? s : { ...s, status: 'connected' }));
+        void boostVideoSenders(pc);   // keep the spotlight view sharp
       }
       if (st === 'disconnected') {
         // A browser/tab close has no chance to send a hangup signal. Give a
@@ -544,6 +563,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         const offer = await e.pc.createOffer();
         await e.pc.setLocalDescription(offer);
         sendSignal('offer', { sdp: { type: e.pc.localDescription?.type || 'offer', sdp: e.pc.localDescription?.sdp }, kind: 'video' }, id);
+        void boostVideoSenders(e.pc);
       } catch { /* noop */ }
     }
 
@@ -581,6 +601,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         const offer = await entry.pc.createOffer();
         await entry.pc.setLocalDescription(offer);
         sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
+        void boostVideoSenders(entry.pc);
       } catch { /* noop */ }
     }
   }, [sendSignal]);
