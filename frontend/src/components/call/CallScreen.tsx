@@ -355,41 +355,56 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 </button>
             )}
 
-            {/* Chat side panel. */}
+            {/* Chat side panel — Google Meet dark style. */}
             {showChat && (
-                <div className="absolute right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white text-gray-900 shadow-2xl">
-                    <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-                        <h3 className="font-semibold">In-call messages</h3>
-                        <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-gray-600" title="Close">✕</button>
+                <div className="absolute right-0 top-0 z-50 flex h-full w-[380px] max-w-[92vw] flex-col bg-[#1c1c1e] p-3 text-white shadow-2xl">
+                    <header className="flex items-center justify-between px-2 py-2">
+                        <h3 className="text-xl font-medium">In-call messages</h3>
+                        <button onClick={() => setShowChat(false)} className="grid h-9 w-9 place-items-center rounded-full text-white/70 hover:bg-white/10" title="Close">✕</button>
                     </header>
+
+                    <div className="mt-1 rounded-2xl bg-white/[0.06] px-4 py-3 text-center text-sm text-white/70">
+                        <p className="flex items-center justify-center gap-2 font-medium text-white/85">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                            Messages aren't saved
+                        </p>
+                        <p className="mt-1 text-xs">Messages can only be seen by people in the call while it's on, and are deleted when the call ends.</p>
+                    </div>
+
                     <div
                         ref={chatBodyRef}
                         onScroll={(e) => {
                             const el = e.currentTarget;
                             chatAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
                         }}
-                        className="flex-1 space-y-3 overflow-y-auto px-4 py-3 [overflow-anchor:none]"
+                        className="mt-2 flex-1 space-y-4 overflow-y-auto px-2 py-2 [overflow-anchor:none]"
                     >
                         {messages.length === 0 ? (
-                            <p className="mt-6 text-center text-sm text-gray-400">Messages sent during the call appear here.</p>
+                            <div className="flex h-full flex-col items-center justify-center text-center">
+                                <svg className="h-16 w-16 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                <p className="mt-4 text-sm text-white/50">No chat messages yet</p>
+                            </div>
                         ) : (
                             messages.map((m) => (
-                                <div key={m.id} className={m.mine ? "text-right" : "text-left"}>
-                                    <p className="text-xs font-semibold text-gray-500">{m.from}</p>
-                                    <div className={`mt-0.5 inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-sm ${m.mine ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-900"}`}>{m.text}</div>
+                                <div key={m.id} className="text-sm">
+                                    <p className={`mb-0.5 text-xs font-medium ${m.mine ? "text-right text-white/50" : "text-white/60"}`}>{m.mine ? "You" : m.from}</p>
+                                    <div className={m.mine ? "flex justify-end" : "flex justify-start"}>
+                                        <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 ${m.mine ? "bg-[#8ab4f8] text-[#202124]" : "bg-white/[0.08] text-white"}`}>{m.text}</div>
+                                    </div>
                                 </div>
                             ))
                         )}
                     </div>
-                    <div className="flex items-center gap-2 border-t border-gray-200 p-3">
+
+                    <div className="mt-2 flex items-center gap-2 rounded-full bg-white/[0.08] px-4 py-1.5">
                         <input
                             value={chatText}
                             onChange={(e) => setChatText(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter") submitChat(); }}
                             placeholder="Send a message"
-                            className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[#1a73e8]"
+                            className="flex-1 bg-transparent py-1.5 text-sm text-white placeholder-white/40 outline-none"
                         />
-                        <button onClick={submitChat} disabled={!chatText.trim()} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1a73e8] text-white disabled:opacity-40" title="Send">
+                        <button onClick={submitChat} disabled={!chatText.trim()} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#8ab4f8] transition hover:bg-white/10 disabled:opacity-40" title="Send">
                             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z" /></svg>
                         </button>
                     </div>

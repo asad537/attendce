@@ -51,8 +51,8 @@ const CALL_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
 // Ask for a crisp 720p (up to 1080p) front camera at 30fps so remote video
 // isn't grainy. `ideal` degrades gracefully on weaker cameras/networks.
 const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  width: { ideal: 1280, max: 1920 },
-  height: { ideal: 720, max: 1080 },
+  width: { ideal: 1920, max: 1920 },
+  height: { ideal: 1080, max: 1080 },
   frameRate: { ideal: 30, max: 30 },
   facingMode: 'user',
 };
@@ -61,7 +61,7 @@ const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 // small tile turns blocky when blown up to the main stage. Lift the encoder's
 // ceiling so the spotlight view stays sharp (the encoder still adapts down on
 // weak networks).
-const MAX_VIDEO_BITRATE = 3_000_000; // 3 Mbps
+const MAX_VIDEO_BITRATE = 4_000_000; // 4 Mbps
 async function boostVideoSenders(pc: RTCPeerConnection) {
   for (const sender of pc.getSenders()) {
     if (sender.track?.kind !== 'video') continue;
@@ -70,6 +70,10 @@ async function boostVideoSenders(pc: RTCPeerConnection) {
       if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
       params.encodings[0].maxBitrate = MAX_VIDEO_BITRATE;
       params.encodings[0].maxFramerate = 30;
+      // Never shrink the picture — drop frames under pressure instead — so the
+      // spotlight stays sharp rather than going soft when blown up.
+      params.encodings[0].scaleResolutionDownBy = 1;
+      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = 'maintain-resolution';
       await sender.setParameters(params);
     } catch { /* setParameters can race the negotiation; ignore */ }
   }
@@ -315,6 +319,9 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       try { stream = await getUserMediaPromised({ audio: true }); } catch (err2) { lastError = err2 || err1; }
     }
     if (!stream) throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
+    // Hint the encoder to keep the picture sharp rather than smooth.
+    const vt = stream.getVideoTracks()[0];
+    if (vt) vt.contentHint = 'detail';
     localRef.current = stream;
     setLocalStream(stream);
     return stream;
