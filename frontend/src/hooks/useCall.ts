@@ -76,18 +76,17 @@ function preferVideoCodecs(pc: RTCPeerConnection) {
 }
 
 const MAX_VIDEO_BITRATE = 4_000_000; // 4 Mbps
-async function boostVideoSenders(pc: RTCPeerConnection) {
+async function boostVideoSenders(pc: RTCPeerConnection, peerCount = 1) {
   for (const sender of pc.getSenders()) {
     if (sender.track?.kind !== 'video') continue;
     try {
       const params = sender.getParameters();
       if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-      params.encodings[0].maxBitrate = MAX_VIDEO_BITRATE;
-      params.encodings[0].maxFramerate = 30;
-      // Never shrink the picture — drop frames under pressure instead — so the
-      // spotlight stays sharp rather than going soft when blown up.
-      params.encodings[0].scaleResolutionDownBy = 1;
-      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = 'maintain-resolution';
+      params.encodings[0].maxBitrate = Math.max(250_000, Math.floor(MAX_VIDEO_BITRATE / Math.max(1, peerCount)));
+      params.encodings[0].maxFramerate = peerCount >= 4 ? 15 : 30;
+      // Share the upload budget across peers and reduce group-call encoder load.
+      params.encodings[0].scaleResolutionDownBy = peerCount >= 6 ? 2 : 1;
+      (params as RTCRtpSendParameters & { degradationPreference?: string }).degradationPreference = 'balanced';
       await sender.setParameters(params);
     } catch { /* setParameters can race the negotiation; ignore */ }
   }
@@ -165,6 +164,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   const stopHeartbeat = () => { if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = undefined; } };
 
   const bumpParticipants = useCallback(() => {
+    peersRef.current.forEach(({ pc }) => { void boostVideoSenders(pc, peersRef.current.size); });
     const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
       id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff, muted: e.muted, handUp: e.handUp,
     }));
@@ -268,12 +268,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     preferVideoCodecs(pc);   // before any offer/answer is built
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
     pc.ontrack = e => {
-      // Play remote frames the moment they arrive instead of buffering them —
-      // this is most of the perceived delay on a shared screen.
+      // Allow a small buffer to absorb network jitter in multi-party calls.
       try {
         const r = e.receiver as RTCRtpReceiver & { playoutDelayHint?: number; jitterBufferTarget?: number };
-        r.playoutDelayHint = 0;
-        r.jitterBufferTarget = 0;
+        r.playoutDelayHint = 0.1;
+        r.jitterBufferTarget = 100;
       } catch { /* noop */ }
       try { if (e.track) stream.addTrack(e.track); } catch { /* noop */ }
       try {
@@ -290,14 +289,14 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         clearTimer();
         connectedAtRef.current = connectedAtRef.current || Date.now();
         setState(s => (s.status === 'connected' ? s : { ...s, status: 'connected' }));
-        void boostVideoSenders(pc);   // keep the spotlight view sharp
+        void boostVideoSenders(pc, peersRef.current.size);
       }
       if (st === 'disconnected') {
         // A browser/tab close has no chance to send a hangup signal. Give a
         // brief grace period for a Wi-Fi hiccup, then end the abandoned peer.
         window.setTimeout(() => {
           if (pc.connectionState === 'disconnected') removePeer(id);
-        }, 3000);
+        }, 12000);
       }
       if (st === 'failed' || st === 'closed') removePeer(id);
     };
@@ -392,8 +391,10 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       // Roster only ADDs members; departures come via 'leave'/'hangup' or pc-close
       // (avoids racing a peer we just connected to but who hasn't heartbeat yet).
       for (const r of roster) { if (!peersRef.current.has(r.id)) await connectTo(r); }
-    } catch { /* noop */ }
-  }, [connectTo]);
+    } catch (err: any) {
+      if (err.response?.status === 410) finish();
+    }
+  }, [connectTo, finish]);
 
   const startHeartbeat = useCallback(() => {
     stopHeartbeat();
@@ -474,13 +475,23 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     reset();
   }, [sendSignal, reset]);
 
-  const hangup = useCallback(() => {
+  const hangup = useCallback(async () => {
+    if (roleRef.current === 'caller' && roomRef.current && svc.endForAll) {
+      try {
+        await svc.endForAll(roomRef.current);
+        logCall(statusRef.current === 'calling' ? 'cancelled' : 'ended');
+        finish();
+      } catch {
+        toast.error('Could not end the call for everyone. Please try again.');
+      }
+      return;
+    }
     const calling = statusRef.current === 'calling';
     peersRef.current.forEach((_e, id) => sendSignal(calling ? 'cancel' : 'hangup', null, id));
     if (calling && primaryPeerRef.current) sendSignal('cancel', null, primaryPeerRef.current.id);
     logCall(calling ? 'cancelled' : 'ended');
     finish();
-  }, [sendSignal, finish, logCall]);
+  }, [sendSignal, finish, logCall, svc]);
 
   // Invite another user into the current call — turns it into a group call.
   const addToCall = useCallback((peer: Peer) => {
@@ -737,6 +748,12 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   }, [sendSignal]);
 
   const handleSignal = useCallback(async (sig: CallSignal) => {
+    if (sig.type === 'call-ended') {
+      if (sig.call_id === roomRef.current || sig.call_id === pendingInvite.current?.room) {
+        finish();
+      }
+      return;
+    }
     if (sig.type === 'invite') {
       if (statusRef.current !== 'idle') {
         // Busy — politely decline the new caller without disturbing the active call.
@@ -829,7 +846,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         reset();
       }
     }
-  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants, pushReaction, pushCaption]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, finish, bumpParticipants, pushReaction, pushCaption]);
 
   useEffect(() => {
     if (!meId) return;

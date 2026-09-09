@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\CallParticipant;
 use App\Models\CallSignal;
+use App\Models\CallRoom;
+use Illuminate\Support\Facades\DB;
 use App\Models\Message;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -71,6 +73,7 @@ class CallController extends Controller
         ]);
 
         $userId = $request->user()->id;
+        CallRoom::ensureActive($data['call_id']);
         // Only someone who is a party to this call's signalling (they sent or
         // received an invite/offer/etc. for this call_id) may join its room —
         // otherwise anyone could join an arbitrary room and eavesdrop.
@@ -92,7 +95,28 @@ class CallController extends Controller
     /** Leave a group-call room. */
     public function leave(Request $request): JsonResponse
     {
-        $data = $request->validate(['call_id' => 'required|string|max:40']);
+        $data = $request->validate(['call_id' => 'required|string|max:40', 'end_for_all' => 'sometimes|boolean']);
+        if ($request->boolean('end_for_all')) {
+            DB::transaction(function () use ($data, $request) {
+                $room = CallRoom::whereKey($data['call_id'])->lockForUpdate()->first();
+                abort_unless($room && (int) $room->host_id === (int) $request->user()->id, 403, 'Only the call creator can end the call for everyone.');
+                if ($room->ended_at) return;
+                $room->update(['ended_at' => now()]);
+                $signals = CallSignal::where('call_id', $room->call_id);
+                $ids = CallParticipant::where('call_id', $room->call_id)->pluck('user_id')
+                    ->merge((clone $signals)->pluck('from_user_id'))
+                    ->merge((clone $signals)->pluck('to_user_id'))->unique();
+                foreach ($ids as $id) {
+                    if ((int) $id === (int) $room->host_id) continue;
+                    CallSignal::create([
+                        'call_id' => $room->call_id, 'from_user_id' => $room->host_id,
+                        'to_user_id' => $id, 'type' => 'call-ended', 'data' => null,
+                    ]);
+                }
+                CallParticipant::where('call_id', $room->call_id)->delete();
+            });
+            return response()->json(['ok' => true]);
+        }
         CallParticipant::where('call_id', $data['call_id'])->where('user_id', $request->user()->id)->delete();
 
         return response()->json(['ok' => true]);
@@ -131,6 +155,10 @@ class CallController extends Controller
         ]);
 
         abort_if((int) $data['to_user_id'] === (int) $request->user()->id, 422, 'You cannot call yourself.');
+        CallRoom::ensureActive($data['call_id']);
+        if ($data['type'] === 'invite') {
+            CallRoom::firstOrCreate(['call_id' => $data['call_id']], ['host_id' => $request->user()->id]);
+        }
 
         CallSignal::create([
             'call_id' => $data['call_id'],

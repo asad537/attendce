@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\CallParticipant;
 use App\Models\CallSignal;
+use App\Models\CallRoom;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,7 @@ class GuestCallController extends Controller
 
         $invite = $this->openToken($data['token'], 'invite');
         $callId = $invite['call_id'];
+        CallRoom::ensureActive($callId);
 
         $name = trim(preg_replace('/\s+/', ' ', $data['name'])) ?: 'Guest';
 
@@ -97,6 +99,7 @@ class GuestCallController extends Controller
     public function signal(Request $request): JsonResponse
     {
         [$guestId, $callId] = $this->session($request);
+        CallRoom::ensureActive($callId);
         $data = $request->validate([
             'to_user_id' => 'required|exists:users,id',
             'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave,camera,mute,reaction,chat,hand,caption',
@@ -153,6 +156,7 @@ class GuestCallController extends Controller
     public function heartbeat(Request $request): JsonResponse
     {
         [$guestId, $callId] = $this->session($request);
+        CallRoom::ensureActive($callId);
         $data = $request->validate(['kind' => 'required|in:voice,video']);
 
         CallParticipant::updateOrCreate(

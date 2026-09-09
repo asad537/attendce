@@ -1,7 +1,7 @@
 import api from './api';
 import { MessageUser } from './messageService';
 
-export type SignalType = 'offer' | 'answer' | 'ice' | 'hangup' | 'reject' | 'cancel' | 'invite' | 'join' | 'leave' | 'camera' | 'mute' | 'reaction' | 'chat' | 'hand' | 'caption';
+export type SignalType = 'offer' | 'answer' | 'ice' | 'hangup' | 'reject' | 'cancel' | 'invite' | 'join' | 'leave' | 'camera' | 'mute' | 'reaction' | 'chat' | 'hand' | 'caption' | 'call-ended';
 
 export interface CallSignal {
   id: number;
@@ -30,6 +30,9 @@ export const callService = {
   async leave(call_id: string): Promise<void> {
     await api.post('/calls/leave', { call_id }).catch(() => { /* best-effort */ });
   },
+  async endForAll(call_id: string): Promise<void> {
+    await api.post('/calls/leave', { call_id, end_for_all: true });
+  },
   // Mint a shareable link that lets an external guest join THIS call.
   async inviteGuest(call_id: string): Promise<{ path: string; token: string; expires_in: number }> {
     const res = await api.post('/guest-call/invite', { call_id });
@@ -51,6 +54,7 @@ export interface CallTransport {
   poll(): Promise<CallSignal[]>;
   join(payload: { call_id: string; kind: 'voice' | 'video' }): Promise<RosterParticipant[]>;
   leave(call_id: string): Promise<void>;
+  endForAll?(call_id: string): Promise<void>;
   log(payload: { to_user_id: number; kind: 'voice' | 'video'; outcome: string; duration?: number }): Promise<void>;
 }
 
