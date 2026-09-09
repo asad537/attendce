@@ -275,6 +275,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       if (e.streams[0]) {
         e.streams[0].getTracks().forEach(t => stream.addTrack(t));
       }
+      entry.stream = new MediaStream(stream.getTracks());
       bumpParticipants();
     };
     pc.onconnectionstatechange = () => {

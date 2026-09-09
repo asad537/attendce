@@ -71,12 +71,13 @@ function MicOffIcon() {
 
 function Video({ stream, muted, mirror = false, className }: { stream: MediaStream | null; muted?: boolean; mirror?: boolean; className?: string }) {
     const ref = useRef<HTMLVideoElement>(null);
+    const videoTrack = stream?.getVideoTracks()[0];
     useEffect(() => {
         if (ref.current && stream) {
             ref.current.srcObject = stream;
             ref.current.play().catch(() => { /* autoplay handling */ });
         }
-    }, [stream]);
+    }, [stream, videoTrack?.id, videoTrack?.readyState]);
     return <video ref={ref} autoPlay playsInline muted={muted} className={`${className || ""}${mirror ? " -scale-x-100" : ""}`} />;
 }
 
@@ -86,12 +87,13 @@ function Video({ stream, muted, mirror = false, className }: { stream: MediaStre
 // to create a video element and incorrectly makes the audio seem to "start".
 function RemoteAudio({ stream }: { stream: MediaStream }) {
     const ref = useRef<HTMLAudioElement>(null);
+    const audioTrack = stream?.getAudioTracks()[0];
     useEffect(() => {
-        if (ref.current) {
+        if (ref.current && stream) {
             ref.current.srcObject = stream;
             ref.current.play().catch(() => { /* browser will retry after user interaction */ });
         }
-    }, [stream]);
+    }, [stream, audioTrack?.id, audioTrack?.readyState]);
     return <audio ref={ref} autoPlay playsInline />;
 }
 
