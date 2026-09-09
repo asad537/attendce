@@ -226,8 +226,11 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
       videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
       publishDefaults: {
         simulcast: true,
-        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
-        videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 30 },
+        // Keep low layers for thumbnails, but publish a real HD layer for the
+        // spotlight tile; without h720 LiveKit can only deliver a soft 360p
+        // image even when the camera capture is 1080p.
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720],
+        videoEncoding: { maxBitrate: 3_500_000, maxFramerate: 30 },
       },
     });
     roomRef.current = room;
