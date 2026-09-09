@@ -143,6 +143,39 @@ export function IncomingCallCard({ call }: { call: ReturnType<typeof useCall> })
     );
 }
 
+// Google Material icon paths used by the Meet-style control bar.
+const MAT = {
+    mic: "M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z",
+    micOff: "M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c.91-.13 1.77-.45 2.54-.9L19.73 21 21 19.73 4.27 3z",
+    cam: "M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z",
+    camOff: "M21 6.5l-4 4V7c0-.55-.45-1-1-1H9.82L21 17.18V6.5zM3.27 2L2 3.27 4.73 6H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.21 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z",
+    present: "M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z",
+    mood: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z",
+    cc: "M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12zM7 15h2c.55 0 1-.45 1-1v-1H8.5v.5h-1v-3h1v.5H10v-1c0-.55-.45-1-1-1H7c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1zm7 0h2c.55 0 1-.45 1-1v-1h-1.5v.5h-1v-3h1v.5H17v-1c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1z",
+    moreVert: "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
+    callEnd: "M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .27-.11.52-.29.7l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z",
+};
+function Mat({ d, className = "h-6 w-6" }: { d: string; className?: string }) {
+    return <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={d} /></svg>;
+}
+// Outlined raised hand (Meet uses an outline here).
+function HandIcon() {
+    return (
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M8 12.5V5.5a1.5 1.5 0 0 1 3 0V11" /><path d="M11 11V3.5a1.5 1.5 0 0 1 3 0V11" /><path d="M14 11V5a1.5 1.5 0 0 1 3 0v7" />
+            <path d="M17 12V9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.9-2.55l-3.1-4.4a1.7 1.7 0 0 1 2.7-2.05L8 13.5" />
+        </svg>
+    );
+}
+// Meet's little blue "more options" dots inside the mic pill.
+function BlueDots() {
+    return (
+        <svg className="h-4 w-4 text-[#8ab4f8]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="2.2" /><circle cx="12" cy="12" r="2.2" /><circle cx="19" cy="12" r="2.2" />
+        </svg>
+    );
+}
+
 export default function CallScreen({ call, guest = false }: { call: ReturnType<typeof useCall>; guest?: boolean }) {
     const {
         state,
@@ -502,46 +535,41 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 </div>
             )}
 
-            {/* Control bar — Google Meet layout: dark pill, rounded-square buttons,
-                pink "off" states, joined mic/camera groups, wide red leave. */}
-            <div className="flex items-center justify-center px-4 pb-4 pt-2">
-                <div className="flex items-center gap-2 rounded-[30px] bg-[#1e1f20] px-3 py-2 shadow-2xl">
+            {/* Control bar — exact Google Meet look: dark strip, big rounded
+                container, mic/camera as circles inside pills (blue dots / chevron),
+                squircle buttons, pink off-states, blue active states, red Leave. */}
+            <div className="flex items-center justify-center bg-[#1a1a1a] px-4 py-3">
+                <div className="flex items-center gap-2 rounded-[32px] bg-[#242526] px-3 py-2">
 
-                    {/* Mic group: [⋯ | mic] */}
-                    <div className="flex overflow-hidden rounded-[20px] bg-[#333537]">
-                        <span className="grid w-9 place-items-center text-white/60 tracking-widest select-none" aria-hidden="true">⋯</span>
+                    {/* Mic pill: [ • • • | mic ] */}
+                    <div className="flex items-center rounded-full bg-[#3c4043]">
+                        <span className="grid h-14 w-11 place-items-center select-none" aria-hidden="true"><BlueDots /></span>
                         <button
                             onClick={toggleMute}
-                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${muted ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            className={`grid h-14 w-14 place-items-center transition rounded-full ${muted ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={muted ? "Turn on microphone" : "Turn off microphone"}
                         >
-                            {muted ? <MicOffIcon /> : <MicIcon />}
+                            <Mat d={muted ? MAT.micOff : MAT.mic} />
                         </button>
                     </div>
 
-                    {/* Camera group: [^ | camera] */}
+                    {/* Camera pill: [ ^ | camera ] */}
                     {isVideo ? (
-                        <div className="flex overflow-hidden rounded-[20px] bg-[#333537]">
-                            <span className="grid w-9 place-items-center text-white/60 select-none" aria-hidden="true">
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                        <div className="flex items-center rounded-full bg-[#3c4043]">
+                            <span className="grid h-14 w-11 place-items-center text-white/70 select-none" aria-hidden="true">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 15l7-7 7 7" /></svg>
                             </span>
                             <button
                                 onClick={toggleCam}
-                                className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${camOff ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                                className={`grid h-14 w-14 place-items-center transition rounded-full ${camOff ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                                 title={camOff ? "Turn on camera" : "Turn off camera"}
                             >
-                                {camOff ? (
-                                    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.83l12 12H21V6.5zM3.27 2L2 3.27 4.73 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z" /></svg>
-                                ) : <VideoIcon />}
+                                <Mat d={camOff ? MAT.camOff : MAT.cam} />
                             </button>
                         </div>
                     ) : (status === "connected" || status === "connecting") && (
-                        <button
-                            onClick={switchToVideo}
-                            className="grid h-14 w-14 place-items-center rounded-[20px] bg-[#333537] text-white transition hover:bg-[#3f4143]"
-                            title="Turn on camera (switch to video)"
-                        >
-                            <VideoIcon />
+                        <button onClick={switchToVideo} className={`grid h-14 w-14 place-items-center transition rounded-[24px] bg-[#3c4043] text-white hover:bg-[#4a4d51]`} title="Turn on camera (switch to video)">
+                            <Mat d={MAT.cam} />
                         </button>
                     )}
 
@@ -549,12 +577,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleScreenShare}
-                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${sharingScreen ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${sharingScreen ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={sharingScreen ? "Stop presenting" : "Present now"}
                         >
-                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
-                            </svg>
+                            <Mat d={MAT.present} />
                         </button>
                     )}
 
@@ -563,10 +589,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         <div className="relative">
                             <button
                                 onClick={() => setShowEmoji((v) => !v)}
-                                className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${showEmoji ? "bg-[#a8c7fa] text-[#062e6f]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                                className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showEmoji ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                                 title="Send a reaction"
                             >
-                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8M9 10h.01M15 10h.01" /></svg>
+                                <Mat d={MAT.mood} />
                             </button>
                             {showEmoji && (
                                 <div className="absolute bottom-[72px] left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#2a2d30] px-3 py-2 shadow-xl">
@@ -582,13 +608,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleCaptions}
-                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${captionsOn ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${captionsOn ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={captionsOn ? "Turn off captions" : "Turn on captions"}
                         >
-                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
-                                <rect x="3" y="5" width="18" height="14" rx="2.5" />
-                                <path strokeLinecap="round" d="M10.5 10.2a2 2 0 1 0 0 3.6M16.5 10.2a2 2 0 1 0 0 3.6" />
-                            </svg>
+                            <Mat d={MAT.cc} />
                         </button>
                     )}
 
@@ -596,12 +619,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {(status === "connected" || status === "connecting") && (
                         <button
                             onClick={toggleHand}
-                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${handRaised ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${handRaised ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title={handRaised ? "Lower hand" : "Raise hand"}
                         >
-                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M7 11.5V6a1.5 1.5 0 0 1 3 0v5M10 11V4.5a1.5 1.5 0 0 1 3 0V11M13 11V5.5a1.5 1.5 0 0 1 3 0V12M16 12V8.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.9-2.5L4 14.8a1.6 1.6 0 0 1 2.5-2L7 13.5" />
-                            </svg>
+                            <HandIcon />
                         </button>
                     )}
 
@@ -609,10 +630,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {!guest && <div className="relative">
                         <button
                             onClick={() => setShowAdd((v) => !v)}
-                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${showAdd ? "bg-[#a8c7fa] text-[#062e6f]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showAdd ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
                             title="More — add people"
                         >
-                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                            <Mat d={MAT.moreVert} />
                         </button>
                         {showAdd && (
                             <div className="absolute bottom-[72px] left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2d30] p-1 shadow-xl">
@@ -642,13 +663,13 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         )}
                     </div>}
 
-                    {/* Leave call — wide red pill */}
+                    {/* Leave call — Meet red capsule with the call_end handset */}
                     <button
                         onClick={hangup}
-                        className="ml-1 grid h-14 w-[140px] place-items-center rounded-[30px] bg-[#c62828] text-white transition hover:bg-[#b71c1c]"
+                        className="ml-2 grid h-14 w-[140px] place-items-center rounded-full bg-[#ea4335] text-white transition hover:bg-[#d33b2c]"
                         title="Leave call"
                     >
-                        <span className="rotate-[135deg]"><PhoneIcon /></span>
+                        <Mat d={MAT.callEnd} className="h-7 w-7" />
                     </button>
                 </div>
             </div>
