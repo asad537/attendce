@@ -435,6 +435,12 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     }
     if (statusRef.current === 'idle') return;
     if (sig.call_id !== (roomIdRef.current || pendingInvite.current?.room)) return;   // stale room
+    if (sig.type === 'call-ended') {
+      // The host ends the shared room through the API; guests receive this
+      // signal because LiveKit itself does not know about our host role.
+      finish();
+      return;
+    }
     if (sig.type === 'reject' || sig.type === 'cancel' || sig.type === 'hangup' || sig.type === 'leave') {
       if (sig.type === 'reject') logCall('declined');
       else if (sig.type === 'hangup') logCall('ended');
