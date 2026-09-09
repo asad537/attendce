@@ -29,11 +29,15 @@ class ErrorBoundary extends Component<Props, State> {
     // the user on a blank page.
     const message = `${error.message || ''} ${error.name || ''}`;
     const isStaleChunk = /dynamically imported module|loading chunk|importing a module script|chunkloaderror/i.test(message);
-    const recoveryKey = 'stale_chunk_recovered_at';
-    const lastAttempt = Number(sessionStorage.getItem(recoveryKey) || 0);
-    if (isStaleChunk && Date.now() - lastAttempt > 30_000) {
-      sessionStorage.setItem(recoveryKey, String(Date.now()));
-      window.location.reload();
+    const recoveryKey = 'stale_chunk_recovered';
+    if (isStaleChunk && !sessionStorage.getItem(recoveryKey)) {
+      sessionStorage.setItem(recoveryKey, '1');
+      // A query cache-buster gets a fresh HTML entry document even if a proxy
+      // or browser still has the previous index page. `replace` also avoids a
+      // broken page remaining in the browser history.
+      const url = new URL(window.location.href);
+      url.searchParams.set('__app_refresh', String(Date.now()));
+      window.location.replace(url.toString());
     }
   }
 

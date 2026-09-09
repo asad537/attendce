@@ -11,6 +11,10 @@ export default defineConfig({
     react(),
   ],
   build: {
+    // Keep the immediately previous hashed files during a deploy. A tab that
+    // was already open can then finish loading its lazy route instead of
+    // failing because that old filename was removed by the new build.
+    emptyOutDir: false,
     // Split rarely-changing vendor libs into their own long-cached chunks so a
     // returning user only re-downloads app code, not React/charting, on deploy.
     rollupOptions: {
