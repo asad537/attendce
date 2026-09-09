@@ -162,6 +162,11 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
         sendChat,
         addToCall,
         getCallId,
+        handRaised,
+        toggleHand,
+        captionsOn,
+        toggleCaptions,
+        captions,
     } = call;
 
     const copyGuestLink = async () => {
@@ -446,12 +451,12 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             {presenting && !selectedRemoteId ? (
                                 <MeetTile big name="You (Presenting)" stream={localStream || undefined} showVideo />
                             ) : (
-                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} muted={spotlight?.muted} />
+                                <MeetTile big name={spotlight?.name || peer.name} stream={spotlight?.stream} showVideo={isVideo && !spotlight?.cameraOff} muted={spotlight?.muted} handUp={spotlight?.handUp} />
                             )}
                         </div>
                         <div className="flex w-40 shrink-0 flex-col gap-2 overflow-y-auto sm:w-56">
                             <div className="aspect-video shrink-0">
-                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} />
                             </div>
                             {(presenting && !selectedRemoteId ? remotes : remotes.filter((r) => r.id !== spotlight?.id)).map((p) => (
                                 <button
@@ -461,7 +466,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                                     className="aspect-video shrink-0 overflow-hidden rounded-xl text-left outline-none ring-0 transition hover:ring-2 hover:ring-emerald-400 focus-visible:ring-2 focus-visible:ring-emerald-300"
                                     title={`Show ${p.name} on main screen`}
                                 >
-                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} muted={p.muted} />
+                                    <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} muted={p.muted} handUp={p.handUp} />
                                 </button>
                             ))}
                         </div>
@@ -474,17 +479,28 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             name={spotlight?.name || peer.name}
                             stream={spotlight?.stream}
                             showVideo={isVideo && !spotlight?.cameraOff}
-                            muted={spotlight?.muted}
+                            muted={spotlight?.muted} handUp={spotlight?.handUp}
                             note={remotes.length === 0 ? (status === "calling" ? "Calling…" : "Connecting…") : undefined}
                         />
                         {status !== "ended" && (
                             <div className="absolute bottom-4 right-6 z-20 aspect-video w-40 overflow-hidden rounded-xl shadow-lg ring-1 ring-black/40 sm:w-56">
-                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} />
+                                <SelfTile muted={muted} showVideo={isVideo && !camOff} stream={localStream} handUp={handRaised} />
                             </div>
                         )}
                     </>
                 )}
             </div>
+
+            {/* Live captions — one line per recent speaker, above the bar. */}
+            {captions.length > 0 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-[104px] z-30 flex flex-col items-center gap-1 px-4">
+                    {captions.map((c) => (
+                        <div key={c.id} className="max-w-[720px] rounded-lg bg-black/70 px-4 py-2 text-center text-[15px] leading-snug text-white shadow">
+                            <span className="mr-2 font-semibold text-white/60">{c.name}:</span>{c.text}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {/* Control bar — Google Meet layout: dark pill, rounded-square buttons,
                 pink "off" states, joined mic/camera groups, wide red leave. */}
@@ -562,6 +578,33 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         </div>
                     )}
 
+                    {/* Live captions (CC) */}
+                    {(status === "connected" || status === "connecting") && (
+                        <button
+                            onClick={toggleCaptions}
+                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${captionsOn ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            title={captionsOn ? "Turn off captions" : "Turn on captions"}
+                        >
+                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="14" rx="2.5" />
+                                <path strokeLinecap="round" d="M10.5 10.2a2 2 0 1 0 0 3.6M16.5 10.2a2 2 0 1 0 0 3.6" />
+                            </svg>
+                        </button>
+                    )}
+
+                    {/* Raise hand */}
+                    {(status === "connected" || status === "connecting") && (
+                        <button
+                            onClick={toggleHand}
+                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${handRaised ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            title={handRaised ? "Lower hand" : "Raise hand"}
+                        >
+                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M7 11.5V6a1.5 1.5 0 0 1 3 0v5M10 11V4.5a1.5 1.5 0 0 1 3 0V11M13 11V5.5a1.5 1.5 0 0 1 3 0V12M16 12V8.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.9-2.5L4 14.8a1.6 1.6 0 0 1 2.5-2L7 13.5" />
+                            </svg>
+                        </button>
+                    )}
+
                     {/* More (⋮) — add people / guest link */}
                     {!guest && <div className="relative">
                         <button
@@ -615,7 +658,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
 
 // The local user's own tile ("You"), reused in the filmstrip and as the 1:1
 // picture-in-picture. Shows a mic-muted badge like Meet.
-function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boolean; stream: MediaStream | null }) {
+function SelfTile({ muted, showVideo, stream, handUp = false }: { muted: boolean; showVideo: boolean; stream: MediaStream | null; handUp?: boolean }) {
     return (
         <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#3c4043]">
             {showVideo && stream ? (
@@ -626,6 +669,7 @@ function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boo
                 </div>
             )}
             <span className="absolute bottom-1.5 left-2 text-xs font-medium drop-shadow">You</span>
+            {handUp && <span className="absolute left-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-[#a8c7fa] text-base shadow" title="Hand raised">✋</span>}
             {muted && (
                 <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[#ea4335]">
                     <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-.11 1.23l1.53 1.53A8.9 8.9 0 0021 11h-2zM4.27 3L3 4.27l6 6V11a3 3 0 003 3c.23 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.42-2.31.42a5 5 0 01-5-5H5a7 7 0 007 7c1.28 0 2.49-.35 3.53-.95L19.73 21 21 19.73 4.27 3zM12 4a3 3 0 013 3v3.18l1.98 1.98A5 5 0 0017 7a5 5 0 00-5-5 4.94 4.94 0 00-2.02.44L12 4z" /></svg>
@@ -637,7 +681,7 @@ function SelfTile({ muted, showVideo, stream }: { muted: boolean; showVideo: boo
 
 // A single Google-Meet style tile: live video, or a themed avatar when the
 // camera is off / not yet connected.
-function MeetTile({ name, stream, showVideo, muted = false, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; muted?: boolean; big?: boolean; note?: string }) {
+function MeetTile({ name, stream, showVideo, muted = false, handUp = false, big, note }: { name: string; stream?: MediaStream; showVideo: boolean; muted?: boolean; handUp?: boolean; big?: boolean; note?: string }) {
     const [mediaVersion, setMediaVersion] = useState(0);
 
     // A remote camera can be disabled while its MediaStream still contains a
@@ -686,6 +730,9 @@ function MeetTile({ name, stream, showVideo, muted = false, big, note }: { name:
                 <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-[#ea4335]" title="Microphone muted">
                     <MicOffIcon />
                 </span>
+            )}
+            {handUp && (
+                <span className="absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-[#a8c7fa] text-lg shadow" title="Hand raised">✋</span>
             )}
             {note && <span className="absolute left-4 top-4 rounded-full bg-black/40 px-3 py-1 text-xs">{note}</span>}
         </div>

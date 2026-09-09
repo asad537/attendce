@@ -1,7 +1,7 @@
 import api from './api';
 import { MessageUser } from './messageService';
 
-export type SignalType = 'offer' | 'answer' | 'ice' | 'hangup' | 'reject' | 'cancel' | 'invite' | 'join' | 'leave' | 'camera' | 'mute' | 'reaction' | 'chat';
+export type SignalType = 'offer' | 'answer' | 'ice' | 'hangup' | 'reject' | 'cancel' | 'invite' | 'join' | 'leave' | 'camera' | 'mute' | 'reaction' | 'chat' | 'hand' | 'caption';
 
 export interface CallSignal {
   id: number;

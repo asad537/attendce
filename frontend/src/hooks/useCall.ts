@@ -13,6 +13,7 @@ export interface RemoteParticipant {
   stream: MediaStream;
   cameraOff: boolean;
   muted: boolean;
+  handUp: boolean;
 }
 
 export interface CallState {
@@ -127,6 +128,7 @@ interface PeerConn {
   meta: { name: string; avatar_url?: string | null };
   cameraOff: boolean;
   muted: boolean;
+  handUp: boolean;
 }
 
 export interface UseCallOpts {
@@ -142,6 +144,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
   const [reactions, setReactions] = useState<{ id: string; emoji: string; from: string }[]>([]);
   const [messages, setMessages] = useState<{ id: string; from: string; text: string; mine: boolean; at: number }[]>([]);
+  const [handRaised, setHandRaised] = useState(false);
+  const handRef = useRef(false);
+  const [captionsOn, setCaptionsOn] = useState(false);
+  const [captions, setCaptions] = useState<{ id: number; name: string; text: string; at: number }[]>([]);
+  const recognitionRef = useRef<any>(null);   // browser SpeechRecognition while captions are on
 
   const peersRef = useRef<Map<number, PeerConn>>(new Map());
   const roomRef = useRef('');
@@ -168,7 +175,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
 
   const bumpParticipants = useCallback(() => {
     const list = Array.from(peersRef.current.entries()).map(([id, e]) => ({
-      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff, muted: e.muted,
+      id, name: e.meta.name, avatar_url: e.meta.avatar_url, stream: e.stream, cameraOff: e.cameraOff, muted: e.muted, handUp: e.handUp,
     }));
     setParticipants(list);
     setRemoteStream(list[0]?.stream || null);
@@ -204,6 +211,12 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     setRemoteStream(null);
     setReactions([]);
     setMessages([]);
+    try { recognitionRef.current?.stop(); } catch { /* noop */ }
+    recognitionRef.current = null;
+    handRef.current = false;
+    setHandRaised(false);
+    setCaptionsOn(false);
+    setCaptions([]);
   }, []);
 
   const reset = useCallback((error: string | null = null) => {
@@ -255,7 +268,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (existing) return existing;
     const pc = new RTCPeerConnection(ICE);
     const stream = new MediaStream();
-    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false };
+    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false, handUp: false };
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
     preferVideoCodecs(pc);   // before any offer/answer is built
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
@@ -650,6 +663,54 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   }, [sendSignal]);
 
   // Broadcast an emoji reaction to everyone (and float it on our own screen).
+  // A live caption line per speaker; each line fades out on its own.
+  const pushCaption = useCallback((id: number, name: string, text: string) => {
+    const at = Date.now();
+    setCaptions(cs => [...cs.filter(c => c.id !== id), { id, name, text, at }].slice(-3));
+    window.setTimeout(() => setCaptions(cs => cs.filter(c => !(c.id === id && c.at === at))), 6000);
+  }, []);
+
+  // Raise / lower hand — everyone in the call sees it on your tile.
+  const toggleHand = useCallback(() => {
+    const up = !handRef.current;
+    handRef.current = up;
+    setHandRaised(up);
+    peersRef.current.forEach((_e, id) => sendSignal('hand', { up }, id));
+  }, [sendSignal]);
+
+  const stopRecognition = useCallback(() => {
+    const r = recognitionRef.current;
+    recognitionRef.current = null;
+    try { r?.stop(); } catch { /* noop */ }
+  }, []);
+
+  // Live captions via the browser's own speech recognition (free, on-device in
+  // Chrome). Each participant transcribes their own mic and broadcasts the text.
+  const toggleCaptions = useCallback(() => {
+    if (recognitionRef.current) { stopRecognition(); setCaptionsOn(false); return; }
+    const w = window as any;
+    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (!SR) { toast.error('Live captions need Chrome (speech recognition is not supported in this browser).'); return; }
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || 'en-US';
+    let last = '';
+    rec.onresult = (ev: any) => {
+      const res = ev.results[ev.results.length - 1];
+      const text = String(res?.[0]?.transcript || '').trim();
+      if (!text || text === last) return;
+      last = text;
+      pushCaption(meIdRef.current ?? 0, 'You', text);
+      peersRef.current.forEach((_e, id) => sendSignal('caption', { text, final: Boolean(res.isFinal) }, id));
+    };
+    rec.onend = () => { if (recognitionRef.current === rec) { try { rec.start(); } catch { /* noop */ } } };
+    rec.onerror = () => { /* onend restarts while captions stay on */ };
+    recognitionRef.current = rec;
+    try { rec.start(); setCaptionsOn(true); }
+    catch { recognitionRef.current = null; toast.error('Could not start captions.'); }
+  }, [pushCaption, sendSignal, stopRecognition]);
+
   const sendReaction = useCallback((emoji: string) => {
     pushReaction(emoji, 'You');
     peersRef.current.forEach((_e, id) => sendSignal('reaction', { emoji }, id));
@@ -690,6 +751,16 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         else entry.muted = Boolean((sig.data as { muted?: boolean } | null)?.muted);
         bumpParticipants();
       }
+    } else if (sig.type === 'hand') {
+      const entry = peersRef.current.get(sig.from.id);
+      if (entry) {
+        entry.handUp = Boolean((sig.data as { up?: boolean } | null)?.up);
+        bumpParticipants();
+        if (entry.handUp) toast(`✋ ${sig.from.name} raised their hand`, { duration: 4000 });
+      }
+    } else if (sig.type === 'caption') {
+      const text = (sig.data as { text?: string } | null)?.text;
+      if (text) pushCaption(sig.from.id, sig.from.name, text);
     } else if (sig.type === 'reaction') {
       const emoji = (sig.data as { emoji?: string } | null)?.emoji;
       if (emoji) pushReaction(emoji, sig.from.name);
@@ -746,7 +817,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         reset();
       }
     }
-  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants, pushReaction]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants, pushReaction, pushCaption]);
 
   useEffect(() => {
     if (!meId) return;
@@ -776,5 +847,5 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, localStream, remoteStream, participants, reactions, messages, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, sendReaction, sendChat, addToCall, joinRoom, getCallId: () => roomRef.current };
+  return { state, localStream, remoteStream, participants, reactions, messages, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, sendReaction, sendChat, handRaised, toggleHand, captionsOn, toggleCaptions, captions, addToCall, joinRoom, getCallId: () => roomRef.current };
 }
