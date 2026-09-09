@@ -187,6 +187,18 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const [chatText, setChatText] = useState("");
     const chatBodyRef = useRef<HTMLDivElement>(null);
     const chatAtBottomRef = useRef(true);   // only auto-scroll when already at the bottom
+    // Badge = messages from OTHERS that arrived while the chat was closed.
+    // Opening the chat clears it (it used to show the total, so it never reset).
+    const [unreadChat, setUnreadChat] = useState(0);
+    const seenChatCountRef = useRef(0);
+    useEffect(() => {
+        const fresh = messages.slice(seenChatCountRef.current);
+        seenChatCountRef.current = messages.length;
+        if (showChat || fresh.length === 0) return;
+        const incoming = fresh.filter((m) => !m.mine).length;
+        if (incoming) setUnreadChat((n) => n + incoming);
+    }, [messages, showChat]);
+    useEffect(() => { if (showChat) setUnreadChat(0); }, [showChat]);
     const [showReady, setShowReady] = useState(!guest);   // Meet-style "meeting's ready" card
     const [readyLink, setReadyLink] = useState("");
 
@@ -351,7 +363,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     title="Chat with everyone"
                 >
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                    {messages.length > 0 && !showChat && <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ea4335] px-1 text-[10px] font-bold">{messages.length}</span>}
+                    {unreadChat > 0 && !showChat && <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ea4335] px-1 text-[10px] font-bold">{unreadChat}</span>}
                 </button>
             )}
 
