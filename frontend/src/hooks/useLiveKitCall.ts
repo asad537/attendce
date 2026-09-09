@@ -458,7 +458,9 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     let timeoutId: number;
     const tick = async () => {
       try { const signals = await svc.poll(); for (const sig of signals) { if (active) handleSignal(sig); } } catch { /* noop */ }
-      if (active) timeoutId = window.setTimeout(tick, statusRef.current === 'idle' ? 1500 : 800);
+      // Keep live call controls (especially host end) responsive. Idle pages
+      // stay on the lighter cadence to avoid unnecessary API traffic.
+      if (active) timeoutId = window.setTimeout(tick, statusRef.current === 'idle' ? 1500 : 250);
     };
     void tick();
     return () => { active = false; clearTimeout(timeoutId); };
