@@ -96,11 +96,12 @@ function RemoteAudio({ stream }: { stream: MediaStream }) {
 }
 
 // `replaceTrack(null)` does not always remove the receiver's track. Browsers
-// commonly leave that track in the remote MediaStream but mark it muted, which
-// makes a video element retain its last painted frame. Treat muted and ended
-// tracks as camera-off so the tile immediately falls back to the avatar.
+// commonly leave that track in the remote MediaStream. Remote WebRTC tracks
+// start as track.muted = true until the <video> element mounts and decodes
+// frames, so checking !track.muted creates a deadlock where <video> is never
+// rendered. Check track.readyState !== "ended" so the video element mounts.
 function hasRenderableVideo(stream?: MediaStream) {
-    return Boolean(stream?.getVideoTracks().some((track) => track.readyState === "live" && !track.muted));
+    return Boolean(stream?.getVideoTracks().some((track) => track.readyState !== "ended"));
 }
 
 // Compact incoming-call popup (shown while ringing, before the call is picked

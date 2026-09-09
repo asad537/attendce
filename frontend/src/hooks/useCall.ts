@@ -62,20 +62,12 @@ const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 // small tile turns blocky when blown up to the main stage. Lift the encoder's
 // ceiling so the spotlight view stays sharp (the encoder still adapts down on
 // weak networks).
-// Prefer more efficient video codecs (VP9 > H.264 > VP8) so the same bitrate
-// yields a visibly sharper picture. Must run before the offer/answer is created.
+// Prefer more efficient video codecs without disrupting rtx payload associations
 function preferVideoCodecs(pc: RTCPeerConnection) {
   try {
     const caps = (RTCRtpSender as unknown as { getCapabilities?: (k: string) => RTCRtpCapabilities | null }).getCapabilities?.('video');
     if (!caps?.codecs?.length) return;
-    const rank = (mime: string) => {
-      const m = mime.toUpperCase();
-      if (m.includes('VP9')) return 0;
-      if (m.includes('H264')) return 1;
-      if (m.includes('VP8')) return 2;
-      return 3; // keep AV1 last — software-encoding it chokes weaker laptops
-    };
-    const ordered = [...caps.codecs].sort((a, b) => rank(a.mimeType) - rank(b.mimeType));
+    const ordered = caps.codecs.filter(c => !c.mimeType.toLowerCase().includes('av1'));
     pc.getTransceivers().forEach((t) => {
       const isVideo = t.sender.track?.kind === 'video' || t.receiver.track?.kind === 'video';
       if (!isVideo) return;
@@ -280,7 +272,10 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         r.playoutDelayHint = 0;
         r.jitterBufferTarget = 0;
       } catch { /* noop */ }
-      e.streams[0]?.getTracks().forEach(t => stream.addTrack(t));
+      if (e.track) stream.addTrack(e.track);
+      if (e.streams[0]) {
+        e.streams[0].getTracks().forEach(t => stream.addTrack(t));
+      }
       bumpParticipants();
     };
     pc.onconnectionstatechange = () => {
