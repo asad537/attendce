@@ -666,10 +666,10 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                     {/* Leave call — Meet red capsule with the call_end handset */}
                     <button
                         onClick={hangup}
-                        className="ml-2 grid h-14 w-[140px] place-items-center rounded-full bg-[#ea4335] text-white transition hover:bg-[#d33b2c]"
+                        className="ml-2 grid h-14 w-[100px] place-items-center rounded-full bg-[#ea4335] text-white transition hover:bg-[#d33b2c]"
                         title="Leave call"
                     >
-                        <Mat d={MAT.callEnd} className="h-7 w-7" />
+                        <Mat d={MAT.callEnd} className="h-6 w-6" />
                     </button>
                 </div>
             </div>
