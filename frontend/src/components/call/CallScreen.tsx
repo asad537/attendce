@@ -486,108 +486,128 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 )}
             </div>
 
-            {/* Control bar — Google Meet style pills */}
-            <div className="flex items-center justify-center gap-3 px-4 pb-5 pt-2">
-                <button
-                    onClick={toggleMute}
-                    className={`grid h-12 w-12 place-items-center rounded-full transition ${muted ? "bg-[#ea4335] text-white hover:bg-[#d33b2c]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
-                    title={muted ? "Turn on microphone" : "Turn off microphone"}
-                >
-                    {muted ? <MicOffIcon /> : <MicIcon />}
-                </button>
+            {/* Control bar — Google Meet layout: dark pill, rounded-square buttons,
+                pink "off" states, joined mic/camera groups, wide red leave. */}
+            <div className="flex items-center justify-center px-4 pb-4 pt-2">
+                <div className="flex items-center gap-2 rounded-[30px] bg-[#1e1f20] px-3 py-2 shadow-2xl">
 
-                {isVideo ? (
-                    <button
-                        onClick={toggleCam}
-                        className={`grid h-12 w-12 place-items-center rounded-full transition ${camOff ? "bg-[#ea4335] text-white hover:bg-[#d33b2c]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
-                        title={camOff ? "Turn on camera" : "Turn off camera"}
-                    >
-                        <VideoIcon />
-                    </button>
-                ) : (status === "connected" || status === "connecting") && (
-                    <button
-                        onClick={switchToVideo}
-                        className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-white transition hover:bg-[#4a4d51]"
-                        title="Turn on camera (switch to video)"
-                    >
-                        <VideoIcon />
-                    </button>
-                )}
-
-                {(status === "connected" || status === "connecting") && (
-                    <button
-                        onClick={toggleScreenShare}
-                        className={`grid h-12 w-12 place-items-center rounded-full transition ${sharingScreen ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
-                        title={sharingScreen ? "Stop presenting" : "Present now"}
-                    >
-                        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
-                        </svg>
-                    </button>
-                )}
-
-                {(status === "connected" || status === "connecting") && (
-                    <div className="relative">
+                    {/* Mic group: [⋯ | mic] */}
+                    <div className="flex overflow-hidden rounded-[20px] bg-[#333537]">
+                        <span className="grid w-9 place-items-center text-white/60 tracking-widest select-none" aria-hidden="true">⋯</span>
                         <button
-                            onClick={() => setShowEmoji((v) => !v)}
-                            className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-xl text-white transition hover:bg-[#4a4d51]"
-                            title="Send a reaction"
+                            onClick={toggleMute}
+                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${muted ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            title={muted ? "Turn on microphone" : "Turn off microphone"}
                         >
-                            🙂
+                            {muted ? <MicOffIcon /> : <MicIcon />}
                         </button>
-                        {showEmoji && (
-                            <div className="absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#2a2d30] px-3 py-2 shadow-xl">
-                                {REACTION_EMOJIS.map((e) => (
-                                    <button key={e} onClick={() => { sendReaction(e); setShowEmoji(false); }} className="grid h-9 w-9 place-items-center rounded-full text-xl transition hover:bg-white/10">{e}</button>
-                                ))}
-                            </div>
-                        )}
                     </div>
-                )}
 
-                {!guest && <div className="relative">
-                    <button
-                        onClick={() => setShowAdd((v) => !v)}
-                        className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-2xl text-white transition hover:bg-[#4a4d51]"
-                        title="Add people"
-                    >
-                        +
-                    </button>
-                    {showAdd && (
-                        <div className="absolute bottom-16 left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2d30] p-1 shadow-xl">
+                    {/* Camera group: [^ | camera] */}
+                    {isVideo ? (
+                        <div className="flex overflow-hidden rounded-[20px] bg-[#333537]">
+                            <span className="grid w-9 place-items-center text-white/60 select-none" aria-hidden="true">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                            </span>
                             <button
-                                onClick={copyGuestLink}
-                                className="mb-1 flex w-full items-center gap-2 rounded-xl bg-emerald-600/20 px-3 py-2 text-left text-sm font-medium text-emerald-300 hover:bg-emerald-600/30"
+                                onClick={toggleCam}
+                                className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${camOff ? "bg-[#f9dedc] text-[#b3261e] hover:bg-[#f5cfcc]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                                title={camOff ? "Turn on camera" : "Turn off camera"}
                             >
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
-                                Invite guest (copy link)
+                                {camOff ? (
+                                    <svg className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.83l12 12H21V6.5zM3.27 2L2 3.27 4.73 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .39-.08.54-.18L19.73 21 21 19.73 3.27 2z" /></svg>
+                                ) : <VideoIcon />}
                             </button>
-                            <p className="px-3 py-2 text-xs font-semibold text-white/50">Add to call</p>
-                            {addable.length === 0 ? (
-                                <p className="px-3 py-2 text-xs text-white/40">No one else to add.</p>
-                            ) : (
-                                addable.map((p) => (
-                                    <button
-                                        key={p.id}
-                                        onClick={() => { addToCall(p); setShowAdd(false); }}
-                                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-white/10"
-                                    >
-                                        <Avatar user={p} />
-                                        <span className="truncate">{p.name}</span>
-                                    </button>
-                                ))
+                        </div>
+                    ) : (status === "connected" || status === "connecting") && (
+                        <button
+                            onClick={switchToVideo}
+                            className="grid h-14 w-14 place-items-center rounded-[20px] bg-[#333537] text-white transition hover:bg-[#3f4143]"
+                            title="Turn on camera (switch to video)"
+                        >
+                            <VideoIcon />
+                        </button>
+                    )}
+
+                    {/* Present now */}
+                    {(status === "connected" || status === "connecting") && (
+                        <button
+                            onClick={toggleScreenShare}
+                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${sharingScreen ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            title={sharingScreen ? "Stop presenting" : "Present now"}
+                        >
+                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
+                            </svg>
+                        </button>
+                    )}
+
+                    {/* Reactions */}
+                    {(status === "connected" || status === "connecting") && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowEmoji((v) => !v)}
+                                className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${showEmoji ? "bg-[#a8c7fa] text-[#062e6f]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                                title="Send a reaction"
+                            >
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8M9 10h.01M15 10h.01" /></svg>
+                            </button>
+                            {showEmoji && (
+                                <div className="absolute bottom-[72px] left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#2a2d30] px-3 py-2 shadow-xl">
+                                    {REACTION_EMOJIS.map((e) => (
+                                        <button key={e} onClick={() => { sendReaction(e); setShowEmoji(false); }} className="grid h-9 w-9 place-items-center rounded-full text-xl transition hover:bg-white/10">{e}</button>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}
-                </div>}
 
-                <button
-                    onClick={hangup}
-                    className="grid h-12 w-16 place-items-center rounded-full bg-[#ea4335] text-white shadow-lg transition hover:bg-[#d33b2c]"
-                    title="Leave call"
-                >
-                    <span className="rotate-[135deg]"><PhoneIcon /></span>
-                </button>
+                    {/* More (⋮) — add people / guest link */}
+                    {!guest && <div className="relative">
+                        <button
+                            onClick={() => setShowAdd((v) => !v)}
+                            className={`grid h-14 w-14 place-items-center rounded-[20px] transition ${showAdd ? "bg-[#a8c7fa] text-[#062e6f]" : "bg-[#333537] text-white hover:bg-[#3f4143]"}`}
+                            title="More — add people"
+                        >
+                            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
+                        </button>
+                        {showAdd && (
+                            <div className="absolute bottom-[72px] left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2d30] p-1 shadow-xl">
+                                <button
+                                    onClick={copyGuestLink}
+                                    className="mb-1 flex w-full items-center gap-2 rounded-xl bg-emerald-600/20 px-3 py-2 text-left text-sm font-medium text-emerald-300 hover:bg-emerald-600/30"
+                                >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                                    Invite guest (copy link)
+                                </button>
+                                <p className="px-3 py-2 text-xs font-semibold text-white/50">Add to call</p>
+                                {addable.length === 0 ? (
+                                    <p className="px-3 py-2 text-xs text-white/40">No one else to add.</p>
+                                ) : (
+                                    addable.map((p) => (
+                                        <button
+                                            key={p.id}
+                                            onClick={() => { addToCall(p); setShowAdd(false); }}
+                                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm hover:bg-white/10"
+                                        >
+                                            <Avatar user={p} />
+                                            <span className="truncate">{p.name}</span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>}
+
+                    {/* Leave call — wide red pill */}
+                    <button
+                        onClick={hangup}
+                        className="ml-1 grid h-14 w-[140px] place-items-center rounded-[30px] bg-[#c62828] text-white transition hover:bg-[#b71c1c]"
+                        title="Leave call"
+                    >
+                        <span className="rotate-[135deg]"><PhoneIcon /></span>
+                    </button>
+                </div>
             </div>
         </div>
     );
