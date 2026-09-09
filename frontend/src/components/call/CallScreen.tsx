@@ -149,6 +149,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
         localStream,
         remoteStream,
         participants,
+        reactions,
+        messages,
         accept,
         reject,
         hangup,
@@ -156,6 +158,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
         toggleCam,
         toggleScreenShare,
         switchToVideo,
+        sendReaction,
+        sendChat,
         addToCall,
         getCallId,
     } = call;
@@ -178,6 +182,32 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
     const [showAdd, setShowAdd] = useState(false);
     const [, setRemoteMediaVersion] = useState(0);
     const [selectedRemoteId, setSelectedRemoteId] = useState<number | null>(null);
+    const [showEmoji, setShowEmoji] = useState(false);
+    const [showChat, setShowChat] = useState(false);
+    const [chatText, setChatText] = useState("");
+    const [showReady, setShowReady] = useState(!guest);   // Meet-style "meeting's ready" card
+    const [readyLink, setReadyLink] = useState("");
+
+    // Fetch this call's shareable guest link once, for the "meeting's ready" card.
+    useEffect(() => {
+        if (guest || readyLink) return;
+        if (state.status !== "connected" && state.status !== "connecting" && state.status !== "calling") return;
+        const id = getCallId();
+        if (!id) return;
+        let cancelled = false;
+        callService.inviteGuest(id)
+            .then(({ path }) => { if (!cancelled) setReadyLink(window.location.origin + path); })
+            .catch(() => { /* retry on a later status tick */ });
+        return () => { cancelled = true; };
+    }, [guest, readyLink, state.status, getCallId]);
+
+    const REACTION_EMOJIS = ["💖", "👍", "🎉", "👏", "😂", "😮", "😢", "🤔", "👎"];
+    const copyReadyLink = async () => {
+        if (!readyLink) return;
+        try { await navigator.clipboard.writeText(readyLink); toast.success("Meeting link copied."); }
+        catch { toast.success(readyLink); }
+    };
+    const submitChat = () => { const t = chatText.trim(); if (!t) return; sendChat(t); setChatText(""); };
 
     // People we can add to the call (all directory users), fetched on demand.
     const { data: people = [] } = useQuery({
@@ -265,6 +295,90 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                 elements are always muted, preventing duplicate playback/echo
                 and ensuring audio continues when their camera is turned off. */}
             {remotes.map((participant) => <RemoteAudio key={participant.id} stream={participant.stream} />)}
+
+            {/* Floating emoji reactions (Google Meet style). */}
+            <style>{`@keyframes call-float{0%{opacity:0;transform:translateY(24px) scale(.6)}15%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-160px) scale(1)}}`}</style>
+            <div className="pointer-events-none absolute bottom-28 left-1/2 z-40 flex -translate-x-1/2 items-end gap-4">
+                {reactions.map((r) => (
+                    <div key={r.id} className="flex flex-col items-center" style={{ animation: "call-float 4.5s ease-out forwards" }}>
+                        <span className="text-4xl drop-shadow-lg">{r.emoji}</span>
+                        <span className="mt-1 rounded bg-black/40 px-1.5 py-0.5 text-[10px]">{r.from}</span>
+                    </div>
+                ))}
+            </div>
+
+            {/* "Your meeting's ready" — share the guest link (host only). */}
+            {!guest && showReady && status !== "ended" && (
+                <div className="absolute bottom-24 left-4 z-40 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-5 text-gray-900 shadow-2xl">
+                    <div className="flex items-start justify-between">
+                        <h3 className="text-lg font-semibold">Your meeting's ready</h3>
+                        <button onClick={() => setShowReady(false)} className="text-gray-400 hover:text-gray-600" title="Close">✕</button>
+                    </div>
+                    {!guest && (
+                        <button onClick={() => { setShowReady(false); setShowAdd(true); }} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#1a73e8] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1666cc]">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                            Add others
+                        </button>
+                    )}
+                    <p className="mt-4 text-sm text-gray-600">Or share this meeting link with others you want in the meeting</p>
+                    <div className="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2.5">
+                        <span className="flex-1 truncate text-sm text-gray-800">{readyLink || "Generating link…"}</span>
+                        <button onClick={copyReadyLink} disabled={!readyLink} className="shrink-0 text-gray-500 hover:text-gray-800 disabled:opacity-40" title="Copy link">
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                    </div>
+                    <div className="mt-3 flex items-start gap-2 text-xs text-gray-500">
+                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#1a73e8]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" /></svg>
+                        <span>Anyone with this link can join as a guest of this call. The link expires in 1 hour.</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Chat button (bottom-right, Google Meet style). */}
+            {(status === "connected" || status === "connecting") && (
+                <button
+                    onClick={() => setShowChat((v) => !v)}
+                    className="absolute bottom-6 right-5 z-40 grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-white shadow-lg transition hover:bg-[#4a4d51]"
+                    title="Chat with everyone"
+                >
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                    {messages.length > 0 && !showChat && <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-[#ea4335] px-1 text-[10px] font-bold">{messages.length}</span>}
+                </button>
+            )}
+
+            {/* Chat side panel. */}
+            {showChat && (
+                <div className="absolute right-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-white text-gray-900 shadow-2xl">
+                    <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                        <h3 className="font-semibold">In-call messages</h3>
+                        <button onClick={() => setShowChat(false)} className="text-gray-400 hover:text-gray-600" title="Close">✕</button>
+                    </header>
+                    <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                        {messages.length === 0 ? (
+                            <p className="mt-6 text-center text-sm text-gray-400">Messages sent during the call appear here.</p>
+                        ) : (
+                            messages.map((m) => (
+                                <div key={m.id} className={m.mine ? "text-right" : "text-left"}>
+                                    <p className="text-xs font-semibold text-gray-500">{m.from}</p>
+                                    <div className={`mt-0.5 inline-block max-w-[85%] rounded-2xl px-3 py-1.5 text-sm ${m.mine ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-900"}`}>{m.text}</div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-gray-200 p-3">
+                        <input
+                            value={chatText}
+                            onChange={(e) => setChatText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") submitChat(); }}
+                            placeholder="Send a message"
+                            className="flex-1 rounded-full border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[#1a73e8]"
+                        />
+                        <button onClick={submitChat} disabled={!chatText.trim()} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#1a73e8] text-white disabled:opacity-40" title="Send">
+                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z" /></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Top bar: clock · meeting code + participant count */}
             <div className="flex items-center justify-between px-5 py-3 text-sm">
                 <div className="flex items-center gap-2 text-white/85">
@@ -367,6 +481,25 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                             <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z" />
                         </svg>
                     </button>
+                )}
+
+                {(status === "connected" || status === "connecting") && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowEmoji((v) => !v)}
+                            className="grid h-12 w-12 place-items-center rounded-full bg-[#3c4043] text-xl text-white transition hover:bg-[#4a4d51]"
+                            title="Send a reaction"
+                        >
+                            🙂
+                        </button>
+                        {showEmoji && (
+                            <div className="absolute bottom-16 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-full bg-[#2a2d30] px-3 py-2 shadow-xl">
+                                {REACTION_EMOJIS.map((e) => (
+                                    <button key={e} onClick={() => { sendReaction(e); setShowEmoji(false); }} className="grid h-9 w-9 place-items-center rounded-full text-xl transition hover:bg-white/10">{e}</button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {!guest && <div className="relative">

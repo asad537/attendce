@@ -96,6 +96,8 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
+  const [reactions, setReactions] = useState<{ id: string; emoji: string; from: string }[]>([]);
+  const [messages, setMessages] = useState<{ id: string; from: string; text: string; mine: boolean; at: number }[]>([]);
 
   const peersRef = useRef<Map<number, PeerConn>>(new Map());
   const roomRef = useRef('');
@@ -128,6 +130,13 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     setRemoteStream(list[0]?.stream || null);
   }, []);
 
+  // A floating emoji reaction that fades itself out after a few seconds.
+  const pushReaction = useCallback((emoji: string, from: string) => {
+    const id = randomId();
+    setReactions(rs => [...rs, { id, emoji, from }].slice(-12));
+    window.setTimeout(() => setReactions(rs => rs.filter(r => r.id !== id)), 4500);
+  }, []);
+
   const cleanup = useCallback(() => {
     clearTimer();
     stopHeartbeat();
@@ -149,6 +158,8 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     setParticipants([]);
     setLocalStream(null);
     setRemoteStream(null);
+    setReactions([]);
+    setMessages([]);
   }, []);
 
   const reset = useCallback((error: string | null = null) => {
@@ -574,6 +585,20 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     }
   }, [sendSignal]);
 
+  // Broadcast an emoji reaction to everyone (and float it on our own screen).
+  const sendReaction = useCallback((emoji: string) => {
+    pushReaction(emoji, 'You');
+    peersRef.current.forEach((_e, id) => sendSignal('reaction', { emoji }, id));
+  }, [pushReaction, sendSignal]);
+
+  // Send an in-call chat message to everyone.
+  const sendChat = useCallback((text: string) => {
+    const t = text.trim();
+    if (!t) return;
+    setMessages(m => [...m, { id: randomId(), from: 'You', text: t, mine: true, at: Date.now() }]);
+    peersRef.current.forEach((_e, id) => sendSignal('chat', { text: t }, id));
+  }, [sendSignal]);
+
   const handleSignal = useCallback(async (sig: CallSignal) => {
     if (sig.type === 'invite') {
       if (statusRef.current !== 'idle') {
@@ -601,6 +626,12 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         else entry.muted = Boolean((sig.data as { muted?: boolean } | null)?.muted);
         bumpParticipants();
       }
+    } else if (sig.type === 'reaction') {
+      const emoji = (sig.data as { emoji?: string } | null)?.emoji;
+      if (emoji) pushReaction(emoji, sig.from.name);
+    } else if (sig.type === 'chat') {
+      const text = (sig.data as { text?: string } | null)?.text;
+      if (text) setMessages(m => [...m, { id: randomId(), from: sig.from.name, text, mine: false, at: Date.now() }]);
     } else if (sig.type === 'offer') {
       const data = sig.data as { sdp: RTCSessionDescriptionInit; kind?: 'voice' | 'video' };
       // A renegotiation offer carrying kind:'video' means the other side turned
@@ -651,7 +682,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         reset();
       }
     }
-  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants]);
+  }, [createPeer, connectTo, sendSignal, logCall, removePeer, reset, bumpParticipants, pushReaction]);
 
   useEffect(() => {
     if (!meId) return;
@@ -681,5 +712,5 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, localStream, remoteStream, participants, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, addToCall, joinRoom, getCallId: () => roomRef.current };
+  return { state, localStream, remoteStream, participants, reactions, messages, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, sendReaction, sendChat, addToCall, joinRoom, getCallId: () => roomRef.current };
 }
