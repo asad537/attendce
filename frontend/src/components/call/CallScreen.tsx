@@ -607,7 +607,10 @@ function MeetTile({ name, stream, showVideo, muted = false, big, note }: { name:
     return (
         <div className="relative h-full w-full overflow-hidden rounded-2xl bg-[#3c4043]">
             {hasVideo ? (
-                <Video stream={stream!} muted className="h-full w-full object-cover" />
+                // The big spotlight uses object-contain so a shared screen (or
+                // any non-matching aspect) is shown in full instead of cropped
+                // top/bottom; small tiles fill with object-cover.
+                <Video stream={stream!} muted className={`h-full w-full ${big ? "object-contain" : "object-cover"}`} />
             ) : (
                 <div className="grid h-full w-full place-items-center bg-[radial-gradient(circle_at_center,#5b4636,#241d18)]">
                     <span className={`grid place-items-center rounded-full bg-black/30 font-semibold ${big ? "h-28 w-28 text-4xl" : "h-16 w-16 text-2xl"}`}>
