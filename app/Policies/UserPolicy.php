@@ -14,8 +14,14 @@ class UserPolicy
     public function view(User $auth, User $target): bool
     {
         if ($auth->isCeo()) return true;
-        // Manager or TL can view their own direct reports
-        if ($auth->isManager() || $auth->isTl()) {
+        // Managers can open every employee/TL profile shown in their My Team
+        // list. They still cannot edit people outside their direct reports
+        // (that restriction remains in update/delete below).
+        if ($auth->isManager()) {
+            return $target->id === $auth->id || in_array($target->role, ['employee', 'tl'], true);
+        }
+        // Team leads can view only their own direct reports.
+        if ($auth->isTl()) {
             return $target->id === $auth->id || $target->manager_id === $auth->id;
         }
         return $target->id === $auth->id;
