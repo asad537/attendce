@@ -7,12 +7,14 @@
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    @apply bg-gray-50 text-gray-900;
+    @apply overflow-x-hidden bg-gray-50 text-gray-900;
   }
 
   html, body, #root {
     min-width: 320px;
     min-height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* Apply only a light density adjustment on genuinely wide displays. */

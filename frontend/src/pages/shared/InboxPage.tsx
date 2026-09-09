@@ -943,7 +943,7 @@ export default function InboxPage() {
                                                         className={`group mb-2 flex ${mine ? "justify-end" : "justify-start"}`}
                                                     >
                                                         <div
-                                                            className={`relative max-w-[85%] rounded-2xl px-3.5 py-2 shadow-sm sm:max-w-[72%] ${mine ? "rounded-tr-none bg-emerald-600 text-white" : "rounded-tl-none border border-slate-200 bg-white text-slate-800"}`}
+                                                            className={`relative max-w-[85%] rounded-2xl px-3.5 py-2 pr-10 shadow-sm sm:max-w-[72%] ${mine ? "rounded-tr-none bg-emerald-600 text-white" : "rounded-tl-none border border-slate-200 bg-white text-slate-800"}`}
                                                         >
                                                             {item.is_deleted ? (
                                                                 <p

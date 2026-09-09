@@ -145,7 +145,7 @@ export default function CeoDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fb] p-6 lg:p-8 font-sans text-gray-900">
+    <div className="-mt-3 min-h-screen bg-[#f8f9fb] px-4 pb-6 pt-2 font-sans text-gray-900 sm:px-6 lg:px-8 lg:pb-8 lg:pt-3">
       {/* Header section is managed by DashboardLayout, but we can override page title */}
       <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
