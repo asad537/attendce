@@ -61,6 +61,28 @@ const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 // small tile turns blocky when blown up to the main stage. Lift the encoder's
 // ceiling so the spotlight view stays sharp (the encoder still adapts down on
 // weak networks).
+// Prefer more efficient video codecs (VP9 > H.264 > VP8) so the same bitrate
+// yields a visibly sharper picture. Must run before the offer/answer is created.
+function preferVideoCodecs(pc: RTCPeerConnection) {
+  try {
+    const caps = (RTCRtpSender as unknown as { getCapabilities?: (k: string) => RTCRtpCapabilities | null }).getCapabilities?.('video');
+    if (!caps?.codecs?.length) return;
+    const rank = (mime: string) => {
+      const m = mime.toUpperCase();
+      if (m.includes('VP9')) return 0;
+      if (m.includes('H264')) return 1;
+      if (m.includes('VP8')) return 2;
+      return 3; // keep AV1 last — software-encoding it chokes weaker laptops
+    };
+    const ordered = [...caps.codecs].sort((a, b) => rank(a.mimeType) - rank(b.mimeType));
+    pc.getTransceivers().forEach((t) => {
+      const isVideo = t.sender.track?.kind === 'video' || t.receiver.track?.kind === 'video';
+      if (!isVideo) return;
+      try { t.setCodecPreferences(ordered); } catch { /* unsupported browser */ }
+    });
+  } catch { /* noop */ }
+}
+
 const MAX_VIDEO_BITRATE = 4_000_000; // 4 Mbps
 async function boostVideoSenders(pc: RTCPeerConnection) {
   for (const sender of pc.getSenders()) {
@@ -235,6 +257,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     const stream = new MediaStream();
     const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false };
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
+    preferVideoCodecs(pc);   // before any offer/answer is built
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
     pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => stream.addTrack(t)); bumpParticipants(); };
     pc.onconnectionstatechange = () => {
@@ -567,6 +590,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     // Renegotiate the voice peers we just added a video track to.
     for (const [id, e] of toRenegotiate) {
       try {
+        preferVideoCodecs(e.pc);
         const offer = await e.pc.createOffer();
         await e.pc.setLocalDescription(offer);
         sendSignal('offer', { sdp: { type: e.pc.localDescription?.type || 'offer', sdp: e.pc.localDescription?.sdp }, kind: 'video' }, id);
@@ -605,6 +629,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     for (const [id, entry] of peersRef.current) {
       try {
         entry.pc.addTrack(camTrack, localRef.current!);
+        preferVideoCodecs(entry.pc);
         const offer = await entry.pc.createOffer();
         await entry.pc.setLocalDescription(offer);
         sendSignal('offer', { sdp: { type: entry.pc.localDescription?.type || 'offer', sdp: entry.pc.localDescription?.sdp }, kind: 'video' }, id);
