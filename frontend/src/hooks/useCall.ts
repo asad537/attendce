@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { callService, CallSignal, CallTransport, RosterParticipant, SignalType } from '../services/callService';
 import { MessageUser } from '../services/messageService';
+import { processCallSignals } from '../services/processCallSignals';
 
 export type CallStatus = 'idle' | 'calling' | 'incoming' | 'connecting' | 'connected' | 'ended';
 type Peer = MessageUser & { role?: string };
@@ -141,6 +142,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
   const recognitionRef = useRef<any>(null);   // browser SpeechRecognition while captions are on
 
   const peersRef = useRef<Map<number, PeerConn>>(new Map());
+  const earlyIceRef = useRef<Map<number, RTCIceCandidateInit[]>>(new Map());
   const roomRef = useRef('');
   const primaryPeerRef = useRef<Peer | null>(null);      // first invited peer (state.peer + 1:1 call-log)
   const kindRef = useRef<'voice' | 'video'>('voice');
@@ -185,6 +187,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (roomRef.current) svc.leave(roomRef.current);
     peersRef.current.forEach(e => { try { e.pc.close(); } catch { /* noop */ } });
     peersRef.current.clear();
+    earlyIceRef.current.clear();
     try { screenTrackRef.current?.stop(); } catch { /* noop */ }
     try { cameraTrackRef.current?.stop(); } catch { /* noop */ }
     screenTrackRef.current = null;
@@ -259,7 +262,8 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (existing) return existing;
     const pc = new RTCPeerConnection(ICE);
     const stream = new MediaStream();
-    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false, handUp: false };
+    const entry: PeerConn = { pc, stream, remoteSet: false, pendingIce: earlyIceRef.current.get(id) || [], meta: { name: meta?.name || 'Guest', avatar_url: meta?.avatar_url }, cameraOff: false, muted: false, handUp: false };
+    earlyIceRef.current.delete(id);
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
     const hasVideo = !!localRef.current?.getVideoTracks().length;
     if (kindRef.current === 'video' && !hasVideo) {
@@ -772,6 +776,8 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       return;
     }
     if (statusRef.current === 'idle') return;
+    // Late signals from a previous room must not affect the active call.
+    if (sig.call_id !== (roomRef.current || pendingInvite.current?.room)) return;
 
     if (sig.type === 'camera' || sig.type === 'mute') {
       const entry = peersRef.current.get(sig.from.id);
@@ -829,6 +835,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         try { await entry.pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* noop */ }
       } else if (entry) {
         entry.pendingIce.push(candidate);
+      } else {
+        // ICE requests can arrive before the offer over the HTTP transport.
+        const pending = earlyIceRef.current.get(sig.from.id) || [];
+        if (pending.length < 100) pending.push(candidate);
+        earlyIceRef.current.set(sig.from.id, pending);
       }
     } else if (sig.type === 'join') {
       // A peer just joined our room — connect immediately instead of waiting
@@ -855,7 +866,9 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     const tick = async () => {
       try {
         const signals = await svc.poll();
-        for (const sig of signals) { if (active) await handleSignal(sig); }
+        await processCallSignals(signals, handleSignal, () => active, (error) => {
+          console.warn('Call signal could not be applied; continuing other participants.', error);
+        });
       } catch { /* noop */ }
       if (active) {
         // Poll fast while a call is live so connect/hangup feel instant; back
