@@ -228,7 +228,10 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const callId = roomIdRef.current;
     const { url, token } = await getToken(callId, kind);
     const room = new Room({
-      adaptiveStream: true,   // server sends each viewer only the size they render
+      // We attach LiveKit tracks through MediaStream objects in CallScreen.
+      // adaptiveStream relies on track.attach() viewport measurements and was
+      // therefore selecting a low thumbnail layer for the large spotlight.
+      adaptiveStream: false,
       dynacast: true,         // pause layers nobody is watching
       audioCaptureDefaults: CLEAN_MIC,
       videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
