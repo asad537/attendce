@@ -259,7 +259,17 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     localRef.current?.getTracks().forEach(t => pc.addTrack(t, localRef.current!));
     preferVideoCodecs(pc);   // before any offer/answer is built
     pc.onicecandidate = e => { if (e.candidate) sendSignal('ice', e.candidate.toJSON(), id); };
-    pc.ontrack = e => { e.streams[0]?.getTracks().forEach(t => stream.addTrack(t)); bumpParticipants(); };
+    pc.ontrack = e => {
+      // Play remote frames the moment they arrive instead of buffering them —
+      // this is most of the perceived delay on a shared screen.
+      try {
+        const r = e.receiver as RTCRtpReceiver & { playoutDelayHint?: number; jitterBufferTarget?: number };
+        r.playoutDelayHint = 0;
+        r.jitterBufferTarget = 0;
+      } catch { /* noop */ }
+      e.streams[0]?.getTracks().forEach(t => stream.addTrack(t));
+      bumpParticipants();
+    };
     pc.onconnectionstatechange = () => {
       const st = pc.connectionState;
       if (st === 'connected') {
@@ -561,7 +571,8 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     if (!md?.getDisplayMedia) { toast.error('Screen sharing is not supported in this browser.'); return; }
     let screenTrack: MediaStreamTrack | null = null;
     try {
-      const display: MediaStream = await md.getDisplayMedia({ video: true, audio: false });
+      // Ask for 30fps — the browser default for screen capture is often 5-15fps, which reads as lag.
+      const display: MediaStream = await md.getDisplayMedia({ video: { frameRate: { ideal: 30, max: 30 } }, audio: false });
       screenTrack = display.getVideoTracks()[0] || null;
     } catch { return; /* user cancelled the picker */ }
     if (!screenTrack) return;
