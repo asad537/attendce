@@ -50,11 +50,12 @@ const CALL_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   channelCount: 1,
 };
 
-// Flexible video constraints that work on all webcams (720p/1080p/480p) without OverconstrainedError
+// Keep the browser's capture workload and upload cost predictable for group
+// calls. WebRTC forwards this stream to every participant in the mesh.
 const CALL_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
-  width: { ideal: 1280 },
-  height: { ideal: 720 },
-  frameRate: { ideal: 30 },
+  width: { ideal: 640, max: 640 },
+  height: { ideal: 360, max: 360 },
+  frameRate: { ideal: 20, max: 20 },
   facingMode: 'user',
 };
 
@@ -76,7 +77,7 @@ function preferVideoCodecs(pc: RTCPeerConnection) {
   } catch { /* noop */ }
 }
 
-const MAX_VIDEO_BITRATE = 4_000_000; // 4 Mbps
+const MAX_VIDEO_BITRATE = 2_000_000; // shared across peer connections
 async function boostVideoSenders(pc: RTCPeerConnection, peerCount = 1) {
   for (const sender of pc.getSenders()) {
     if (sender.track?.kind !== 'video') continue;
@@ -380,9 +381,10 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
       }
     }
     if (!stream) throw lastError || new Error('UNKNOWN_MEDIA_ERROR');
-    // Hint the encoder to keep the picture sharp rather than smooth.
+    // Prefer motion handling for camera calls; it avoids large frame bursts
+    // when a participant moves and reduces the visible lag on slower systems.
     const vt = stream.getVideoTracks()[0];
-    if (vt) vt.contentHint = 'detail';
+    if (vt) vt.contentHint = 'motion';
     localRef.current = stream;
     setLocalStream(stream);
     return stream;
