@@ -507,7 +507,7 @@ export function SharedEmployeeForm({
       </div>
 
       {/* Bottom actions */}
-      <div className="flex justify-between items-center pt-4 border-t border-gray-100 mt-8">
+      <div className="flex justify-end items-center gap-3 pt-4 border-t border-gray-100 mt-8">
         <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm  transition-colors">
           Cancel
         </button>

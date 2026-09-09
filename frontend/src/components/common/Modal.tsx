@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 interface ModalProps {
   open?: boolean;
@@ -13,19 +13,13 @@ const sizes = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg', xl: 'max-w-xl', 
 
 export default function Modal({ open, isOpen, onClose, title, children, size = 'md' }: ModalProps) {
   const visible = open ?? isOpen ?? false;
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    if (visible) document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [visible, onClose]);
-
   if (!visible) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
         {/* Backdrop */}
-        <div className="fixed inset-0 bg-gray-900/60 transition-opacity" onClick={onClose} />
+        <div className="fixed inset-0 bg-gray-900/60 transition-opacity" />
 
         {/* Dialog */}
         <div className={`relative bg-white rounded-2xl shadow-xl w-full ${sizes[size]} transform transition-all flex flex-col`}>
