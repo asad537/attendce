@@ -68,8 +68,8 @@ class MessageController extends Controller
 
         $conversations = $users->map(function ($user) use ($current) {
             $base = Message::where('is_draft', false)->where(function ($query) use ($current, $user) {
-                $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $user->id))
-                    ->orWhere(fn ($q) => $q->where('sender_id', $user->id)->where('recipient_id', $current->id));
+                $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $user->id)->whereNull('deleted_by_sender_at'))
+                    ->orWhere(fn ($q) => $q->where('sender_id', $user->id)->where('recipient_id', $current->id)->whereNull('deleted_by_recipient_at'));
             });
             $latest = (clone $base)->latest()->first();
             $unread = (clone $base)->where('sender_id', $user->id)->where('recipient_id', $current->id)->whereNull('read_at')->count();
