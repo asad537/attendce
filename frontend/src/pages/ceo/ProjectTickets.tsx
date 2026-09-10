@@ -70,6 +70,7 @@ export default function ProjectTickets() {
     const [assigneeFilter, setAssigneeFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
     const [canManage, setCanManage] = useState(false);
+    const [showList, setShowList] = useState(false);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -334,8 +335,12 @@ export default function ProjectTickets() {
 
 
     return (
-        <div className="space-y-5 bg-gray-50/70 p-4 sm:p-6">
-            <div className="flex items-center gap-3 px-1 text-gray-900"><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-xl text-emerald-600">⊞</span><span className="text-lg font-bold">Project Workspace</span><span className="text-gray-300">›</span></div>
+        <div className="min-h-full space-y-5 bg-[#f7f9fc] p-4 sm:p-6 lg:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-600"><span>Project Workspace</span><span className="text-slate-300">›</span><span className="text-slate-500">{projectName}</span></div>
+              <label className="relative hidden w-full max-w-md lg:block"><span className="absolute inset-y-0 left-4 flex items-center text-slate-500">⌕</span><input className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-14 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} /><kbd className="absolute right-3 top-2 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500">⌘ K</kbd></label>
+              <div className="flex items-center gap-5 text-slate-700"><span className="text-xl">♧</span><span className="grid h-10 w-10 place-items-center rounded-full bg-blue-100 text-sm font-bold text-slate-600">HA</span><span className="text-sm">⌄</span></div>
+            </div>
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                 <div><p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Project</p><h1 className="mt-1 text-2xl font-bold text-gray-950">{projectName}</h1><p className="mt-1 text-sm text-gray-500">Tickets Board · Create tickets and assign them to your team.</p></div>
@@ -358,10 +363,10 @@ export default function ProjectTickets() {
                 </button>}
               </div>
               <div className="grid grid-cols-2 border-t border-gray-100 md:grid-cols-5">{[
-                ['Total Tickets', tickets.length, '◎', 'text-emerald-600 bg-emerald-50'],
-                ['To Do', tickets.filter(t => t.status === 'todo').length, '▣', 'text-emerald-600 bg-emerald-50'],
-                ['In Progress', tickets.filter(t => t.status === 'in_progress').length, '▤', 'text-orange-500 bg-orange-50'],
-                ['In Review', tickets.filter(t => t.status === 'in_review').length, '▧', 'text-violet-600 bg-violet-50'],
+                ['Total Tickets', tickets.length, '▤', 'text-blue-600 bg-blue-50'],
+                ['To Do', tickets.filter(t => t.status === 'todo').length, '☷', 'text-emerald-600 bg-emerald-50'],
+                ['In Progress', tickets.filter(t => t.status === 'in_progress').length, '◷', 'text-orange-500 bg-orange-50'],
+                ['In Review', tickets.filter(t => t.status === 'in_review').length, '◉', 'text-violet-600 bg-violet-50'],
                 ['Done', tickets.filter(t => t.status === 'done').length, '✓', 'text-emerald-600 bg-emerald-50'],
               ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 p-4 last:border-r-0 md:border-b-0"><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${color}`}>{icon}</span><div><p className="text-xs font-medium text-gray-500">{label}</p><p className="text-xl font-bold text-gray-950">{value}</p></div></div>)}</div>
             </section>
@@ -371,7 +376,8 @@ export default function ProjectTickets() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span>
                 <button type="button" onClick={() => setShowFilters(value => !value)} className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${showFilters || activeFilterCount ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600'}`}>⌁ &nbsp; Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</button>
-                <span className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white">▥ Board</span>
+                <button type="button" onClick={() => setShowList(false)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${!showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600'}`}>▦ &nbsp; Board</button>
+                <button type="button" onClick={() => setShowList(true)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600'}`}>☷ &nbsp; List</button>
               </div>
               {showFilters && <div className="absolute right-3 top-full z-30 mt-2 w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
                 <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-gray-900">Filter tickets</h3>{activeFilterCount > 0 && <button type="button" onClick={clearFilters} className="text-sm font-semibold text-emerald-600 hover:text-emerald-800">Clear all</button>}</div>
@@ -383,7 +389,7 @@ export default function ProjectTickets() {
               </div>}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className={showList ? "space-y-3" : "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"}>
                 {cols.map((c) => (
                     <div
                         key={c.key}
