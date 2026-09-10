@@ -383,9 +383,7 @@ export default function CeoProjects() {
                       {meta.label}
                     </span>
                     <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                      <button className="text-amber-400 hover:text-amber-500 transition-colors text-sm">
-                        ★
-                      </button>
+
                       <div className="relative">
                         <button 
                           onClick={() => setDropdownOpen(dropdownOpen === `proj-${p.id}` ? null : `proj-${p.id}`)} 
