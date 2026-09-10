@@ -342,8 +342,8 @@ export default function ProjectTickets() {
               <div className="flex items-center gap-5 text-slate-700"><span className="text-xl">♧</span><span className="grid h-10 w-10 place-items-center rounded-full bg-blue-100 text-sm font-bold text-slate-600">HA</span><span className="text-sm">⌄</span></div>
             </div>
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-              <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                <div><p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Project</p><h1 className="mt-1 text-2xl font-bold text-gray-950">{projectName}</h1><p className="mt-1 text-sm text-gray-500">Tickets Board · Create tickets and assign them to your team.</p></div>
+              <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+                <div><p className="text-sm font-bold uppercase tracking-wider text-slate-700">Project</p><h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">{projectName}</h1><p className="mt-2 text-base text-slate-500">Tickets Board · Create tickets and assign them to your team.</p></div>
                 {canManage && <button
                     className="btn-primary w-full px-5 py-2.5 shadow-lg shadow-emerald-200 sm:w-auto"
                     onClick={() => {
@@ -368,7 +368,7 @@ export default function ProjectTickets() {
                 ['In Progress', tickets.filter(t => t.status === 'in_progress').length, '◷', 'text-orange-500 bg-orange-50'],
                 ['In Review', tickets.filter(t => t.status === 'in_review').length, '◉', 'text-violet-600 bg-violet-50'],
                 ['Done', tickets.filter(t => t.status === 'done').length, '✓', 'text-emerald-600 bg-emerald-50'],
-              ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 p-4 last:border-r-0 md:border-b-0"><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-lg ${color}`}>{icon}</span><div><p className="text-xs font-medium text-gray-500">{label}</p><p className="text-xl font-bold text-gray-950">{value}</p></div></div>)}</div>
+              ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 px-5 py-5 last:border-r-0 md:border-b-0"><span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${color}`}>{icon}</span><div><p className="text-sm font-semibold text-slate-500">{label}</p><p className="text-2xl font-extrabold text-slate-950">{value}</p></div></div>)}</div>
             </section>
 
             <div className="relative flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
@@ -389,16 +389,16 @@ export default function ProjectTickets() {
               </div>}
             </div>
 
-            <div className={showList ? "space-y-3" : "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"}>
+            <div className={showList ? "space-y-3" : "grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4"}>
                 {cols.map((c) => (
                     <div
                         key={c.key}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => moveTicket(Number(event.dataTransfer.getData('ticketId')), c.key)}
-                        className="min-h-[34rem] rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                        className="min-h-[38rem] overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-sm"
                     >
-                        <div className={`mb-4 flex items-center justify-between border-b-2 pb-4 ${columnTheme[c.key].border}`}>
-                            <span className="flex items-center gap-2 font-bold text-gray-900"><i className={`grid h-9 w-9 place-items-center rounded-xl not-italic ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</i>
+                        <div className={`mb-4 flex items-center justify-between border-b-2 px-5 py-5 ${columnTheme[c.key].border} ${columnTheme[c.key].soft}`}>
+                            <span className="flex items-center gap-2 font-bold text-gray-900"><i className={`grid h-8 w-8 place-items-center rounded-full not-italic ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</i>
                                 {c.name}
                                 <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
                                     {
@@ -409,7 +409,7 @@ export default function ProjectTickets() {
                                 </span>
                             </span>
                         </div>
-                        {canManage && <button className={`mb-4 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors  ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
+                        <div className="px-4">
                         {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
@@ -534,6 +534,8 @@ export default function ProjectTickets() {
                                 </div>
                             ))}
                         {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 place-items-center text-center"><div><div className={`mx-auto grid h-16 w-16 place-items-center rounded-2xl text-3xl ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</div><p className="mt-4 font-semibold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-400">Create an issue or drag one here</p></div></div>}
+                        {canManage && <button className={`mb-4 mt-6 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
+                        </div>
                     </div>
                 ))}
             </div>
