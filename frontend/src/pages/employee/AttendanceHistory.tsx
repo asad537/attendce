@@ -73,7 +73,7 @@ export default function AttendanceHistory() {
               <thead>
                 <tr>
                   <th>Date</th><th>Check In</th><th>Check Out</th><th>Status</th>
-                  <th>Work Mode</th><th>Hours</th><th>Breaks</th><th>Overtime</th>
+                  <th>Work Mode</th><th>Hours</th><th>Overtime</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,7 +92,6 @@ export default function AttendanceHistory() {
                     <td><StatusBadge status={a.status} /></td>
                     <td className="capitalize">{a.work_mode.replace('_', ' ')}</td>
                     <td className="font-medium">{a.working_hours ? `${a.working_hours}h` : '–'}</td>
-                    <td>{a.break_minutes ? `${a.break_minutes}m` : '–'}</td>
                     <td>{a.overtime_minutes ? <span className="text-indigo-600 font-medium">{(a.overtime_minutes / 60).toFixed(1)}h</span> : '–'}</td>
                   </tr>
                 ))}
