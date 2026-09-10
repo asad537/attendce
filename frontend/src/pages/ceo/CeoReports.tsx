@@ -7,7 +7,7 @@ import { reportService } from '../../services/reportService';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 
 type ReportRow = {
-  user: { id: number; name: string; employee_id?: string; role?: string; designation?: { name?: string }; department?: { name?: string } };
+  user: { id: number; name: string; employee_id?: string; role?: string; designation?: { title?: string; name?: string }; department?: { name?: string } };
   total_days?: number; working_days_in_period?: number; present?: number; work_from_home?: number;
   on_leave?: number; days_worked_excl_weekends?: number; total_working_hours?: number; avg_working_hours?: number;
   assigned_tickets?: number; completed_tickets?: number; in_progress_tickets?: number; overdue_tickets?: number;
@@ -93,7 +93,7 @@ export default function CeoReports() {
     const completionRate = assignedTickets ? Math.min(100, Math.round(completedTickets / assignedTickets * 100)) : 0;
     const score = rowIndex(row);
     const roleLabels: Record<string, string> = { ceo: 'President', manager: 'Manager', tl: 'Team Lead', employee: 'Employee' };
-    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role: row.user.designation?.name || roleLabels[row.user.role || 'employee'] || 'Team Member', department: row.user.department?.name || 'Operations' };
+    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role: row.user.designation?.title || row.user.designation?.name || roleLabels[row.user.role || 'employee'] || 'Team Member', department: row.user.department?.name || 'Operations' };
   }), [data]);
 
   const filtered = useMemo(() => {

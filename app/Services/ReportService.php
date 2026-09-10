@@ -90,7 +90,7 @@ class ReportService
                 $user->only(['id', 'name', 'employee_id', 'role']),
                 [
                     'department' => $user->department ? $user->department->only(['id', 'name']) : null,
-                    'designation' => $user->designation ? $user->designation->only(['id', 'name']) : null,
+                    'designation' => $user->designation ? $user->designation->only(['id', 'title']) : null,
                 ]
             ),
             'period'          => ['start' => $start, 'end' => $end],
