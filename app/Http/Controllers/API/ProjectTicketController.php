@@ -30,9 +30,23 @@ class ProjectTicketController extends Controller
     private function canManageProject(Request $request, Project $project): bool
     {
         $user = $request->user();
-        return $user->isCeo()
+        return $user->isCeo() || $user->isManager()
             || (int) $project->created_by === (int) $user->id
             || $project->isLead($user->id);
+    }
+
+    private function canManageTicket(Request $request, ProjectTicket $ticket): bool
+    {
+        $user = $request->user();
+        $project = $ticket->project ?? $ticket->project()->first();
+        
+        if ($user->isCeo() || $user->isManager() || (int) $project->created_by === (int) $user->id) {
+            return true;
+        }
+        if ($project->isLead($user->id)) {
+            return (int) $ticket->created_by === (int) $user->id;
+        }
+        return false;
     }
 
     private function authorizeProjectView(Request $request, Project $project): void
@@ -44,7 +58,7 @@ class ProjectTicketController extends Controller
 
     private function authorizeTicket(Request $request, ProjectTicket $ticket): void
     {
-        if ($this->canManageProject($request, $ticket->project)) return;
+        if ($this->canManageTicket($request, $ticket)) return;
         abort_unless((int) $ticket->assignee_id === (int) $request->user()->id, 403);
     }
 
@@ -63,9 +77,17 @@ class ProjectTicketController extends Controller
         
         $query = ProjectTicket::with(['assignee:id,first_name,last_name,name,email,role', 'rater:id,first_name,last_name,name'])->where('project_id', $project->id);
 
-        // CEO, the creator and any project lead see every ticket; everyone else
-        // (a plain member/assignee) sees only the tickets assigned to them.
-        if (!$this->canManageProject($request, $project)) {
+        // CEO, Manager, and the creator see every ticket.
+        // A project lead sees tickets they created and tickets assigned to them.
+        // Everyone else (a plain member/assignee) sees only the tickets assigned to them.
+        if ($user->isCeo() || $user->isManager() || (int) $project->created_by === (int) $user->id) {
+            // Full visibility
+        } elseif ($project->isLead($user->id)) {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhere('assignee_id', $user->id);
+            });
+        } else {
             $query->where('assignee_id', $user->id);
         }
 
@@ -129,12 +151,12 @@ class ProjectTicketController extends Controller
         $this->authorizeTicket($request, $ticket);
         $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','progress'=>'sometimes|integer|min:0|max:100','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','assignee_id'=>'nullable|exists:users,id']);
         $this->ensureDueDateIsNotBeforeProjectStart($data['due_date'] ?? null, $ticket->project);
-        if (!$this->canManageProject($request, $ticket->project)) {
+        if (!$this->canManageTicket($request, $ticket)) {
             // The assignee (doer) may move the status and update their progress %.
             $data = array_intersect_key($data, array_flip(['status', 'progress']));
         }
         if (isset($data['status']) && $data['status'] === 'done' && $ticket->status === 'in_review') {
-            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the President or a project lead can move a ticket from Review to Done.');
+            abort_unless($this->canManageTicket($request, $ticket), 403, 'Only the President or a ticket manager can move a ticket from Review to Done.');
         }
         // Keep the progress bar honest: a done ticket is 100%, anything else <100.
         if (isset($data['status'])) {
@@ -189,7 +211,7 @@ class ProjectTicketController extends Controller
     public function rate(Request $request, ProjectTicket $ticket)
     {
         $ticket->load('project');
-        abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only the President or a project lead can rate a ticket.');
+        abort_unless($this->canManageTicket($request, $ticket), 403, 'Only the President, project creator, or ticket creator can rate a ticket.');
         abort_unless($ticket->status === 'done', 422, 'Only completed (Done) tickets can be rated.');
 
         $data = $request->validate(['rating' => 'required|integer|min:1|max:5']);
@@ -229,7 +251,7 @@ class ProjectTicketController extends Controller
 
     public function uploadAttachment(Request $request, ProjectTicket $ticket)
     {
-        abort_unless($this->canManageProject($request, $ticket->project), 403);
+        abort_unless($this->canManageTicket($request, $ticket), 403);
         $data = $request->validate(['attachment' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240']);
         $file = $data['attachment'];
         $oldPath = $ticket->attachment_path;
@@ -258,7 +280,7 @@ class ProjectTicketController extends Controller
 
     public function destroy(Request $request, ProjectTicket $ticket)
     {
-        abort_unless($this->canManageProject($request, $ticket->project), 403);
+        abort_unless($this->canManageTicket($request, $ticket), 403);
         if ($ticket->attachment_path) Storage::disk('local')->delete($ticket->attachment_path);
         $ticket->delete();
         return response()->json(['message' => 'Ticket deleted.']);
