@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api, { getErrorMessage } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 import { projectService } from "../../services/projectService";
+import { userService } from "../../services/userService";
 import Modal from "../../components/common/Modal";
 import TicketModal from "../../components/common/TicketModal";
 import TimeTrackingModal from "../../components/common/TimeTrackingModal";
@@ -100,10 +101,14 @@ export default function ProjectTickets() {
     });
     const load = async () => {
         try {
-            const [t, m, p] = await Promise.all([
+            // The President and managers may hand a ticket to anyone in the
+            // organisation, so their assignee pool is the whole active staff.
+            const orgWide = currentUser?.role === "ceo" || currentUser?.role === "manager";
+            const [t, m, p, org] = await Promise.all([
                 api.get(`/projects/${projectId}/tickets`),
                 api.get(`/projects/${projectId}/members`).catch(() => null),
                 projectService.getAll(),
+                orgWide ? userService.getList({ per_page: 500, status: "active" }).catch(() => null) : Promise.resolve(null),
             ]);
             const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
             setTickets(fetchedTickets);
@@ -114,7 +119,9 @@ export default function ProjectTickets() {
             // comes from the backend so any project lead — not just any manager —
             // gets full control.
             const team: User[] = Array.isArray(m?.data?.team) ? m!.data.team : [];
-            setUsers(team);
+            const staff = (org?.data || []).filter((u) => u.status === "active" && u.role !== "ceo" && (u.role as string) !== "guest");
+            // Org-wide pool for President/managers (team first so they stay on top), team only for leads.
+            setUsers(orgWide && staff.length ? [...team, ...staff.filter((u) => !team.some((tm) => tm.id === u.id))] : team);
             setCanManage(Boolean(m?.data?.can_manage));
             const currentProject = (Array.isArray(p) ? p : []).find((project) => project.id === Number(projectId));
             setProjectName(currentProject?.name || "Project");

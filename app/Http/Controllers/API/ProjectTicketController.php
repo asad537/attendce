@@ -20,8 +20,11 @@ class ProjectTicketController extends Controller
     // pool is the whole project team rather than "my direct reports".
     private function canAssignUser(Request $request, Project $project, int $targetId): bool
     {
-        if ($request->user()->isCeo()) {
-            return User::whereKey($targetId)->exists();
+        // The President and managers run the whole organisation, so they may
+        // hand a ticket to any active staff member; everyone else is limited
+        // to the project's own team.
+        if ($request->user()->isCeo() || $request->user()->isManager()) {
+            return User::whereKey($targetId)->where('status', 'active')->exists();
         }
         return in_array($targetId, $project->teamUserIds(), true);
     }
