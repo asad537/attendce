@@ -90,6 +90,13 @@ class ProjectController extends Controller
                           ->orWhereHas('tickets', function ($q) use ($user) {
                               $q->where('assignee_id', $user->id);
                           });
+                    // A team lead also sees projects where someone from their
+                    // department has a ticket (e.g. assigned by the President).
+                    if ($user->isTl() && $user->department_id) {
+                        $scope->orWhereHas('tickets.assignee', function ($q) use ($user) {
+                            $q->where('department_id', $user->department_id);
+                        });
+                    }
                 });
             })->latest()->get();
 

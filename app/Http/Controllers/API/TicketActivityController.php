@@ -13,12 +13,8 @@ class TicketActivityController extends Controller
 {
     private function authorizeTicket(Request $request, ProjectTicket $ticket)
     {
-        $project = $ticket->project;
-        $user = $request->user();
-        if ($user->isCeo()) return;
-        if ($project->created_by == $user->id || $project->project_lead_id == $user->id) return;
-        if ((int) $ticket->assignee_id === (int) $user->id) return;
-        abort(403);
+        // Same rule as the ticket board (managers, every lead, department TLs).
+        abort_unless(\App\Services\TicketAccess::canViewTicket($request->user(), $ticket), 403);
     }
 
     public function activity(Request $request, ProjectTicket $ticket)

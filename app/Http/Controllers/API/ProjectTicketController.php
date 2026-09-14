@@ -3,6 +3,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectTicket;
+use App\Services\TicketAccess;
 use App\Models\User;
 use App\Models\TicketSubtask;
 use App\Models\TicketActivity;
@@ -27,39 +28,26 @@ class ProjectTicketController extends Controller
 
     // Who can manage a project's tickets: the CEO, the project creator, or any
     // of the project's leads (a project can now have several leads).
+    // All visibility / management rules live in TicketAccess so the activity
+    // controller and the board agree on who sees what.
     private function canManageProject(Request $request, Project $project): bool
     {
-        $user = $request->user();
-        return $user->isCeo() || $user->isManager()
-            || (int) $project->created_by === (int) $user->id
-            || $project->isLead($user->id);
+        return TicketAccess::canManageProject($request->user(), $project);
     }
 
     private function canManageTicket(Request $request, ProjectTicket $ticket): bool
     {
-        $user = $request->user();
-        $project = $ticket->project ?? $ticket->project()->first();
-        
-        if ($user->isCeo() || $user->isManager() || (int) $project->created_by === (int) $user->id) {
-            return true;
-        }
-        if ($project->isLead($user->id)) {
-            return (int) $ticket->created_by === (int) $user->id;
-        }
-        return false;
+        return TicketAccess::canManageTicket($request->user(), $ticket);
     }
 
     private function authorizeProjectView(Request $request, Project $project): void
     {
-        if ($this->canManageProject($request, $project)) return;
-        if (ProjectTicket::where('project_id', $project->id)->where('assignee_id', $request->user()->id)->exists()) return;
-        abort(403);
+        abort_unless(TicketAccess::canViewProject($request->user(), $project), 403);
     }
 
     private function authorizeTicket(Request $request, ProjectTicket $ticket): void
     {
-        if ($this->canManageTicket($request, $ticket)) return;
-        abort_unless((int) $ticket->assignee_id === (int) $request->user()->id, 403);
+        abort_unless(TicketAccess::canViewTicket($request->user(), $ticket), 403);
     }
 
     private function ensureDueDateIsNotBeforeProjectStart(?string $dueDate, Project $project): void
@@ -77,19 +65,9 @@ class ProjectTicketController extends Controller
         
         $query = ProjectTicket::with(['assignee:id,first_name,last_name,name,email,role', 'rater:id,first_name,last_name,name'])->where('project_id', $project->id);
 
-        // CEO, Manager, and the creator see every ticket.
-        // A project lead sees tickets they created and tickets assigned to them.
-        // Everyone else (a plain member/assignee) sees only the tickets assigned to them.
-        if ($user->isCeo() || $user->isManager() || (int) $project->created_by === (int) $user->id) {
-            // Full visibility
-        } elseif ($project->isLead($user->id)) {
-            $query->where(function ($q) use ($user) {
-                $q->where('created_by', $user->id)
-                  ->orWhere('assignee_id', $user->id);
-            });
-        } else {
-            $query->where('assignee_id', $user->id);
-        }
+        // President / managers / creator: everything. Team leads: their own
+        // tickets plus anything assigned to their department. Others: theirs.
+        TicketAccess::scopeVisible($query, $user, $project);
 
         return response()->json(['tickets' => $query->get()]);
     }
