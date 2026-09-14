@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Notification;
+use App\Support\BusinessTime;
 use Carbon\Carbon;
 
 class SendAttendanceReminders extends Command
@@ -31,9 +32,10 @@ class SendAttendanceReminders extends Command
      */
     public function handle()
     {
-        $now = Carbon::now();
+        // Shift times are company wall-clock times, so compare on that clock.
+        $now = BusinessTime::now();
         $targetTime = $now->copy()->addMinutes(15)->format('H:i');
-        $today = $now->toDateString();
+        $today = today()->toDateString();
 
         $users = User::with('shift')->where('status', 'active')->get();
         $count = 0;

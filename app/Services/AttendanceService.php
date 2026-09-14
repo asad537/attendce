@@ -8,6 +8,7 @@ use App\Models\BreakRecord;
 use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\User;
+use App\Support\BusinessTime;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -81,7 +82,7 @@ class AttendanceService
         }
 
         if ($shift && !$isWeekendWork) {
-            $shiftStart  = Carbon::parse($today . ' ' . $shift->start_time);
+            $shiftStart  = BusinessTime::at($today, $shift->start_time);
             $graceEnd    = $shiftStart->copy()->addMinutes($shift->grace_minutes);
             if ($now->gt($graceEnd)) {
                 $isLate      = true;
@@ -177,11 +178,11 @@ class AttendanceService
         $overtimeMinutes = 0;
         $shift = $user->shift;
         if ($shift) {
-            $shiftEnd      = Carbon::parse(today()->toDateString() . ' ' . $shift->end_time);
+            $shiftEnd      = BusinessTime::at(today()->toDateString(), $shift->end_time);
             if ($shift->is_night_shift && $shiftEnd->lt($checkIn)) {
                 $shiftEnd->addDay();
             }
-            $shiftDuration = Carbon::parse(today()->toDateString() . ' ' . $shift->start_time)
+            $shiftDuration = BusinessTime::at(today()->toDateString(), $shift->start_time)
                 ->diffInMinutes($shiftEnd);
             if ($workMinutes > $shiftDuration) {
                 $overtimeMinutes = $workMinutes - $shiftDuration;

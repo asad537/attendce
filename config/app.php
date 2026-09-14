@@ -69,6 +69,10 @@ return [
 
     'timezone' => 'UTC',
 
+    // Wall-clock timezone used for shift start/end times, reminders and
+    // auto-checkout. Timestamps stay in UTC; only the comparisons use this.
+    'business_timezone' => env('APP_BUSINESS_TIMEZONE', 'Asia/Karachi'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

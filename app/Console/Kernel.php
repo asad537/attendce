@@ -16,8 +16,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('attendance:reminders')->everyMinute();
-        $schedule->command('notifications:birthdays')->dailyAt('09:00');
-        $schedule->command('attendance:autocheckout')->dailyAt('23:59');
+        $schedule->command('notifications:birthdays')->dailyAt('09:00')->timezone(config('app.business_timezone'));
+        // Runs often so people are checked out shortly after their shift's
+        // overtime window closes, instead of once a day at 23:59 UTC (5 AM PKT).
+        $schedule->command('attendance:autocheckout')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('notifications:prune')->daily();
     }
 
