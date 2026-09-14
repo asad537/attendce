@@ -521,7 +521,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                                     type="button"
                                     onClick={() => setSelectedRemoteId(p.id)}
                                     aria-label={`Show ${p.name} on main screen`}
-                                    className="aspect-video shrink-0 overflow-hidden rounded-xl border-0 p-0 text-left outline-none ring-0 transition focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                                    className="aspect-video shrink-0 overflow-hidden rounded-xl border-0 p-0 text-left outline-none ring-0 ring-inset transition hover:ring-2 hover:ring-emerald-400 focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
                                     title={`Show ${p.name} on main screen`}
                                 >
                                     <MeetTile name={p.name} stream={p.stream} showVideo={isVideo && !p.cameraOff} muted={p.muted} handUp={p.handUp} />

@@ -48,6 +48,25 @@ const cols = [
     { key: "done", name: "Done" },
 ] as const;
 
+// Small stroke icons used by the board (Figma: Lucide-style outlines).
+const Ico = ({ d, className = "h-4 w-4" }: { d: string; className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+);
+const ICO = {
+    doc: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8",
+    list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+    clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 6v6l4 2",
+    eye: "M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+    check: "M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3",
+    tag: "M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01",
+    calendar: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+    bell: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0",
+    search: "M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
+    kebab: "M12 5h.01M12 12h.01M12 19h.01",
+};
+const initialsOf = (name?: string) => (name || "").split(" ").filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("") || "?";
+const formatDue = (d?: string) => d ? new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "No due date";
+
 export default function ProjectTickets() {
     const { user: currentUser } = useAuth();
     const { projectId } = useParams();
@@ -233,10 +252,10 @@ export default function ProjectTickets() {
         setStatusFilter('all');
     };
     const columnTheme = {
-        todo: { icon: '☷', accent: 'text-emerald-600', soft: 'bg-emerald-50', border: 'border-emerald-300' },
-        in_progress: { icon: '▣', accent: 'text-orange-500', soft: 'bg-orange-50', border: 'border-orange-300' },
-        in_review: { icon: '▧', accent: 'text-violet-600', soft: 'bg-violet-50', border: 'border-violet-300' },
-        done: { icon: '✓', accent: 'text-emerald-600', soft: 'bg-emerald-50', border: 'border-emerald-300' },
+        todo: { icon: '☷', dot: 'bg-teal-700', accent: 'text-teal-700', soft: 'bg-teal-50', border: 'border-teal-100' },
+        in_progress: { icon: '▣', dot: 'bg-orange-400', accent: 'text-orange-500', soft: 'bg-orange-50', border: 'border-orange-100' },
+        in_review: { icon: '▧', dot: 'bg-violet-600', accent: 'text-violet-600', soft: 'bg-violet-50', border: 'border-violet-100' },
+        done: { icon: '✓', dot: 'bg-emerald-400', accent: 'text-emerald-600', soft: 'bg-emerald-50', border: 'border-emerald-100' },
     } as const;
 
     const uploadAttachment = async (ticket: Ticket, file: File) => {
@@ -338,8 +357,8 @@ export default function ProjectTickets() {
         <div className="min-h-full space-y-5 bg-[#f7f9fc] p-4 sm:p-6 lg:p-7">
             <div className="flex flex-wrap items-center justify-between gap-4 px-1">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-600"><span>Project Workspace</span><span className="text-slate-300">›</span><span className="text-slate-500">{projectName}</span></div>
-              <label className="relative hidden w-full max-w-md lg:block"><span className="absolute inset-y-0 left-4 flex items-center text-slate-500">⌕</span><input className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-14 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} /><kbd className="absolute right-3 top-2 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500">⌘ K</kbd></label>
-              <div className="flex items-center gap-5 text-slate-700"><span className="text-xl">♧</span><span className="grid h-10 w-10 place-items-center rounded-full bg-blue-100 text-sm font-bold text-slate-600">HA</span><span className="text-sm">⌄</span></div>
+              <label className="relative hidden w-full max-w-md lg:block"><span className="absolute inset-y-0 left-4 flex items-center text-slate-500"><Ico d={ICO.search} /></span><input className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-14 text-sm shadow-sm outline-none placeholder:text-slate-400 focus:border-emerald-400" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} /><kbd className="absolute right-3 top-2 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-500">⌘ K</kbd></label>
+              <div className="flex items-center gap-5 text-slate-700"><Ico d={ICO.bell} className="h-5 w-5" /><span className="grid h-10 w-10 place-items-center rounded-full bg-blue-100 text-sm font-bold text-slate-600">{initialsOf(currentUser?.name)}</span><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="m6 9 6 6 6-6" /></svg></div>
             </div>
             <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
               <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
@@ -363,21 +382,21 @@ export default function ProjectTickets() {
                 </button>}
               </div>
               <div className="grid grid-cols-2 border-t border-gray-100 md:grid-cols-5">{[
-                ['Total Tickets', tickets.length, '▤', 'text-blue-600 bg-blue-50'],
-                ['To Do', tickets.filter(t => t.status === 'todo').length, '☷', 'text-emerald-600 bg-emerald-50'],
-                ['In Progress', tickets.filter(t => t.status === 'in_progress').length, '◷', 'text-orange-500 bg-orange-50'],
-                ['In Review', tickets.filter(t => t.status === 'in_review').length, '◉', 'text-violet-600 bg-violet-50'],
-                ['Done', tickets.filter(t => t.status === 'done').length, '✓', 'text-emerald-600 bg-emerald-50'],
-              ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-3 border-b border-r border-gray-100 px-5 py-5 last:border-r-0 md:border-b-0"><span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${color}`}>{icon}</span><div><p className="text-sm font-semibold text-slate-500">{label}</p><p className="text-2xl font-extrabold text-slate-950">{value}</p></div></div>)}</div>
+                ['Total Tickets', tickets.length, ICO.doc, 'text-blue-600 bg-blue-50'],
+                ['To Do', tickets.filter(t => t.status === 'todo').length, ICO.list, 'text-teal-700 bg-teal-50'],
+                ['In Progress', tickets.filter(t => t.status === 'in_progress').length, ICO.clock, 'text-orange-500 bg-orange-50'],
+                ['In Review', tickets.filter(t => t.status === 'in_review').length, ICO.eye, 'text-violet-600 bg-violet-50'],
+                ['Done', tickets.filter(t => t.status === 'done').length, ICO.check, 'text-emerald-600 bg-emerald-50'],
+              ].map(([label, value, icon, color]) => <div key={String(label)} className="flex items-center gap-4 border-b border-r border-gray-100 px-5 py-5 last:border-r-0 md:border-b-0"><span className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl ${color}`}><Ico d={String(icon)} className="h-6 w-6" /></span><div><p className="text-sm font-semibold text-slate-500">{label}</p><p className="text-2xl font-extrabold text-slate-950">{value}</p></div></div>)}</div>
             </section>
 
             <div className="relative flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-              <label className="relative block w-full lg:max-w-sm"><span className="absolute inset-y-0 left-3 flex items-center text-gray-400">⌕</span><input className="input h-11 pl-9 pr-9" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} />{search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')} className="absolute inset-y-0 right-3 text-gray-400">×</button>}</label>
+              <label className="relative block w-full lg:max-w-sm"><span className="absolute inset-y-0 left-3 flex items-center text-gray-400"><Ico d={ICO.search} /></span><input className="input h-11 pl-9 pr-9" placeholder="Search tickets, assignee or KAN ID..." value={search} onChange={event => setSearch(event.target.value)} />{search && <button type="button" aria-label="Clear search" onClick={() => setSearch('')} className="absolute inset-y-0 right-3 text-gray-400">×</button>}</label>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600">☷ &nbsp; Group by: Status</span>
-                <button type="button" onClick={() => setShowFilters(value => !value)} className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${showFilters || activeFilterCount ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600'}`}>⌁ &nbsp; Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</button>
-                <button type="button" onClick={() => setShowList(false)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${!showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600'}`}>▦ &nbsp; Board</button>
-                <button type="button" onClick={() => setShowList(true)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600'}`}>☷ &nbsp; List</button>
+                <span className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700"><Ico d={ICO.list} /> Group by: Status <svg className="h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="m6 9 6 6 6-6" /></svg></span>
+                <button type="button" onClick={() => setShowFilters(value => !value)} className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${showFilters || activeFilterCount ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-700'}`}><svg className="mr-2 inline h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" /></svg>Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</button>
+                <button type="button" onClick={() => setShowList(false)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${!showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-700'}`}><svg className="mr-2 inline h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 5h18v14H3zM3 10h18M9 5v14M15 5v14" /></svg>Board</button>
+                <button type="button" onClick={() => setShowList(true)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${showList ? 'bg-emerald-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-700'}`}><svg className="mr-2 inline h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M4 4h4v4H4zM16 4h4v4h-4zM4 16h4v4H4zM16 16h4v4h-4zM8 6h8M8 18h8M6 8v8M18 8v8" /></svg>List</button>
               </div>
               {showFilters && <div className="absolute right-3 top-full z-30 mt-2 w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white p-4 shadow-xl">
                 <div className="mb-3 flex items-center justify-between"><h3 className="font-bold text-gray-900">Filter tickets</h3>{activeFilterCount > 0 && <button type="button" onClick={clearFilters} className="text-sm font-semibold text-emerald-600 hover:text-emerald-800">Clear all</button>}</div>
@@ -395,12 +414,12 @@ export default function ProjectTickets() {
                         key={c.key}
                         onDragOver={(event) => event.preventDefault()}
                         onDrop={(event) => moveTicket(Number(event.dataTransfer.getData('ticketId')), c.key)}
-                        className="min-h-[38rem] overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-sm"
+                        className="flex min-h-[38rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-sm"
                     >
-                        <div className={`mb-4 flex items-center justify-between border-b-2 px-5 py-5 ${columnTheme[c.key].border} ${columnTheme[c.key].soft}`}>
-                            <span className="flex items-center gap-2 font-bold text-gray-900"><i className={`grid h-8 w-8 place-items-center rounded-full not-italic ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</i>
+                        <div className={`mb-4 flex items-center justify-between px-5 py-5 ${columnTheme[c.key].soft}`}>
+                            <span className="flex items-center gap-3 text-[15px] font-bold text-gray-900"><i className={`h-2.5 w-2.5 rounded-full ${columnTheme[c.key].dot}`} />
                                 {c.name}
-                                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                                <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-bold text-gray-600 shadow-sm">
                                     {
                                         visibleTickets.filter(
                                             (t) => t.status === c.key,
@@ -409,7 +428,7 @@ export default function ProjectTickets() {
                                 </span>
                             </span>
                         </div>
-                        <div className="px-4">
+                        <div className="flex flex-1 flex-col px-4 pb-4">
                         {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
@@ -421,7 +440,7 @@ export default function ProjectTickets() {
                                     className="mb-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
                                 >
                                     <div className="flex justify-between items-start mb-4">
-                                        <p className="font-medium text-[14px] leading-5 text-gray-900 pr-2">
+                                        <p className="font-semibold text-[15px] leading-5 text-gray-900 pr-2">
                                             {t.title}
                                         </p>
                                         <div className="flex gap-1 text-gray-500 shrink-0">
@@ -445,38 +464,22 @@ export default function ProjectTickets() {
                                                     setOpen(true);
                                                 }}
                                                 className="hover:bg-gray-100 p-1 rounded transition-colors"
+                                                title="Edit ticket"
                                             >
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth={2}
-                                                    />
-                                                </svg>
+                                                <Ico d={ICO.kebab} className="h-5 w-5" />
                                             </button>}
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="checkbox"
-                                                className="w-4 h-4 rounded border-0 bg-white text-blue-600 focus:ring-0 focus:ring-offset-0 cursor-pointer"
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
-                                            />
-                                            <span className="text-[12px] font-semibold text-gray-500">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-gray-500">
+                                            <Ico d={ICO.tag} />
+                                            <span className="text-[12px] font-semibold text-gray-600">
                                                 KAN-{t.id}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex min-w-0 items-center gap-2">
                                             <div
-                                                className="relative inline-flex items-center justify-center rounded-md bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                                                className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-orange-50 text-orange-500 hover:bg-orange-100 transition-colors"
                                                 title={`Priority: ${t.priority || "medium"}`}
                                             >
                                                 {canManage ? <PriorityDropdown
@@ -486,7 +489,7 @@ export default function ProjectTickets() {
                                                 /> : getPriorityIconSVG(t.priority)}
                                             </div>
                                             <div
-                                                className="relative inline-flex h-7 max-w-36 items-center justify-center truncate whitespace-nowrap rounded-md bg-emerald-50 px-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-all cursor-pointer"
+                                                className="relative inline-flex h-7 min-w-0 max-w-40 items-center gap-1.5 truncate whitespace-nowrap rounded-full pr-1 text-[11px] font-semibold text-gray-700 hover:bg-gray-50 transition-all cursor-pointer"
                                                 title={
                                                     t.assignee?.name ||
                                                     "Unassigned"
@@ -517,10 +520,16 @@ export default function ProjectTickets() {
                                                         </option>
                                                     ))}
                                                 </select>}
-                                                {t.assignee?.name || "Assign"}
+                                                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-bold ${t.assignee ? "bg-blue-100 text-slate-700" : "border border-dashed border-gray-300 text-gray-400"}`}>{t.assignee ? initialsOf(t.assignee.name) : "+"}</span>
+                                                <span className="truncate">{t.assignee?.name || "Assign"}</span>
                                             </div>
                                         </div>
                                     </div>
+                                    <div className={`mt-3 flex items-center gap-2 text-[12px] font-medium ${t.due_date && t.status !== 'done' && t.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10) ? 'text-red-500' : 'text-gray-500'}`}>
+                                        <Ico d={ICO.calendar} />
+                                        <span>{formatDue(t.due_date)}</span>
+                                    </div>
+                                    <span className="mt-3 inline-block rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-semibold text-blue-600">{projectName}</span>
                                     {t.status !== 'todo' && (
                                         <div className="mt-3">
                                             <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-gray-400">
@@ -533,8 +542,8 @@ export default function ProjectTickets() {
                                     )}
                                 </div>
                             ))}
-                        {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 place-items-center text-center"><div><div className={`mx-auto grid h-16 w-16 place-items-center rounded-2xl text-3xl ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`}>{columnTheme[c.key].icon}</div><p className="mt-4 font-semibold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-400">Create an issue or drag one here</p></div></div>}
-                        {canManage && <button className={`mb-4 mt-6 w-full rounded-xl border border-dashed py-3 text-sm font-bold transition-colors ${columnTheme[c.key].border} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
+                        {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 flex-1 place-items-center text-center"><div><Ico d={ICO.doc} className="mx-auto h-16 w-16 text-gray-300" /><p className="mt-4 text-[15px] font-bold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-500">Create an issue or drag one here</p></div></div>}
+                        {canManage && <button className={`mt-auto w-full rounded-xl py-3.5 text-sm font-bold transition-colors hover:brightness-95 ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
                         </div>
                     </div>
                 ))}
