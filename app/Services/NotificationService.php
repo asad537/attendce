@@ -22,8 +22,11 @@ class NotificationService
             'message'         => $message,
             'type'            => $type,
             'action_url'      => $actionUrl,
-            'notifiable_id'   => $notifiable ? $notifiable->id : null,
-            'notifiable_type' => $notifiable ? get_class($notifiable) : null,
+            // The notifications table was created with a non-nullable morph, so a
+            // plain notification (late check-in, reminders, birthdays) is
+            // attached to the recipient instead of failing the insert.
+            'notifiable_id'   => $notifiable ? $notifiable->id : $recipient->id,
+            'notifiable_type' => $notifiable ? get_class($notifiable) : get_class($recipient),
         ]);
 
         // Broadcast real-time notification

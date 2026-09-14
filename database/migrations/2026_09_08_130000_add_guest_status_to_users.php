@@ -10,14 +10,18 @@ return new class extends Migration
     // because scopeActive() only matches status='active'.
     public function up(): void
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN status ENUM('active','inactive','suspended','guest') NOT NULL DEFAULT 'active'");
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo','guest') NOT NULL DEFAULT 'employee'");
+        if (DB::getDriverName() === 'mysql') { // ENUM MODIFY is MySQL-only; sqlite (tests) stores plain strings
+            DB::statement("ALTER TABLE users MODIFY COLUMN status ENUM('active','inactive','suspended','guest') NOT NULL DEFAULT 'active'");
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo','guest') NOT NULL DEFAULT 'employee'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("DELETE FROM users WHERE status = 'guest' OR role = 'guest'");
-        DB::statement("ALTER TABLE users MODIFY COLUMN status ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active'");
-        DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo') NOT NULL DEFAULT 'employee'");
+        if (DB::getDriverName() === 'mysql') { // ENUM MODIFY is MySQL-only; sqlite (tests) stores plain strings
+            DB::statement("DELETE FROM users WHERE status = 'guest' OR role = 'guest'");
+            DB::statement("ALTER TABLE users MODIFY COLUMN status ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active'");
+            DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM('employee','manager','tl','ceo') NOT NULL DEFAULT 'employee'");
+        }
     }
 };

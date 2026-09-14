@@ -118,12 +118,17 @@ class AttendanceService
         } catch (\Exception $e) {}
 
         if ($isLate) {
-            NotificationService::send(
-                $user,
-                'Late Check-in',
-                "You checked in {$lateMinutes} minutes late today.",
-                'warning'
-            );
+            // A notification hiccup must never undo or fail a check-in.
+            try {
+                NotificationService::send(
+                    $user,
+                    'Late Check-in',
+                    "You checked in {$lateMinutes} minutes late today.",
+                    'warning'
+                );
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return $attendance;

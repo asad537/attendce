@@ -65,16 +65,18 @@ class SecurityAuthorizationTest extends TestCase
         $this->getJson('/api/me')->assertForbidden();
     }
 
-    public function test_manager_cannot_assign_a_project_to_someone_outside_their_team(): void
+    // Managers administer the whole organisation (they can see and add every
+    // department), so a project lead may come from outside their own team.
+    public function test_manager_can_assign_a_project_to_someone_outside_their_team(): void
     {
         $manager = $this->employee(['role' => 'manager']);
         $outsideEmployee = $this->employee();
         Sanctum::actingAs($manager);
 
         $this->postJson('/api/projects', [
-            'name' => 'Unauthorized cross-team project',
+            'name' => 'Cross-team project',
             'project_lead_id' => $outsideEmployee->id,
-        ])->assertForbidden();
+        ])->assertCreated();
     }
 
     public function test_manager_can_assign_a_project_to_their_direct_report(): void

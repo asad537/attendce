@@ -14,7 +14,9 @@ class AddWeekendToWorkModeInAttendanceTable extends Migration
      */
     public function up()
     {
-        DB::statement("ALTER TABLE attendance MODIFY COLUMN work_mode ENUM('office', 'remote', 'hybrid', 'weekend') DEFAULT 'office'");
+        if (DB::getDriverName() === 'mysql') { // ENUM MODIFY is MySQL-only; sqlite (tests) stores plain strings
+            DB::statement("ALTER TABLE attendance MODIFY COLUMN work_mode ENUM('office', 'remote', 'hybrid', 'weekend') DEFAULT 'office'");
+        }
     }
 
     /**
@@ -24,6 +26,8 @@ class AddWeekendToWorkModeInAttendanceTable extends Migration
      */
     public function down()
     {
-        DB::statement("ALTER TABLE attendance MODIFY COLUMN work_mode ENUM('office', 'remote', 'hybrid') DEFAULT 'office'");
+        if (DB::getDriverName() === 'mysql') { // ENUM MODIFY is MySQL-only; sqlite (tests) stores plain strings
+            DB::statement("ALTER TABLE attendance MODIFY COLUMN work_mode ENUM('office', 'remote', 'hybrid') DEFAULT 'office'");
+        }
     }
 }
