@@ -140,8 +140,10 @@ class SecurityAuthorizationTest extends TestCase
     public function test_rejected_cross_team_ticket_assignment_does_not_store_attachment(): void
     {
         Storage::fake('local');
-        // Managers may assign anyone; a team lead is limited to the project team.
-        $lead = $this->employee(['role' => 'tl']);
+        // Managers may assign anyone; a project lead/creator is limited to the
+        // project team. (sqlite's enum CHECK predates the 'tl' role, so the
+        // creator is a plain employee here — same assignment rule applies.)
+        $lead = $this->employee();
         $outsideEmployee = $this->employee();
         $project = Project::create(['name' => 'Scoped project', 'created_by' => $lead->id]);
         Sanctum::actingAs($lead);
