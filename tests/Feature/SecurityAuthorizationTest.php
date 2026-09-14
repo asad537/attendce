@@ -140,10 +140,11 @@ class SecurityAuthorizationTest extends TestCase
     public function test_rejected_cross_team_ticket_assignment_does_not_store_attachment(): void
     {
         Storage::fake('local');
-        $manager = $this->employee(['role' => 'manager']);
+        // Managers may assign anyone; a team lead is limited to the project team.
+        $lead = $this->employee(['role' => 'tl']);
         $outsideEmployee = $this->employee();
-        $project = Project::create(['name' => 'Scoped project', 'created_by' => $manager->id]);
-        Sanctum::actingAs($manager);
+        $project = Project::create(['name' => 'Scoped project', 'created_by' => $lead->id]);
+        Sanctum::actingAs($lead);
 
         $this->postJson("/api/projects/{$project->id}/tickets", [
             'title' => 'Unauthorized assignment',
