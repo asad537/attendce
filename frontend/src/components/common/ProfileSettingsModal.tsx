@@ -280,7 +280,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                     <img src="/images/default-profile-img.jpg" alt="Default Avatar" className="w-full h-full object-cover" />
                     <div 
                       className="absolute inset-0 mix-blend-screen"
-                      style={{ backgroundColor: ACCENT_HEX[accent] || '#059669' }} 
+                      style={{ backgroundColor: ACCENT_HEX[appearanceAccent] || '#059669' }} 
                     />
                   </div>
                 )}
