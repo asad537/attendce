@@ -230,18 +230,19 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const room = new Room({
       // CallScreen renders tracks through MediaStreams, rather than
       // Track.attach(), so adaptive stream cannot measure the stage tile.
-      // Keep a stable HD layer available instead of letting a growing meeting
-      // overload each participant's CPU and upload connection.
+      // Keep a proper high-quality stage layer while thumbnails use lower
+      // layers. The original 1080p stream plus two lower layers is LiveKit's
+      // supported simulcast layout.
       adaptiveStream: false,
       dynacast: true,         // pause layers nobody is watching
       audioCaptureDefaults: CLEAN_MIC,
-      videoCaptureDefaults: { resolution: VideoPresets.h720.resolution },
+      videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
       publishDefaults: {
         simulcast: true,
-        // An original 720p stream plus two lower simulcast layers is the
-        // supported layout. It keeps the main tile sharp and thumbnails light.
-        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
-        videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 24 },
+        // Do not duplicate the original h1080 layer here. Two lower layers
+        // keep bandwidth economical while the stage can stay crisp.
+        videoSimulcastLayers: [VideoPresets.h360, VideoPresets.h720],
+        videoEncoding: { maxBitrate: 4_000_000, maxFramerate: 24 },
       },
     });
     roomRef.current = room;
