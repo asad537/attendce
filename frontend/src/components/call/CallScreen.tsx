@@ -203,6 +203,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
         captionsOn,
         toggleCaptions,
         captions,
+        setPreferredParticipant,
     } = call;
 
     const copyGuestLink = async () => {
@@ -321,6 +322,16 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
 
         return () => cleanups.forEach((cleanup) => cleanup());
     }, [participants]);
+
+    // Keep Hook ordering stable even while the call switches between idle and
+    // connected. Pick the visible stage participant and ask the media engine
+    // to prioritize only that participant's high-quality layer.
+    useEffect(() => {
+        const preferred = participants.find((p) => p.id === selectedRemoteId)
+            || participants.find((p) => !p.cameraOff && hasRenderableVideo(p.stream))
+            || participants[0];
+        setPreferredParticipant(preferred?.id ?? null);
+    }, [participants, selectedRemoteId, setPreferredParticipant]);
 
     if (!peer) return null;
     const isVideo = kind === "video";
