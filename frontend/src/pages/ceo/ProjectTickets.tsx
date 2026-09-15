@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api, { getErrorMessage } from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAutoRefresh } from "../../hooks/useAutoRefresh";
 import { projectService } from "../../services/projectService";
 import { userService } from "../../services/userService";
 import Modal from "../../components/common/Modal";
@@ -123,7 +124,7 @@ export default function ProjectTickets() {
             const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
             setTickets(fetchedTickets);
             const sharedTicketId = Number(new URLSearchParams(window.location.search).get('ticket'));
-            if (sharedTicketId) setDetail(fetchedTickets.find((ticket: Ticket) => ticket.id === sharedTicketId) || null);
+            if (sharedTicketId && !detail) setDetail(fetchedTickets.find((ticket: Ticket) => ticket.id === sharedTicketId) || null);
 
             // Assignee pool = the project's own team (leads + members). can_manage
             // comes from the backend so any project lead — not just any manager —
@@ -140,9 +141,21 @@ export default function ProjectTickets() {
             toast.error(getErrorMessage(e));
         }
     };
+    const loadTicketsSilent = async () => {
+        try {
+            const t = await api.get(`/projects/${projectId}/tickets`);
+            const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
+            setTickets(fetchedTickets);
+        } catch (e) {
+            // ignore silently
+        }
+    };
+
     useEffect(() => {
         load();
     }, [projectId]);
+
+    useAutoRefresh(loadTicketsSilent, { intervalMs: 10000, enabled: !detail && !open });
 
     // Assignee pool = the whole project team (leads + members). The CEO / project
     // leads decide who is on the team, so any team member can receive a ticket.
