@@ -155,7 +155,6 @@ const MAT = {
     present: "M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM10 12H8l4-4 4 4h-2v4h-4v-4z",
     mood: "M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z",
     cc: "M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12zM7 15h2c.55 0 1-.45 1-1v-1H8.5v.5h-1v-3h1v.5H10v-1c0-.55-.45-1-1-1H7c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1zm7 0h2c.55 0 1-.45 1-1v-1h-1.5v.5h-1v-3h1v.5H17v-1c0-.55-.45-1-1-1h-2c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1z",
-    moreVert: "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
     personAdd: "M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
     callEnd: "M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 0 1-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .27-.11.52-.29.7l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z",
 };
@@ -658,24 +657,15 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                         cannot access the employee directory, so this stays out
                         of their toolbar by design. */}
                     {!guest && (status === "connected" || status === "connecting") && (
-                        <button
-                            onClick={() => setShowAdd((v) => !v)}
-                            className={`mobile-hide-control grid h-14 w-14 place-items-center transition rounded-[24px] ${showAdd ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
-                            title="Add people to meeting"
-                        >
-                            <Mat d={MAT.personAdd} />
-                        </button>
-                    )}
-
-                    {/* More (⋮) — add people / guest link */}
-                    {!guest && <div className="relative mobile-more">
-                        <button
-                            onClick={() => setShowAdd((v) => !v)}
-                            className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showAdd ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
-                            title="More — add people"
-                        >
-                            <Mat d={MAT.moreVert} />
-                        </button>
+                        <div className="relative mobile-hide-control">
+                            <button
+                                onClick={() => setShowAdd((v) => !v)}
+                                className={`grid h-14 w-14 place-items-center transition rounded-[24px] ${showAdd ? "bg-[#a8c7fa] text-[#062e6f] hover:bg-[#9bbcf0]" : "bg-[#3c4043] text-white hover:bg-[#4a4d51]"}`}
+                                title="Add people to meeting"
+                                aria-label="Add people to meeting"
+                            >
+                                <Mat d={MAT.personAdd} />
+                            </button>
                         {showAdd && (
                             <div className="absolute bottom-[72px] left-1/2 z-20 max-h-64 w-64 -translate-x-1/2 overflow-y-auto rounded-2xl border border-white/10 bg-[#2a2d30] p-1 shadow-xl">
                                 <button
@@ -702,7 +692,8 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
                                 )}
                             </div>
                         )}
-                    </div>}
+                        </div>
+                    )}
 
                     {/* Leave call — Meet red capsule with the call_end handset */}
                     <button
