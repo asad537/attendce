@@ -76,7 +76,12 @@ class AuthController extends Controller
             $passwordChanged = true;
         }
 
-        if ($request->hasFile('avatar')) {
+        if ($request->has('remove_avatar') && $request->boolean('remove_avatar')) {
+            if ($user->avatar) {
+                \Storage::delete($user->avatar);
+            }
+            $user->avatar = null;
+        } elseif ($request->hasFile('avatar')) {
             $user->avatar = $request->file('avatar')->store('avatars');
         }
 
