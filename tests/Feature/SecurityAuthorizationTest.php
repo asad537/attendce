@@ -254,4 +254,32 @@ class SecurityAuthorizationTest extends TestCase
 
         $this->assertSame('done', $ticket->fresh()->status);
     }
+
+    public function test_assigned_employee_cannot_change_ticket_assignee_priority_or_planning_fields(): void
+    {
+        $manager = $this->employee(['role' => 'manager']);
+        $employee = $this->employee();
+        $otherEmployee = $this->employee();
+        $project = Project::create(['name' => 'Managed Project', 'created_by' => $manager->id]);
+        $ticket = \App\Models\ProjectTicket::create([
+            'project_id' => $project->id,
+            'title' => 'Assigned work',
+            'status' => 'todo',
+            'priority' => 'medium',
+            'assignee_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        Sanctum::actingAs($employee);
+        $this->putJson("/api/tickets/{$ticket->id}", ['assignee_id' => $otherEmployee->id])->assertForbidden();
+        $this->putJson("/api/tickets/{$ticket->id}", ['priority' => 'urgent'])->assertForbidden();
+        $this->putJson("/api/tickets/{$ticket->id}", ['title' => 'Changed by employee'])->assertForbidden();
+        $this->putJson("/api/tickets/{$ticket->id}", ['due_date' => today()->addWeek()->toDateString()])->assertForbidden();
+
+        $ticket->refresh();
+        $this->assertSame('Assigned work', $ticket->title);
+        $this->assertSame('medium', $ticket->priority);
+        $this->assertSame((int) $employee->id, (int) $ticket->assignee_id);
+        $this->assertNull($ticket->due_date);
+    }
 }

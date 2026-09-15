@@ -619,7 +619,8 @@ export default function ProjectTickets() {
                         <div className="flex-1 space-y-6">
                             <div>
                                 <input 
-                                    className="w-full bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-emerald-500 focus:ring-0 text-2xl font-bold text-gray-900 p-1 -ml-1 transition-colors"
+                                    readOnly={!canManage}
+                                    className={`w-full bg-transparent border-0 border-b border-transparent focus:ring-0 text-2xl font-bold text-gray-900 p-1 -ml-1 transition-colors ${canManage ? 'hover:border-gray-300 focus:border-emerald-500' : 'cursor-default'}`}
                                     value={detail.title} 
                                     onChange={(e) => {
                                         setDetail({...detail, title: e.target.value});
@@ -633,7 +634,8 @@ export default function ProjectTickets() {
                             <div className="space-y-3">
                                 <h3 className="text-[15px] font-semibold text-gray-800">Description</h3>
                                 <textarea
-                                    className="w-full min-h-[100px] border border-gray-400 hover:border-gray-600 focus:border-gray-900 focus:ring-0 text-[14px] text-gray-800 p-3 rounded transition-colors resize-y"
+                                    readOnly={!canManage}
+                                    className={`w-full min-h-[100px] border text-[14px] text-gray-800 p-3 rounded transition-colors resize-y ${canManage ? 'border-gray-400 hover:border-gray-600 focus:border-gray-900 focus:ring-0' : 'border-gray-200 bg-gray-50 cursor-default'}`}
                                     placeholder="Add a description..."
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
@@ -796,40 +798,39 @@ export default function ProjectTickets() {
                                 <div className="p-4 space-y-4">
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Assignee</span>
-                                        <div className="relative inline-flex items-center gap-2 hover:bg-gray-50 border border-transparent hover:border-gray-200 p-1 -ml-1 rounded cursor-pointer transition-colors">
+                                        <div className={`relative inline-flex items-center gap-2 border border-transparent p-1 -ml-1 rounded transition-colors ${canManage ? 'hover:bg-gray-50 hover:border-gray-200 cursor-pointer' : 'cursor-default'}`}>
                                             <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold text-white">
                                                 {detail.assignee?.name ? detail.assignee.name.substring(0,2).toUpperCase() : '?'}
                                             </div>
                                             <span className="text-[13px] font-medium text-gray-800">{detail.assignee?.name || 'Unassigned'}</span>
-                                            <select 
+                                            {canManage && <select
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                 value={detail.assignee?.id || ""}
                                                 onChange={(e) => {
-                                                    const user = users.find(u => u.id === Number(e.target.value));
-                                                    setDetail({...detail, assignee: user ? {id: user.id, name: user.name} : undefined});
-                                                    api.put(`/tickets/${detail.id}`, { ...detail, assignee_id: e.target.value });
-                                                    load();
+                                                    api.put(`/tickets/${detail.id}`, { assignee_id: e.target.value || null })
+                                                        .then((response) => { setDetail(response.data.ticket); load(); toast.success('Assignee updated'); })
+                                                        .catch((err) => toast.error(getErrorMessage(err)));
                                                 }}
                                             >
                                                 <option value="">Unassigned</option>
                                                 {assignableUsers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                                            </select>
+                                            </select>}
                                         </div>
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Priority</span>
-                                        <PriorityDropdown 
+                                        {canManage ? <PriorityDropdown
                                             value={detail.priority || "medium"}
                                             onChange={(val) => {
-                                                setDetail({...detail, priority: val as any});
-                                                api.put(`/tickets/${detail.id}`, { ...detail, priority: val });
-                                                load();
+                                                api.put(`/tickets/${detail.id}`, { priority: val })
+                                                    .then((response) => { setDetail(response.data.ticket); load(); toast.success('Priority updated'); })
+                                                    .catch((err) => toast.error(getErrorMessage(err)));
                                             }}
-                                        />
+                                        /> : <span className="inline-flex items-center gap-2 text-[13px] text-gray-700">{getPriorityIconSVG(detail.priority)}<span className="capitalize">{detail.priority || 'medium'}</span></span>}
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
-                                        <input type="date" min={projectStartDate || undefined} className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; setDetail({...detail, due_date}); api.put(`/tickets/${detail.id}`, { due_date }).then(load).catch((err) => toast.error(getErrorMessage(err))); }} />
+                                        {canManage ? <input type="date" min={projectStartDate || undefined} className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; api.put(`/tickets/${detail.id}`, { due_date: due_date || null }).then((response) => { setDetail(response.data.ticket); load(); }).catch((err) => toast.error(getErrorMessage(err))); }} /> : <span className="text-[13px] text-gray-700">{detail.due_date?.slice(0, 10) || 'No due date'}</span>}
                                     </div>
                                     <div className="flex items-start">
                                         <span className="w-[120px] pt-1 text-[13px] font-medium text-gray-500">Progress</span>

@@ -131,6 +131,12 @@ class ProjectTicketController extends Controller
     {
         $this->authorizeTicket($request, $ticket);
         $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','progress'=>'sometimes|integer|min:0|max:100','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','assignee_id'=>'nullable|exists:users,id']);
+        // Only project managers (CEO/manager, creator, or designated project lead)
+        // may change ownership or planning fields. Assignees may update status/progress only.
+        $managementFields = ['title', 'description', 'priority', 'due_date', 'assignee_id'];
+        if (array_intersect($managementFields, array_keys($data))) {
+            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only a project manager can change ticket details, priority, due date, or assignee.');
+        }
         $this->ensureDueDateIsNotBeforeProjectStart($data['due_date'] ?? null, $ticket->project);
         if (!$this->canManageTicket($request, $ticket)) {
             // The assignee (doer) may move the status and update their progress %.
