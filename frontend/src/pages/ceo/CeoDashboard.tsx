@@ -255,14 +255,16 @@ export default function CeoDashboard() {
                      {shown.map(ev => {
                        const cat = categories.find(c => c.key === ev.type);
                        return (
-                         <ScheduleCard
-                           key={ev.id}
-                           category={cat?.label || ev.type}
-                           title={ev.title}
-                           room={ev.location || 'Online'}
-                           time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`}
-                           color={cat?.color || 'text-gray-500'}
-                         />
+                          <ScheduleCard
+                            key={ev.id}
+                            category={cat?.label || ev.type}
+                            title={ev.title}
+                            room={ev.location || 'Online'}
+                            time={`${format(parseISO(ev.date), 'dd MMM')} - ${ev.time}`}
+                            color={cat?.color || 'text-gray-500'}
+                            attendees={ev.attendee_users}
+                            onClick={() => navigate(`/calendar?date=${ev.date}`)}
+                          />
                        );
                      })}
                      {monthEvents.length > 3 && (
@@ -544,10 +546,10 @@ function StatCard({ title, value, suffix, message }: { title: string, value: str
   );
 }
 
-function ScheduleCard({ category, title, room, time, color }: { category: string, title: string, room: string, time: string, color: string }) {
+function ScheduleCard({ category, title, room, time, color, attendees, onClick }: { category: string, title: string, room: string, time: string, color: string, attendees?: {id:number, name:string, avatar:string|null}[], onClick?: () => void }) {
   const isHex = color?.startsWith('#');
   return (
-    <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-2">
+    <div onClick={onClick} className={`bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-2 ${onClick ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''}`}>
       <span className={`text-[10px] font-bold ${!isHex ? color : ''}`} style={isHex ? { color } : undefined}>{category}</span>
       <h4 className="font-bold text-sm text-gray-800">{title}</h4>
       <div className="flex justify-between items-center mt-1">
@@ -555,11 +557,20 @@ function ScheduleCard({ category, title, room, time, color }: { category: string
            <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md">{room}</span>
            <span className="text-[10px] font-semibold text-gray-400">{time}</span>
         </div>
-        <div className="flex -space-x-2">
-           <div className="w-6 h-6 rounded-full bg-blue-100 border-2 border-white"></div>
-           <div className="w-6 h-6 rounded-full bg-pink-100 border-2 border-white"></div>
-           <div className="w-6 h-6 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center text-[8px] font-bold text-emerald-700">+3</div>
-        </div>
+        {attendees && attendees.length > 0 && (
+          <div className="flex -space-x-2">
+             {attendees.slice(0, 2).map((a, i) => (
+               <div key={a.id} title={a.name} className="w-6 h-6 rounded-full border-2 border-white overflow-hidden bg-emerald-100 z-10 flex items-center justify-center text-[10px] font-bold text-emerald-700 uppercase">
+                 {a.avatar ? <img src={a.avatar} alt={a.name} className="w-full h-full object-cover" /> : a.name.charAt(0)}
+               </div>
+             ))}
+             {attendees.length > 2 && (
+               <div className="w-6 h-6 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center text-[8px] font-bold text-emerald-700 z-0">
+                 +{attendees.length - 2}
+               </div>
+             )}
+          </div>
+        )}
       </div>
     </div>
   );

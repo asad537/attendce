@@ -5,12 +5,14 @@ import api from '../services/api';
 export interface CalendarEvent {
   id: number;
   created_by: number;
-  date: string;
-  type: string;
   title: string;
+  date: string;
   time: string;
+  type: string;
   location: string;
   note: string;
+  attendees?: number[];
+  attendee_users?: { id: number; name: string; avatar: string | null }[];
 }
 
 export interface CalendarCategory {

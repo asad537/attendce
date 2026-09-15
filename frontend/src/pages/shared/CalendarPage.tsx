@@ -5,6 +5,8 @@ import { useCalendarEvents } from '../../hooks/useCalendarEvents';
 import { useAuth } from '../../contexts/AuthContext';
 import { confirmDialog } from '../../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
+import { userService } from '../../services/userService';
+import { User } from '../../types';
 
 export default function CalendarPage() {
   const [searchParams] = useSearchParams();
@@ -20,6 +22,12 @@ export default function CalendarPage() {
     const date = parseISO(requestedDate);
     if (!Number.isNaN(date.getTime())) { setCalendarDate(date); setSelectedDate(date); }
   }, [requestedDate]);
+
+  const [users, setUsers] = useState<User[]>([]);
+  useEffect(() => {
+    userService.getList({ status: 'active', per_page: 500 }).then(res => setUsers(res.data)).catch(console.error);
+  }, []);
+
   const [showFilters, setShowFilters] = useState(true);
   const [showDetails, setShowDetails] = useState(true);
 
@@ -63,12 +71,15 @@ export default function CalendarPage() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: ''
+  const [newEvent, setNewEvent] = useState<{title:string; date:string; time:string; type:string; location:string; note:string; attendees:number[]}>({
+    title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '', attendees: []
   });
 
   const handlePrevMonth = () => setCalendarDate(subMonths(calendarDate, 1));
   const handleNextMonth = () => setCalendarDate(addMonths(calendarDate, 1));
+
+  const [hoveredEvent, setHoveredEvent] = useState<any>(null);
+  const [tooltipPos, setTooltipPos] = useState({x: 0, y: 0});
 
   const monthStart = startOfMonth(calendarDate);
   const monthEnd = endOfMonth(monthStart);
@@ -79,7 +90,7 @@ export default function CalendarPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '' });
+    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '', attendees: [] });
   };
 
   const handleAddEvent = async (e: React.FormEvent) => {
@@ -191,7 +202,7 @@ export default function CalendarPage() {
                 <button
                   onClick={() => {
                     setEditingId(null);
-                    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '' });
+                    setNewEvent({ title: '', date: format(new Date(), 'yyyy-MM-dd'), time: '09:00', type: 'talent', location: '', note: '', attendees: [] });
                     setIsModalOpen(true);
                   }}
                   className="flex items-center gap-2 px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700"
@@ -233,8 +244,17 @@ export default function CalendarPage() {
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px] scrollbar-hide">
-                      {dayEvents.map(ev => { const c = catOf(ev.type); return (
-                        <div key={ev.id} className="p-1.5 rounded-md text-[10px] flex flex-col gap-0.5 border-l-2 text-gray-700" style={{ borderLeftColor: c.color, backgroundColor: `${c.color}1a` }}>
+                      {dayEvents.map(ev => { 
+                        const c = catOf(ev.type); 
+                        return (
+                        <div 
+                           key={ev.id} 
+                           onMouseEnter={(e) => { setHoveredEvent(ev); setTooltipPos({x: e.clientX, y: e.clientY}); }}
+                           onMouseMove={(e) => setTooltipPos({x: e.clientX, y: e.clientY})}
+                           onMouseLeave={() => setHoveredEvent(null)}
+                           className="p-1.5 rounded-md text-[10px] flex flex-col gap-0.5 border-l-2 text-gray-700 hover:brightness-95 cursor-pointer" 
+                           style={{ borderLeftColor: c.color, backgroundColor: `${c.color}1a` }}
+                        >
                            <span className="font-bold truncate leading-tight">{ev.title}</span>
                            <span className="opacity-80 flex justify-between items-center">
                              {ev.time}
@@ -272,6 +292,7 @@ export default function CalendarPage() {
                   time={ev.time}
                   location={ev.location}
                   note={ev.note}
+                  attendeesText={!ev.attendees || ev.attendees.length === 0 ? 'Everyone' : `${ev.attendees.length} Attendee(s)`}
                   color={catOf(ev.type).color}
                   canEdit={ev.created_by === user?.id}
                   onEdit={() => handleEditEvent(ev.id)}
@@ -317,6 +338,35 @@ export default function CalendarPage() {
                 <input required type="text" value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Room or link" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Attendees (Leave empty to invite everyone)</label>
+                <div className="w-full border border-gray-300 rounded-xl px-3 py-2 max-h-32 overflow-y-auto bg-white">
+                  {users.map(u => (
+                    <label key={u.id} className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50">
+                      <input 
+                        type="checkbox" 
+                        checked={newEvent.attendees.includes(u.id)}
+                        onChange={(e) => {
+                          const newAttendees = e.target.checked 
+                            ? [...newEvent.attendees, u.id]
+                            : newEvent.attendees.filter(id => id !== u.id);
+                          setNewEvent({...newEvent, attendees: newAttendees});
+                        }}
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {u.name}{' '}
+                        {(() => {
+                          const desig = u.designation?.title || '';
+                          const roleLabel = u.role === 'tl' ? 'TL' : u.role === 'manager' ? 'Manager' : u.role === 'ceo' ? 'CEO' : '';
+                          const label = [desig, roleLabel].filter(Boolean).join(' - ');
+                          return label ? <span className="text-xs text-emerald-600 font-medium">({label})</span> : null;
+                        })()}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
                 <textarea rows={3} value={newEvent.note} onChange={e => setNewEvent({...newEvent, note: e.target.value})} className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-emerald-500 outline-none resize-none" placeholder="Any additional notes" />
               </div>
@@ -330,11 +380,45 @@ export default function CalendarPage() {
           </div>
         </div>
       )}
+      {/* Custom Tooltip */}
+      {hoveredEvent && (
+        <div 
+          className="fixed z-[9999] bg-emerald-600 text-white p-3 rounded-2xl shadow-2xl shadow-emerald-600/30 pointer-events-none flex flex-col gap-2 w-max max-w-xs transition-all duration-150 border border-emerald-500/50 backdrop-blur-sm"
+          style={{ top: tooltipPos.y + 15, left: tooltipPos.x + 15 }}
+        >
+          <div className="flex items-center gap-2 mb-0.5 px-1">
+             <div className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.8)]"></div>
+             <span className="font-extrabold text-[13px] tracking-wide">{hoveredEvent.title}</span>
+          </div>
+          
+          <div className="flex flex-col gap-1.5 bg-emerald-900/20 p-2.5 rounded-xl border border-emerald-400/20">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-emerald-100/90 text-xs font-semibold flex items-center gap-1.5">
+                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 Time
+              </span>
+              <span className="font-bold text-xs">{hoveredEvent.time || 'All Day'}</span>
+            </div>
+            
+            <div className="w-full h-px bg-emerald-400/20 my-0.5"></div>
+            
+            <div className="flex flex-col gap-1">
+              <span className="text-emerald-100/90 text-xs font-semibold flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Attendees
+              </span>
+              <span className="font-medium text-xs whitespace-normal leading-relaxed pl-5 text-emerald-50">
+                {hoveredEvent.attendee_users && hoveredEvent.attendee_users.length > 0 ? hoveredEvent.attendee_users.map((a: any) => a.name).join(', ') : 'Everyone'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function DetailCard({ category, title, time, location, note, color, onEdit, onDelete, canEdit }: any) {
+function DetailCard({ category, title, time, location, note, color, attendeesText, onEdit, onDelete, canEdit }: any) {
   const [showMenu, setShowMenu] = React.useState(false);
 
   return (
@@ -379,6 +463,8 @@ function DetailCard({ category, title, time, location, note, color, onEdit, onDe
         <span className="text-gray-900 font-semibold">{time}</span>
         <span className="text-gray-500">Location</span>
         <span className="text-gray-900 font-semibold break-words">{location}</span>
+        <span className="text-gray-500">Attendees</span>
+        <span className="text-gray-900 font-semibold">{attendeesText}</span>
         <span className="text-gray-500">Note</span>
         <span className="text-gray-900 font-semibold leading-relaxed break-words">{note}</span>
       </div>
