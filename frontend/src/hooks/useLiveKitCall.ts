@@ -228,20 +228,20 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const callId = roomIdRef.current;
     const { url, token } = await getToken(callId, kind);
     const room = new Room({
-      // We attach LiveKit tracks through MediaStream objects in CallScreen.
-      // adaptiveStream relies on track.attach() viewport measurements and was
-      // therefore selecting a low thumbnail layer for the large spotlight.
+      // CallScreen renders tracks through MediaStreams, rather than
+      // Track.attach(), so adaptive stream cannot measure the stage tile.
+      // Keep a stable HD layer available instead of letting a growing meeting
+      // overload each participant's CPU and upload connection.
       adaptiveStream: false,
       dynacast: true,         // pause layers nobody is watching
       audioCaptureDefaults: CLEAN_MIC,
-      videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
+      videoCaptureDefaults: { resolution: VideoPresets.h720.resolution },
       publishDefaults: {
         simulcast: true,
-        // Keep low layers for thumbnails, but publish a real HD layer for the
-        // spotlight tile; without h720 LiveKit can only deliver a soft 360p
-        // image even when the camera capture is 1080p.
-        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360, VideoPresets.h720, VideoPresets.h1080],
-        videoEncoding: { maxBitrate: 5_000_000, maxFramerate: 30 },
+        // An original 720p stream plus two lower simulcast layers is the
+        // supported layout. It keeps the main tile sharp and thumbnails light.
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+        videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 24 },
       },
     });
     roomRef.current = room;
