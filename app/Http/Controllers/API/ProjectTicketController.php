@@ -102,6 +102,18 @@ class ProjectTicketController extends Controller
                     'type' => 'created',
                     'new_value' => 'Ticket created'
                 ]);
+                if (!empty($data['assignee_id'])) {
+                    $assignee = \App\Models\User::find($data['assignee_id']);
+                    if ($assignee) {
+                        TicketActivity::create([
+                            'ticket_id' => $ticket->id,
+                            'user_id' => $request->user()->id,
+                            'type' => 'assignee_changed',
+                            'old_value' => 'Unassigned',
+                            'new_value' => $assignee->name
+                        ]);
+                    }
+                }
                 return $ticket;
             });
         } catch (\Throwable $error) {
@@ -182,6 +194,20 @@ class ProjectTicketController extends Controller
                 }
             } elseif (in_array($field, ['status', 'priority', 'title', 'description'])) {
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>$field.'_changed', 'old_value'=>$oldValue, 'new_value'=>$newValue]);
+                if ($field === 'status' && $newValue === 'in_review') {
+                    $creator = \App\Models\User::find($ticket->created_by);
+                    if ($creator && $creator->id !== $request->user()->id) {
+                        $projectName = $ticket->project ? $ticket->project->name : 'Project';
+                        \App\Services\NotificationService::send(
+                            $creator,
+                            'Ticket Ready for Review',
+                            "The ticket \"{$ticket->title}\" in {$projectName} is ready for review.",
+                            'info',
+                            "/projects/{$ticket->project_id}?ticket={$ticket->id}",
+                            $ticket
+                        );
+                    }
+                }
             } elseif ($field === 'progress') {
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>'progress_changed', 'old_value'=>($oldValue ?? 0).'%', 'new_value'=>$newValue.'%']);
             }

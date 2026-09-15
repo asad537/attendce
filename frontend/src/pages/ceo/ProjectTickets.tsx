@@ -644,7 +644,7 @@ export default function ProjectTickets() {
                                         setDetail({...detail, title: e.target.value});
                                     }}
                                     onBlur={() => {
-                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title }); load(); }
+                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title }).then(() => { load(); loadActivity(detail.id); }); }
                                     }}
                                 />
                             </div>
@@ -658,7 +658,7 @@ export default function ProjectTickets() {
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
                                     onBlur={() => {
-                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description }); load(); }
+                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description }).then(() => { load(); loadActivity(detail.id); }); }
                                     }}
                                 />
                             </div>
@@ -797,6 +797,7 @@ export default function ProjectTickets() {
                                         await api.put(`/tickets/${detail.id}`, { status: nextStatus });
                                         // Backend snaps a done ticket to 100% — mirror that here.
                                         setDetail({...detail, status: nextStatus, progress: nextStatus === 'done' ? 100 : detail.progress});
+                                        loadActivity(detail.id);
                                         load();
                                     } catch (err) {
                                         toast.error(getErrorMessage(err));
@@ -826,7 +827,7 @@ export default function ProjectTickets() {
                                                 value={detail.assignee?.id || ""}
                                                 onChange={(e) => {
                                                     api.put(`/tickets/${detail.id}`, { assignee_id: e.target.value || null })
-                                                        .then((response) => { setDetail(response.data.ticket); load(); toast.success('Assignee updated'); })
+                                                        .then((response) => { setDetail(response.data.ticket); loadActivity(detail.id); load(); toast.success('Assignee updated'); })
                                                         .catch((err) => toast.error(getErrorMessage(err)));
                                                 }}
                                             >
@@ -841,14 +842,14 @@ export default function ProjectTickets() {
                                             value={detail.priority || "medium"}
                                             onChange={(val) => {
                                                 api.put(`/tickets/${detail.id}`, { priority: val })
-                                                    .then((response) => { setDetail(response.data.ticket); load(); toast.success('Priority updated'); })
+                                                    .then((response) => { setDetail(response.data.ticket); loadActivity(detail.id); load(); toast.success('Priority updated'); })
                                                     .catch((err) => toast.error(getErrorMessage(err)));
                                             }}
                                         /> : <span className="inline-flex items-center gap-2 text-[13px] text-gray-700">{getPriorityIconSVG(detail.priority)}<span className="capitalize">{detail.priority || 'medium'}</span></span>}
                                     </div>
                                     <div className="flex items-center">
                                         <span className="w-[120px] text-[13px] font-medium text-gray-500">Due date</span>
-                                        {canManage ? <input type="date" min={projectStartDate || undefined} className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; api.put(`/tickets/${detail.id}`, { due_date: due_date || null }).then((response) => { setDetail(response.data.ticket); load(); }).catch((err) => toast.error(getErrorMessage(err))); }} /> : <span className="text-[13px] text-gray-700">{detail.due_date?.slice(0, 10) || 'No due date'}</span>}
+                                        {canManage ? <input type="date" min={projectStartDate || undefined} className="rounded border border-gray-200 px-2 py-1 text-[13px]" value={detail.due_date?.slice(0, 10) || ''} onChange={(e) => { const due_date = e.target.value; api.put(`/tickets/${detail.id}`, { due_date: due_date || null }).then((response) => { setDetail(response.data.ticket); loadActivity(detail.id); load(); }).catch((err) => toast.error(getErrorMessage(err))); }} /> : <span className="text-[13px] text-gray-700">{detail.due_date?.slice(0, 10) || 'No due date'}</span>}
                                     </div>
                                     <div className="flex items-start">
                                         <span className="w-[120px] pt-1 text-[13px] font-medium text-gray-500">Progress</span>
