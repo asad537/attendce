@@ -528,7 +528,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
             </div>
           )}
 
-          {activeTab !== 'appearance' && activeTab !== 'dashboard' && <div className="mt-8 flex gap-3">
+          {((activeTab !== 'appearance' && activeTab !== 'dashboard') || avatar) && <div className="mt-8 flex gap-3">
             <button
               type="button"
               onClick={onClose}
