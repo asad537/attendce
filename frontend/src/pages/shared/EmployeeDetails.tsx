@@ -11,6 +11,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { userDisplayTitle } from '../../utils/userDisplay';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 
 
@@ -261,7 +262,7 @@ export default function EmployeeDetails() {
             </div>
             
             <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
-            <p className="text-sm font-medium text-gray-500 mt-1">{user.designation?.title || roleLabels[user.role] || user.role} · {user.department?.name}</p>
+            <p className="text-sm font-medium text-gray-500 mt-1">{userDisplayTitle(user, user.role)} · {user.department?.name}</p>
             
             <div className="flex items-center gap-3 mt-4 w-full justify-center">
               <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold font-mono">
@@ -766,9 +767,3 @@ export default function EmployeeDetails() {
     </div>
   );
 }
-const roleLabels: Record<string, string> = {
-  ceo: 'President',
-  manager: 'Manager',
-  tl: 'Team Lead',
-  employee: 'Employee',
-};

@@ -12,6 +12,7 @@ import {
 } from "../../services/messageService";
 import { useCallContext } from "../../contexts/CallContext";
 import { confirmDialog } from "../../components/common/ConfirmDialog";
+import { userDisplayTitle } from "../../utils/userDisplay";
 
 const initials = (name = "") =>
     name
@@ -27,15 +28,7 @@ const colors = [
     "from-[#7b8fb6] to-[#435577]",
 ];
 
-const roleLabel: Record<string, string> = {
-    ceo: "President",
-    manager: "Manager",
-    tl: "Team Lead",
-    employee: "Employee",
-};
-
-const displayRole = (user: MessageUser) =>
-    user.designation || roleLabel[user.role || "employee"] || "Team member";
+const displayRole = (user: MessageUser) => userDisplayTitle(user);
 
 function Avatar({
     user,
@@ -1627,11 +1620,7 @@ export default function InboxPage() {
                                             <b className="truncate text-sm font-semibold text-[#1f2c28]">
                                                 {c.user.name}
                                             </b>
-                                            {c.user.designation && (
-                                                <small className="truncate text-[11px] text-[#7f8c87]">
-                                                    {typeof c.user.designation === 'string' ? c.user.designation : (c.user.designation as any).title}
-                                                </small>
-                                            )}
+                                            <small className="truncate text-[11px] text-[#7f8c87]">{displayRole(c.user)}</small>
                                         </span>
                                     </button>
                                 ))}

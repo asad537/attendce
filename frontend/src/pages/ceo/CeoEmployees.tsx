@@ -8,6 +8,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { format, parseISO } from 'date-fns';
+import { userDisplayTitle } from '../../utils/userDisplay';
 
 export default function CeoEmployees() {
   const navigate = useNavigate();
@@ -64,13 +65,6 @@ export default function CeoEmployees() {
     tl:       'bg-cyan-100 text-cyan-700',
     manager:  'bg-blue-100 text-blue-700',
     ceo:      'bg-purple-100 text-purple-700',
-  };
-
-  const roleLabel: Record<string, string> = {
-    employee: 'Employee',
-    tl:       'Team Lead',
-    manager:  'Manager',
-    ceo:      'President',
   };
 
   return (
@@ -203,7 +197,7 @@ export default function CeoEmployees() {
                 <h3 className="font-bold text-gray-900 text-lg">{u.name}</h3>
                 <div className="mt-1.5">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${roleColors[u.role] || ''}`}>
-                    {u.designation?.title || roleLabel[u.role] || u.role}
+                    {userDisplayTitle(u, u.role)}
                   </span>
                 </div>
                 
@@ -220,7 +214,7 @@ export default function CeoEmployees() {
                     <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="truncate">{u.designation?.title || '—'}</span>
+                    <span className="truncate">{u.role === 'ceo' ? 'President' : u.designation?.title || '—'}</span>
                   </div>
                   {u.phone && (
                     <div className="flex items-center gap-2">
