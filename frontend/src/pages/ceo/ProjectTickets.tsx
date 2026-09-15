@@ -146,6 +146,14 @@ export default function ProjectTickets() {
             const t = await api.get(`/projects/${projectId}/tickets`);
             const fetchedTickets: Ticket[] = Array.isArray(t.data?.tickets) ? t.data.tickets : [];
             setTickets(fetchedTickets);
+
+            // Keep an open ticket drawer in sync too. This updates only its
+            // data; it does not close the drawer or reset an open create/edit
+            // form, so remote board changes never cause a page reload.
+            setDetail(current => current
+                ? fetchedTickets.find(ticket => ticket.id === current.id) || null
+                : null
+            );
         } catch (e) {
             // ignore silently
         }
@@ -155,7 +163,10 @@ export default function ProjectTickets() {
         load();
     }, [projectId]);
 
-    useAutoRefresh(loadTicketsSilent, { intervalMs: 10000, enabled: !detail && !open });
+    // Live AJAX board sync. Ticket moves made by another person appear within
+    // three seconds without reloading the page. Pause only while this user is
+    // submitting the create/edit form so their in-progress fields stay intact.
+    useAutoRefresh(loadTicketsSilent, { intervalMs: 3_000, enabled: !open });
 
     // Assignee pool = the whole project team (leads + members). The CEO / project
     // leads decide who is on the team, so any team member can receive a ticket.
