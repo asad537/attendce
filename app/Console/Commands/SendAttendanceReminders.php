@@ -32,9 +32,7 @@ class SendAttendanceReminders extends Command
      */
     public function handle()
     {
-        // Shift times are company wall-clock times, so compare on that clock.
         $now = BusinessTime::now();
-        $targetTime = $now->copy()->addMinutes(15)->format('H:i');
         $today = today()->toDateString();
 
         $users = User::with('shift')->where('status', 'active')->get();
@@ -43,47 +41,68 @@ class SendAttendanceReminders extends Command
         foreach ($users as $user) {
             if (!$user->shift) continue;
 
-            $shiftStart = Carbon::parse($user->shift->start_time)->format('H:i');
-            $shiftEnd = Carbon::parse($user->shift->end_time)->format('H:i');
+            $shiftStart = Carbon::parse($user->shift->start_time);
+            $shiftEnd = Carbon::parse($user->shift->end_time);
+            
+            // Adjust dates for comparison if needed
+            $startDiff = $now->diffInMinutes(BusinessTime::at($now->toDateString(), $user->shift->start_time), false);
+            if ($startDiff < 0) {
+                // Shift started earlier today, maybe check next day
+                $startDiff = $now->diffInMinutes(BusinessTime::at($now->copy()->addDay()->toDateString(), $user->shift->start_time), false);
+            }
+            
+            $endDiff = $now->diffInMinutes(BusinessTime::at($now->toDateString(), $user->shift->end_time), false);
+            if ($endDiff < 0) {
+                // Shift ended earlier today
+                $endDiff = $now->diffInMinutes(BusinessTime::at($now->copy()->addDay()->toDateString(), $user->shift->end_time), false);
+            }
 
-            // 1. Check-In Reminder (15 mins before start time)
-            if ($targetTime === $shiftStart) {
-                // Check if they already checked in today
-                $attendance = Attendance::where('user_id', $user->id)
-                    ->whereDate('date', $today)
-                    ->whereNotNull('check_in')
-                    ->first();
+            // 1. Check-In Reminder (12 to 16 mins before start time)
+            if ($startDiff > 0 && $startDiff <= 16) {
+                $cacheKey = "reminder_checkin_{$user->id}_{$today}";
+                if (!\Cache::has($cacheKey)) {
+                    // Check if they already checked in today
+                    $attendance = Attendance::where('user_id', $user->id)
+                        ->whereDate('date', $today)
+                        ->whereNotNull('check_in')
+                        ->first();
 
-                if (!$attendance) {
-                    \App\Services\NotificationService::send(
-                        $user,
-                        'Upcoming Shift Reminder',
-                        'Don\'t forget to check in! Your shift starts in 15 minutes at ' . Carbon::parse($shiftStart)->format('h:i A') . '.',
-                        'info',
-                        '/employee/dashboard'
-                    );
-                    $count++;
+                    if (!$attendance) {
+                        \App\Services\NotificationService::send(
+                            $user,
+                            'Upcoming Shift Reminder',
+                            'Don\'t forget to check in! Your shift starts soon at ' . $shiftStart->format('h:i A') . '.',
+                            'info',
+                            '/employee/dashboard'
+                        );
+                        \Cache::put($cacheKey, true, now()->addHours(12));
+                        $count++;
+                    }
                 }
             }
 
-            // 2. Check-Out Reminder (15 mins before end time)
-            if ($targetTime === $shiftEnd) {
-                // Check if they are currently checked in, but NOT checked out
-                $attendance = Attendance::where('user_id', $user->id)
-                    ->whereDate('date', $today)
-                    ->whereNotNull('check_in')
-                    ->whereNull('check_out')
-                    ->first();
+            // 2. Check-Out Reminder (12 to 16 mins before end time)
+            if ($endDiff > 0 && $endDiff <= 16) {
+                $cacheKey = "reminder_checkout_{$user->id}_{$today}";
+                if (!\Cache::has($cacheKey)) {
+                    // Check if they are currently checked in, but NOT checked out
+                    $attendance = Attendance::where('user_id', $user->id)
+                        ->whereNotNull('check_in')
+                        ->whereNull('check_out')
+                        ->latest('check_in')
+                        ->first();
 
-                if ($attendance) {
-                    \App\Services\NotificationService::send(
-                        $user,
-                        'Shift Ending Soon',
-                        'Your shift ends in 15 minutes at ' . Carbon::parse($shiftEnd)->format('h:i A') . '. Don\'t forget to check out.',
-                        'info',
-                        '/employee/dashboard'
-                    );
-                    $count++;
+                    if ($attendance) {
+                        \App\Services\NotificationService::send(
+                            $user,
+                            'Shift Ending Soon',
+                            'Your shift ends soon at ' . $shiftEnd->format('h:i A') . '. Don\'t forget to check out.',
+                            'info',
+                            '/employee/dashboard'
+                        );
+                        \Cache::put($cacheKey, true, now()->addHours(12));
+                        $count++;
+                    }
                 }
             }
         }
