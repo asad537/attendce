@@ -18,7 +18,7 @@ class LeaveTypeSeeder extends Seeder
             ],
             [
                 'name' => 'Sick Leave', 'code' => 'SL',
-                'days_allowed_per_year' => 10, 'is_paid' => true,
+                'days_allowed_per_year' => 12, 'is_paid' => true,
                 'carry_forward' => false,
                 'color' => '#EF4444', 'description' => 'Medical/sick leave',
             ],
