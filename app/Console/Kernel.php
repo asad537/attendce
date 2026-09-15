@@ -20,6 +20,7 @@ class Kernel extends ConsoleKernel
         // Runs often so people are checked out shortly after their shift's
         // overtime window closes, instead of once a day at 23:59 UTC (5 AM PKT).
         $schedule->command('attendance:autocheckout')->everyFiveMinutes()->withoutOverlapping();
+        $schedule->command('tickets:check-deadlines')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('notifications:prune')->daily();
     }
 

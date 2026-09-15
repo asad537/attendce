@@ -35,6 +35,7 @@ type Ticket = {
     progress?: number;
     priority?: "low" | "medium" | "high" | "urgent";
     due_date?: string;
+    deadline?: string;
     attachment_path?: string;
     attachment_name?: string;
     assignee?: { id: number; name: string };
@@ -67,6 +68,14 @@ const ICO = {
 };
 const initialsOf = (name?: string) => (name || "").split(" ").filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join("") || "?";
 const formatDue = (d?: string) => d ? new Date(d.slice(0, 10) + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "No due date";
+const formatDeadline = (d?: string) => d ? new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+const toLocalDatetimeInput = (d?: string) => {
+    if (!d) return "";
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "";
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 export default function ProjectTickets() {
     const { user: currentUser } = useAuth();
@@ -97,6 +106,7 @@ export default function ProjectTickets() {
         status: "todo",
         priority: "medium",
         due_date: "",
+        deadline: "",
         assignee_id: "",
     });
     const load = async () => {
@@ -148,11 +158,13 @@ export default function ProjectTickets() {
             if (editing)
                 await api.put(`/tickets/${editing.id}`, {
                     ...form,
+                    deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
                     assignee_id: form.assignee_id || null,
                 });
             else
                 await api.post(`/projects/${projectId}/tickets`, {
                     ...form,
+                    deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
                     assignee_id: form.assignee_id || null,
                 });
             setOpen(false);
@@ -163,6 +175,7 @@ export default function ProjectTickets() {
                 status: "todo",
                 priority: "medium",
                 due_date: "",
+                deadline: "",
                 assignee_id: "",
             });
             load();
@@ -380,6 +393,7 @@ export default function ProjectTickets() {
                             status: "todo",
                             priority: "medium",
                             due_date: "",
+                            deadline: "",
                             assignee_id: "",
                         });
                         setOpen(true);
@@ -435,7 +449,7 @@ export default function ProjectTickets() {
                                 </span>
                             </span>
                         </div>
-                        <div className="flex flex-1 flex-col px-4 pb-4">
+                        <div className="flex flex-1 flex-col px-4 pb-4 overflow-y-auto max-h-[900px]">
                         {visibleTickets
                             .filter((t) => t.status === c.key)
                             .map((t) => (
@@ -444,7 +458,7 @@ export default function ProjectTickets() {
                                     draggable
                                     onDragStart={(event) => event.dataTransfer.setData('ticketId', String(t.id))}
                                     onClick={() => setDetail(t)}
-                                    className="mb-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all cursor-grab active:cursor-grabbing"
+                                    className={`mb-3 rounded-xl border p-4 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing ${t.deadline && t.status !== 'done' && new Date(t.deadline) < new Date() ? 'border-red-300 bg-red-50 hover:border-red-400' : 'border-gray-200 bg-white hover:border-emerald-300'}`}
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <p className="font-semibold text-[15px] leading-5 text-gray-900 pr-2">
@@ -464,6 +478,7 @@ export default function ProjectTickets() {
                                                             t.priority ||
                                                             "medium",
                                                         due_date: t.due_date?.slice(0, 10) || "",
+                                                        deadline: toLocalDatetimeInput(t.deadline),
                                                         assignee_id:
                                                             t.assignee?.id?.toString() ||
                                                             "",
@@ -532,10 +547,13 @@ export default function ProjectTickets() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className={`mt-3 flex items-center gap-2 text-[12px] font-medium ${t.due_date && t.status !== 'done' && t.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10) ? 'text-red-500' : 'text-gray-500'}`}>
-                                        <Ico d={ICO.calendar} />
-                                        <span>{formatDue(t.due_date)}</span>
-                                    </div>
+
+                                    {t.deadline && (
+                                        <div className={`mt-3 flex items-center gap-2 text-[12px] font-medium ${t.status !== 'done' && new Date(t.deadline) < new Date() ? 'text-red-500' : 'text-orange-500'}`}>
+                                            <Ico d={ICO.clock} />
+                                            <span>Due: {formatDeadline(t.deadline)}</span>
+                                        </div>
+                                    )}
                                     <span className="mt-3 inline-block rounded-md bg-blue-50 px-2.5 py-1 text-[12px] font-semibold text-blue-600">{projectName}</span>
                                     {t.status !== 'todo' && (
                                         <div className="mt-3">
@@ -550,7 +568,7 @@ export default function ProjectTickets() {
                                 </div>
                             ))}
                         {visibleTickets.filter(t => t.status === c.key).length === 0 && <div className="grid min-h-64 flex-1 place-items-center text-center"><div><Ico d={ICO.doc} className="mx-auto h-16 w-16 text-gray-300" /><p className="mt-4 text-[15px] font-bold text-gray-800">No issues yet</p><p className="mt-1 text-sm text-gray-500">Create an issue or drag one here</p></div></div>}
-                        {canManage && <button className={`mt-auto w-full rounded-xl py-3.5 text-sm font-bold transition-colors hover:brightness-95 ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
+                        {canManage && <button className={`mt-auto w-full rounded-xl py-3.5 text-sm font-bold transition-colors hover:brightness-95 ${columnTheme[c.key].soft} ${columnTheme[c.key].accent}`} onClick={() => { setEditing(null); setForm({ title: "", description: "", status: c.key, priority: "medium", due_date: "", deadline: "", assignee_id: "" }); setOpen(true); }}>+ Create issue</button>}
                         </div>
                     </div>
                 ))}
@@ -592,7 +610,7 @@ export default function ProjectTickets() {
                             </option>
                         ))}
                     </select>
-                    <label className="label">Due date<input type="date" min={projectStartDate || undefined} className="input mt-1" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></label>
+                    <label className="label">Deadline (Date & Time)<input type="datetime-local" className="input mt-1" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} /></label>
                     <div className="flex justify-end gap-2">
                         <button
                             type="button"

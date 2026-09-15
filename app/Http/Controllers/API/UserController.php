@@ -46,10 +46,12 @@ class UserController extends Controller
         // Team leads see their own direct reports + themselves. Managers (like
         // the CEO) see the whole organisation, so My Team lists everyone —
         // including people the CEO added who don't report to them directly.
-        if ($auth->isTl()) {
+        if ($auth->isTl() && !$request->boolean('all_staff')) {
             $query->where(function ($q) use ($auth) {
                 $q->where('manager_id', $auth->id)->orWhere('id', $auth->id);
             });
+        } elseif ($auth->isTl() && $request->boolean('all_staff')) {
+            $query->whereNotIn('role', ['manager', 'president']);
         }
 
         if ($request->filled('department_id')) $query->where('department_id', $request->department_id);

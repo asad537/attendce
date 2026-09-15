@@ -2,8 +2,8 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 class ProjectTicket extends Model {
-    protected $fillable = ['project_id','title','description','status','progress','priority','due_date','attachment_path','attachment_name','assignee_id','created_by','rating','rated_by','rated_at'];
-    protected $casts = ['progress' => 'integer', 'rating' => 'integer', 'rated_at' => 'datetime'];
+    protected $fillable = ['project_id','title','description','status','progress','priority','due_date','deadline','deadline_notified','attachment_path','attachment_name','assignee_id','created_by','rating','rated_by','rated_at'];
+    protected $casts = ['progress' => 'integer', 'rating' => 'integer', 'rated_at' => 'datetime', 'deadline' => 'datetime', 'deadline_notified' => 'boolean'];
     public function assignee() { return $this->belongsTo(User::class, 'assignee_id'); }
     public function rater() { return $this->belongsTo(User::class, 'rated_by'); }
     public function project() { return $this->belongsTo(Project::class); }

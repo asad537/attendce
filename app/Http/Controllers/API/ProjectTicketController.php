@@ -77,7 +77,7 @@ class ProjectTicketController extends Controller
     public function store(Request $request, Project $project)
     {
         abort_unless($this->canManageProject($request, $project), 403);
-        $data = $request->validate(['title'=>'required|string|max:200','description'=>'nullable|string','status'=>'nullable|in:todo,in_progress,in_review,done','priority'=>'nullable|in:low,medium,high,urgent','due_date'=>'nullable|date','attachment'=>'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240','assignee_id'=>'nullable|exists:users,id']);
+        $data = $request->validate(['title'=>'required|string|max:200','description'=>'nullable|string','status'=>'nullable|in:todo,in_progress,in_review,done','priority'=>'nullable|in:low,medium,high,urgent','due_date'=>'nullable|date','deadline'=>'nullable|date','attachment'=>'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx,txt|max:10240','assignee_id'=>'nullable|exists:users,id']);
         $this->ensureDueDateIsNotBeforeProjectStart($data['due_date'] ?? null, $project);
         if (!empty($data['assignee_id'])) {
             abort_unless($this->canAssignUser($request, $project, (int) $data['assignee_id']), 403, 'You can only assign this ticket to a member of the project team.');
@@ -130,12 +130,12 @@ class ProjectTicketController extends Controller
     public function update(Request $request, ProjectTicket $ticket)
     {
         $this->authorizeTicket($request, $ticket);
-        $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','progress'=>'sometimes|integer|min:0|max:100','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','assignee_id'=>'nullable|exists:users,id']);
+        $data = $request->validate(['title'=>'sometimes|required|string|max:200','description'=>'nullable|string','status'=>'sometimes|in:todo,in_progress,in_review,done','progress'=>'sometimes|integer|min:0|max:100','priority'=>'sometimes|in:low,medium,high,urgent','due_date'=>'nullable|date','deadline'=>'nullable|date','assignee_id'=>'nullable|exists:users,id']);
         // Only project managers (CEO/manager, creator, or designated project lead)
         // may change ownership or planning fields. Assignees may update status/progress only.
-        $managementFields = ['title', 'description', 'priority', 'due_date', 'assignee_id'];
+        $managementFields = ['title', 'description', 'priority', 'due_date', 'deadline', 'assignee_id'];
         if (array_intersect($managementFields, array_keys($data))) {
-            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only a project manager can change ticket details, priority, due date, or assignee.');
+            abort_unless($this->canManageProject($request, $ticket->project), 403, 'Only a project manager can change ticket details, priority, due date, deadline, or assignee.');
         }
         $this->ensureDueDateIsNotBeforeProjectStart($data['due_date'] ?? null, $ticket->project);
         if (!$this->canManageTicket($request, $ticket)) {

@@ -89,7 +89,7 @@ export default function CeoProjects() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [p, u] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200 })]);
+      const [p, u] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200, all_staff: 1 })]);
       setProjects(p);
       setLeads(u.data);
 
