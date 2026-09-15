@@ -63,7 +63,7 @@ class AuthController extends Controller
             'address'          => 'nullable|string|max:500',
             'emergency_contact'=> 'nullable|string|max:100',
             'education'        => 'nullable|array',
-            'avatar'           => 'nullable|image|max:1024',
+            'avatar'           => 'nullable|image|max:2048',
             'current_password' => 'required_with:new_password',
             'new_password'     => 'nullable|string|min:8|confirmed',
         ]);

@@ -4,6 +4,9 @@ import { authService } from '../../services/authService';
 import { documentService, UserDocument } from '../../services/documentService';
 import { applyAccent, useSettings } from '../../contexts/SettingsContext';
 import toast from 'react-hot-toast';
+import Modal from './Modal';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../../utils/cropImage';
 
 // Accent colours every user can pick for their own dashboard.
 const THEME_ACCENTS = ['emerald', 'teal', 'green', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber'];
@@ -32,6 +35,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
     user?.avatar_url || null
   );
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -124,7 +131,16 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
       const file = e.target.files[0];
       setAvatar(file);
       setAvatarPreview(URL.createObjectURL(file));
+      setIsAvatarModalOpen(true);
     }
+    e.target.value = '';
+  };
+
+  const handleAvatarCancel = () => {
+    setAvatar(null);
+    setAvatarPreview(user?.avatar_url || null);
+    setIsAvatarModalOpen(false);
+    setZoom(1);
   };
 
   const addEducation = () => {
@@ -142,17 +158,28 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
   };
 
   const handleAvatarSubmit = async () => {
-    if (!avatar) return;
+    if (!avatarPreview) return;
     setLoading(true);
     try {
+      let finalAvatar: File | Blob | null = avatar;
+      if (croppedAreaPixels) {
+        finalAvatar = await getCroppedImg(avatarPreview, croppedAreaPixels);
+      }
+
       const formData = new FormData();
-      formData.append('avatar', avatar);
+      if (finalAvatar) formData.append('avatar', finalAvatar);
+      
       await authService.updateProfile(formData);
       toast.success('Profile picture updated successfully');
       setAvatar(null);
       await refreshUser();
+      setIsAvatarModalOpen(false);
+      setZoom(1);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update profile picture');
+      const errorMsg = err.response?.data?.errors 
+        ? Object.values(err.response.data.errors).flat().join('\n')
+        : (err.response?.data?.message || 'Failed to update profile picture');
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -190,7 +217,10 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
         onClose();
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update profile');
+      const errorMsg = err.response?.data?.errors 
+        ? Object.values(err.response.data.errors).flat().join('\n')
+        : (err.response?.data?.message || 'Failed to update profile');
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -237,16 +267,6 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </label>
             </div>
-            {avatar && (
-              <button
-                type="button"
-                onClick={handleAvatarSubmit}
-                disabled={loading}
-                className="mb-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full font-semibold hover:bg-emerald-200 transition-colors focus:outline-none"
-              >
-                {loading ? 'Saving...' : 'Save Profile Image'}
-              </button>
-            )}
             
             <h2 className="text-xl font-bold text-gray-900">{user?.name}</h2>
             <p className="text-sm font-medium text-emerald-600">{user?.employee_id || 'Employee'}</p>
@@ -581,6 +601,60 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
           </div>}
         </form>
       </div>
+
+      {/* Avatar Preview Modal */}
+      <Modal open={isAvatarModalOpen} onClose={handleAvatarCancel} title="Crop & Adjust Profile Image" size="md">
+        <div className="flex flex-col items-center py-4 px-2">
+          <div className="relative w-full h-64 bg-gray-50 rounded-2xl overflow-hidden mb-6 border border-gray-100 shadow-inner">
+            {avatarPreview && (
+              <Cropper
+                image={avatarPreview}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={(croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+                onZoomChange={setZoom}
+              />
+            )}
+          </div>
+          <div className="w-full px-4 mb-6">
+            <label className="text-xs text-gray-500 font-semibold mb-3 flex justify-between">
+              <span>Zoom</span>
+              <span>{Math.round(zoom * 100)}%</span>
+            </label>
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              aria-labelledby="Zoom"
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            />
+          </div>
+          <div className="flex w-full gap-3 mt-2">
+            <button
+              type="button"
+              onClick={handleAvatarCancel}
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-100 rounded-xl hover:border-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleAvatarSubmit}
+              disabled={loading}
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-white bg-emerald-600 rounded-xl focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Profile Image'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
