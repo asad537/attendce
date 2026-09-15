@@ -126,16 +126,20 @@ class ProjectTicketController extends Controller
             $assignee = \App\Models\User::find($data['assignee_id']);
             $projectName = $project->name;
             $title = 'New ticket assigned';
-            $messageToAssignee = "You've been assigned \"{$ticket->title}\" in {$projectName}.";
-            $messageToManagement = "{$assignee->name} has been assigned \"{$ticket->title}\" in {$projectName}.";
+            $assignerName = $request->user()->name;
+            $messageToAssignee = "You've been assigned \"{$ticket->title}\" by {$assignerName} in {$projectName}.";
+            $messageToManagement = "{$assignerName} assigned \"{$ticket->title}\" to {$assignee->name} in {$projectName}.";
             $link = "/projects/{$project->id}?ticket={$ticket->id}";
 
             if ($assignee && (int) $assignee->id !== (int) $request->user()->id) {
                 \App\Services\NotificationService::send($assignee, $title, $messageToAssignee, 'info', $link, $ticket);
             }
 
-            // Notify CEO and Managers
-            $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get();
+            // Notify CEO, Managers, and TL
+            $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get()->keyBy('id');
+            if ($project->projectLead) {
+                $management->put($project->projectLead->id, $project->projectLead);
+            }
             foreach ($management as $manager) {
                 if ($manager->id !== $request->user()->id && $manager->id !== $assignee->id) {
                     \App\Services\NotificationService::send($manager, 'Ticket Assigned', $messageToManagement, 'info', $link, $ticket);
@@ -191,16 +195,20 @@ class ProjectTicketController extends Controller
                 if ($newUser) {
                     $projectName = $ticket->project ? $ticket->project->name : 'Project';
                     $title = 'Ticket assigned';
-                    $messageToAssignee = "You've been assigned \"{$ticket->title}\" in {$projectName}.";
-                    $messageToManagement = "{$newUser->name} has been assigned \"{$ticket->title}\" in {$projectName}.";
+                    $assignerName = $request->user()->name;
+                    $messageToAssignee = "You've been assigned \"{$ticket->title}\" by {$assignerName} in {$projectName}.";
+                    $messageToManagement = "{$assignerName} assigned \"{$ticket->title}\" to {$newUser->name} in {$projectName}.";
                     $link = "/projects/{$ticket->project_id}?ticket={$ticket->id}";
 
                     if ((int) $newUser->id !== (int) $request->user()->id) {
                         \App\Services\NotificationService::send($newUser, 'Ticket assigned to you', $messageToAssignee, 'info', $link, $ticket);
                     }
 
-                    // Notify CEO and Managers
-                    $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get();
+                    // Notify CEO, Managers, and TL
+                    $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get()->keyBy('id');
+                    if ($ticket->project && $ticket->project->projectLead) {
+                        $management->put($ticket->project->projectLead->id, $ticket->project->projectLead);
+                    }
                     foreach ($management as $manager) {
                         if ($manager->id !== $request->user()->id && $manager->id !== $newUser->id) {
                             \App\Services\NotificationService::send($manager, 'Ticket Assigned', $messageToManagement, 'info', $link, $ticket);
