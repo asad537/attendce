@@ -757,6 +757,11 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     peersRef.current.forEach((_e, id) => sendSignal('reaction', { emoji }, id));
   }, [pushReaction, sendSignal]);
 
+  // The mesh engine has no server-side simulcast subscription layers. Keep a
+  // compatible no-op so CallScreen can prioritize a spotlight when LiveKit is
+  // active without branching on the selected call engine.
+  const setPreferredParticipant = useCallback((_id: number | null) => {}, []);
+
   // Send an in-call chat message to everyone.
   const sendChat = useCallback((text: string) => {
     const t = text.trim();
@@ -910,5 +915,5 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { state, localStream, remoteStream, participants, reactions, messages, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, sendReaction, sendChat, handRaised, toggleHand, captionsOn, toggleCaptions, captions, addToCall, joinRoom, getCallId: () => roomRef.current };
+  return { state, localStream, remoteStream, participants, reactions, messages, start, accept, reject, hangup, toggleMute, toggleCam, toggleScreenShare, switchToVideo, sendReaction, sendChat, handRaised, toggleHand, captionsOn, toggleCaptions, captions, addToCall, joinRoom, setPreferredParticipant, getCallId: () => roomRef.current };
 }
