@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { reportService } from '../../services/reportService';
 import { PageLoader } from '../../components/common/LoadingSpinner';
+import { userDisplayTitle } from '../../utils/userDisplay';
 
 type ReportRow = {
   user: { id: number; name: string; employee_id?: string; role?: string; designation?: { title?: string; name?: string }; department?: { name?: string } };
@@ -92,8 +93,7 @@ export default function CeoReports() {
     const completedTickets = Number(row.completed_tickets || 0);
     const completionRate = assignedTickets ? Math.min(100, Math.round(completedTickets / assignedTickets * 100)) : 0;
     const score = rowIndex(row);
-    const roleLabels: Record<string, string> = { ceo: 'President', manager: 'Manager', tl: 'Team Lead', employee: 'Employee' };
-    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role: row.user.designation?.title || row.user.designation?.name || roleLabels[row.user.role || 'employee'] || 'Team Member', department: row.user.department?.name || 'Operations' };
+    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role: userDisplayTitle(row.user), department: row.user.department?.name || 'Operations' };
   }), [data]);
 
   const filtered = useMemo(() => {
