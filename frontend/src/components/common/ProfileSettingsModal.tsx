@@ -141,6 +141,23 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
     setEducationList(educationList.filter((_, i) => i !== index));
   };
 
+  const handleAvatarSubmit = async () => {
+    if (!avatar) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', avatar);
+      await authService.updateProfile(formData);
+      toast.success('Profile picture updated successfully');
+      setAvatar(null);
+      await refreshUser();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update profile picture');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -201,7 +218,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
           
           <div className="flex flex-col items-center">
             {/* Elegant Avatar Section */}
-            <div className="relative group mb-4">
+            <div className="relative group mb-3">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-emerald-100 shadow-md ring-4 ring-white">
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -220,6 +237,16 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
                 <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </label>
             </div>
+            {avatar && (
+              <button
+                type="button"
+                onClick={handleAvatarSubmit}
+                disabled={loading}
+                className="mb-3 text-xs bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full font-semibold hover:bg-emerald-200 transition-colors focus:outline-none"
+              >
+                {loading ? 'Saving...' : 'Save Profile Image'}
+              </button>
+            )}
             
             <h2 className="text-xl font-bold text-gray-900">{user?.name}</h2>
             <p className="text-sm font-medium text-emerald-600">{user?.employee_id || 'Employee'}</p>
@@ -528,7 +555,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
             </div>
           )}
 
-          {((activeTab !== 'appearance' && activeTab !== 'dashboard') || avatar) && <div className="mt-8 flex gap-3">
+          {activeTab !== 'appearance' && activeTab !== 'dashboard' && <div className="mt-8 flex gap-3">
             <button
               type="button"
               onClick={onClose}
