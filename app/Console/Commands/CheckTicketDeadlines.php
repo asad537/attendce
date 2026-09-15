@@ -15,7 +15,7 @@ class CheckTicketDeadlines extends Command
 
     public function handle()
     {
-        $overdueTickets = ProjectTicket::with(['project.project_lead', 'assignee'])
+        $overdueTickets = ProjectTicket::with(['project.projectLead', 'assignee'])
             ->whereNotNull('deadline')
             ->where('deadline', '<=', Carbon::now())
             ->where('status', '!=', 'done')
@@ -40,8 +40,8 @@ class CheckTicketDeadlines extends Command
             }
 
             // Notify Project Lead (TL)
-            if ($ticket->project && $ticket->project->project_lead) {
-                NotificationService::send($ticket->project->project_lead, $title, $message, 'error', $link, $ticket);
+            if ($ticket->project && $ticket->project->projectLead) {
+                NotificationService::send($ticket->project->projectLead, $title, $message, 'error', $link, $ticket);
             }
 
             // Notify Managers
