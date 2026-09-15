@@ -230,19 +230,21 @@ export function useLiveKitCall(meId?: number, opts: UseLiveKitCallOpts = {}): Ca
     const room = new Room({
       // CallScreen renders tracks through MediaStreams, rather than
       // Track.attach(), so adaptive stream cannot measure the stage tile.
-      // Keep a proper high-quality stage layer while thumbnails use lower
-      // layers. The original 1080p stream plus two lower layers is LiveKit's
-      // supported simulcast layout.
+      // A stable 720p stage is deliberately preferred to a 1080p stream here.
+      // Most call participants are on ordinary office/mobile uplinks; asking
+      // every publisher for 1080p at 4 Mbps made WebRTC hit congestion and
+      // continuously reduce quality/freeze. 720p at 30fps keeps motion smooth
+      // while the two lower simulcast layers serve small tiles efficiently.
       adaptiveStream: false,
       dynacast: true,         // pause layers nobody is watching
       audioCaptureDefaults: CLEAN_MIC,
-      videoCaptureDefaults: { resolution: VideoPresets.h1080.resolution },
+      videoCaptureDefaults: { resolution: VideoPresets.h720.resolution },
       publishDefaults: {
         simulcast: true,
-        // Do not duplicate the original h1080 layer here. Two lower layers
-        // keep bandwidth economical while the stage can stay crisp.
-        videoSimulcastLayers: [VideoPresets.h360, VideoPresets.h720],
-        videoEncoding: { maxBitrate: 4_000_000, maxFramerate: 24 },
+        // The source is h720, so only publish lower additional layers. Never
+        // duplicate the source layer in this array.
+        videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+        videoEncoding: { maxBitrate: 2_500_000, maxFramerate: 30 },
       },
     });
     roomRef.current = room;
