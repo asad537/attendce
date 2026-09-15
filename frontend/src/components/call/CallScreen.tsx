@@ -569,7 +569,7 @@ export default function CallScreen({ call, guest = false }: { call: ReturnType<t
             {/* Control bar — exact Google Meet look: dark strip, big rounded
                 container, mic/camera as circles inside pills (blue dots / chevron),
                 squircle buttons, pink off-states, blue active states, red Leave. */}
-            <div className="call-controls flex items-center justify-center overflow-x-auto bg-[#1a1a1a] px-3 py-3">
+            <div className="call-controls flex items-center justify-center overflow-visible bg-[#1a1a1a] px-3 py-3">
                 <div className="flex items-center gap-2 rounded-[32px] bg-[#242526] px-3 py-2">
 
                     {/* Mic pill: [ • • • | mic ] */}
