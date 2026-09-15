@@ -36,6 +36,7 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
     user?.avatar_url || null
   );
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
@@ -143,6 +144,25 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
     setZoom(1);
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!window.confirm("Are you sure you want to remove your profile image?")) return;
+    setLoading(true);
+    setIsAvatarMenuOpen(false);
+    try {
+      const formData = new FormData();
+      formData.append('remove_avatar', 'true');
+      await authService.updateProfile(formData);
+      toast.success('Profile picture removed successfully');
+      setAvatar(null);
+      setAvatarPreview(null);
+      await refreshUser();
+    } catch (err: any) {
+      toast.error('Failed to remove profile picture');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addEducation = () => {
     setEducationList([...educationList, { degree: '', institution: '', year: '', field: '' }]);
   };
@@ -248,24 +268,63 @@ export default function ProfileSettingsModal({ isOpen, onClose, embedded = false
           
           <div className="flex flex-col items-center">
             {/* Elegant Avatar Section */}
-            <div className="relative group mb-3">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-emerald-100 shadow-md ring-4 ring-white">
+            <div className="relative mb-3 flex flex-col items-center">
+              <div 
+                className="relative group w-24 h-24 rounded-full overflow-hidden bg-emerald-100 shadow-md ring-4 ring-white cursor-pointer"
+                onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+              >
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-bold text-3xl shadow-inner">
-                    {user?.name?.charAt(0)?.toUpperCase()}
+                  <div className="relative w-full h-full bg-white">
+                    <img src="/images/default-profile-img.jpg" alt="Default Avatar" className="w-full h-full object-cover" />
+                    <div 
+                      className="absolute inset-0 mix-blend-color"
+                      style={{ backgroundColor: ACCENT_HEX[accent] || '#059669' }} 
+                    />
                   </div>
                 )}
+                
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 text-white opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-[2px]">
+                  <svg className="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-[10px] font-medium tracking-wide uppercase">Edit</span>
+                </div>
               </div>
-              <label className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/60 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-all duration-200 backdrop-blur-[2px]">
-                <svg className="w-6 h-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-[10px] font-medium tracking-wide uppercase">Change</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-              </label>
+              
+              {/* Dropdown Menu */}
+              {isAvatarMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setIsAvatarMenuOpen(false)}></div>
+                  <div className="absolute top-24 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20 overflow-hidden text-left origin-top">
+                    <label className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <svg className="w-4 h-4 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Change Profile Image
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                        setIsAvatarMenuOpen(false);
+                        handleAvatarChange(e);
+                      }} />
+                    </label>
+                    {user?.avatar_url && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="w-full flex items-center px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer transition-colors focus:outline-none"
+                      >
+                        <svg className="w-4 h-4 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Remove Profile Image
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             
             <h2 className="text-xl font-bold text-gray-900">{user?.name}</h2>
