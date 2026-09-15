@@ -122,17 +122,24 @@ class ProjectTicketController extends Controller
         }
 
         // Notify the assignee (unless they assigned it to themselves).
-        if (!empty($data['assignee_id']) && (int) $data['assignee_id'] !== (int) $request->user()->id) {
-            $assignee = User::find($data['assignee_id']);
-            if ($assignee) {
-                NotificationService::send(
-                    $assignee,
-                    'New ticket assigned',
-                    "You've been assigned \"{$ticket->title}\" in {$project->name}.",
-                    'info',
-                    "/projects/{$project->id}?ticket={$ticket->id}",
-                    $ticket
-                );
+        if (!empty($data['assignee_id'])) {
+            $assignee = \App\Models\User::find($data['assignee_id']);
+            $projectName = $project->name;
+            $title = 'New ticket assigned';
+            $messageToAssignee = "You've been assigned \"{$ticket->title}\" in {$projectName}.";
+            $messageToManagement = "{$assignee->name} has been assigned \"{$ticket->title}\" in {$projectName}.";
+            $link = "/projects/{$project->id}?ticket={$ticket->id}";
+
+            if ($assignee && (int) $assignee->id !== (int) $request->user()->id) {
+                \App\Services\NotificationService::send($assignee, $title, $messageToAssignee, 'info', $link, $ticket);
+            }
+
+            // Notify CEO and Managers
+            $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get();
+            foreach ($management as $manager) {
+                if ($manager->id !== $request->user()->id && $manager->id !== $assignee->id) {
+                    \App\Services\NotificationService::send($manager, 'Ticket Assigned', $messageToManagement, 'info', $link, $ticket);
+                }
             }
         }
 
@@ -180,17 +187,25 @@ class ProjectTicketController extends Controller
                 $oldValStr = $oldUser ? $oldUser->name : 'Unassigned';
                 $newValStr = $newUser ? $newUser->name : 'Unassigned';
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>'assignee_changed', 'old_value'=>$oldValStr, 'new_value'=>$newValStr]);
-                // Notify the newly-assigned user (unless they reassigned it to themselves).
-                if ($newUser && (int) $newUser->id !== (int) $request->user()->id) {
+                // Notify the newly-assigned user and management
+                if ($newUser) {
                     $projectName = $ticket->project ? $ticket->project->name : 'Project';
-                    NotificationService::send(
-                        $newUser,
-                        'Ticket assigned to you',
-                        "You've been assigned \"{$ticket->title}\" in {$projectName}.",
-                        'info',
-                        "/projects/{$ticket->project_id}?ticket={$ticket->id}",
-                        $ticket
-                    );
+                    $title = 'Ticket assigned';
+                    $messageToAssignee = "You've been assigned \"{$ticket->title}\" in {$projectName}.";
+                    $messageToManagement = "{$newUser->name} has been assigned \"{$ticket->title}\" in {$projectName}.";
+                    $link = "/projects/{$ticket->project_id}?ticket={$ticket->id}";
+
+                    if ((int) $newUser->id !== (int) $request->user()->id) {
+                        \App\Services\NotificationService::send($newUser, 'Ticket assigned to you', $messageToAssignee, 'info', $link, $ticket);
+                    }
+
+                    // Notify CEO and Managers
+                    $management = \App\Models\User::whereIn('role', ['ceo', 'manager'])->get();
+                    foreach ($management as $manager) {
+                        if ($manager->id !== $request->user()->id && $manager->id !== $newUser->id) {
+                            \App\Services\NotificationService::send($manager, 'Ticket Assigned', $messageToManagement, 'info', $link, $ticket);
+                        }
+                    }
                 }
             } elseif (in_array($field, ['status', 'priority', 'title', 'description'])) {
                 TicketActivity::create(['ticket_id'=>$ticket->id, 'user_id'=>$request->user()->id, 'type'=>$field.'_changed', 'old_value'=>$oldValue, 'new_value'=>$newValue]);
