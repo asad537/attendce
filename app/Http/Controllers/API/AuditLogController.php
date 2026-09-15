@@ -13,7 +13,7 @@ class AuditLogController extends Controller
     /** GET /api/audit-logs (CEO only) */
     public function index(Request $request): JsonResponse
     {
-        $query = AuditLog::with('user')->orderByDesc('created_at');
+        $query = AuditLog::with('user.department')->orderByDesc('created_at');
 
         if ($request->filled('module'))  $query->where('module', $request->module);
         if ($request->filled('user_id')) $query->where('user_id', $request->user_id);
