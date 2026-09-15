@@ -220,9 +220,11 @@ export default function EmployeeDashboard() {
               <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 font-semibold text-blue-700">
                 <Icon type="clock" className="h-4 w-4" />Workday completed
               </div>
-              <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-white px-4 py-2 font-semibold text-emerald-600 transition  disabled:opacity-60">
-                <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Resuming…' : 'Resume Work'}
-              </button>
+              {workday.worked < workday.expected && (
+                <button onClick={handleCheckIn} disabled={actionLoading} className="flex items-center justify-center gap-2 rounded-lg border border-emerald-500 bg-white px-4 py-2 font-semibold text-emerald-600 transition  disabled:opacity-60">
+                  <Icon type="in" className="h-4 w-4" />{actionLoading ? 'Resuming…' : 'Resume Work'}
+                </button>
+              )}
             </div>
           )}
         </div>
