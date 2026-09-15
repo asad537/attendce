@@ -16,6 +16,29 @@ interface DesigForm { title: string; description: string; department_id: number;
 const emptyDept   = (): DeptForm  => ({ name: '', code: '', description: '' });
 const emptyDesig  = (): DesigForm => ({ title: '', description: '', department_id: 0 });
 
+const cardThemes = [
+  { 
+    bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100', iconBg: 'bg-blue-500', iconText: 'text-white', badgeBg: 'bg-blue-100', dot: 'bg-blue-500', btnBg: 'bg-blue-50', btnText: 'text-blue-600', btnHover: 'hover:bg-blue-100',
+    topIcon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>,
+    bgGraphic: <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="13" rx="1.5"/><path d="M2 20h20M8 20l1.5-3M16 20l-1.5-3M10 8.5l-2.5 2.5L10 13.5m4-5 2.5 2.5-2.5 2.5"/></svg> 
+  },
+  { 
+    bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', iconBg: 'bg-emerald-400', iconText: 'text-white', badgeBg: 'bg-emerald-100', dot: 'bg-emerald-500', btnBg: 'bg-emerald-50', btnText: 'text-emerald-600', btnHover: 'hover:bg-emerald-100',
+    topIcon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+    bgGraphic: <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M3 20h18M5 17h3v-3H5v3Zm5 0h3v-6h-3v6Zm5 0h3V8h-3v9Z"/><path d="m4 11 4-4 4 3 6-6 2 2"/></svg>
+  },
+  { 
+    bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100', iconBg: 'bg-purple-400', iconText: 'text-white', badgeBg: 'bg-purple-100', dot: 'bg-purple-500', btnBg: 'bg-purple-50', btnText: 'text-purple-600', btnHover: 'hover:bg-purple-100',
+    topIcon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+    bgGraphic: <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h8l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h6M8 15h4M15 16l4-4 2 2-4 4-3 1 1-3Z"/></svg>
+  },
+  { 
+    bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100', iconBg: 'bg-orange-400', iconText: 'text-white', badgeBg: 'bg-orange-100', dot: 'bg-orange-400', btnBg: 'bg-orange-50', btnText: 'text-orange-500', btnHover: 'hover:bg-orange-100',
+    topIcon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>,
+    bgGraphic: <svg className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a9 9 0 1 0 8.5 12h-4a2 2 0 0 1-1.7-3.1A5 5 0 0 0 12 3Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="11" cy="7" r=".8"/><circle cx="15" cy="8" r=".8"/></svg>
+  },
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function CeoDepartments() {
@@ -33,8 +56,8 @@ export default function CeoDepartments() {
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  // expanded dept accordion
-  const [expanded, setExpanded]     = useState<number | null>(null);
+  // positions modal
+  const [positionsModalDept, setPositionsModalDept] = useState<Department | null>(null);
 
   // dept modals
   const [deptAdd, setDeptAdd]       = useState(false);
@@ -66,7 +89,7 @@ export default function CeoDepartments() {
       setDepts(filteredDepts);
       setDesigs(desigs);
       if (!seesAll && user?.department?.id) {
-        setExpanded(user.department.id);
+        // user only sees their own department, no need to expand anything automatically
       }
     } catch {
       if (!silent) toast.error('Failed to load departments');
@@ -197,81 +220,121 @@ export default function CeoDepartments() {
   const Err = ({ msg }: { msg?: string }) => msg
     ? <p className="text-xs text-red-500 mt-1">{msg}</p> : null;
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 lg:p-6 space-y-5">
+    <div className="min-h-full bg-[#f8fbff] p-4 text-[#172b45] sm:p-6 lg:p-8">
+      <div className="w-full space-y-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {canManageDepts ? 'Departments' : `Department - ${user?.department?.name || ''}`}
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage {canManageDepts ? 'departments and their' : 'your department and its'} designations (positions)
-          </p>
+      <div className="flex flex-col gap-5 pb-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-white shadow-[0_10px_24px_rgba(16,185,129,.25)]"
+            style={{ backgroundColor: 'var(--color-emerald-500)' }}
+          >
+            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#172b45]">
+              {canManageDepts ? 'Departments' : `Department - ${user?.department?.name || ''}`}
+            </h1>
+            <p className="mt-1 text-sm text-[#71839b]">
+              Manage {canManageDepts ? 'departments and their' : 'your department and its'} designations (positions).
+            </p>
+          </div>
         </div>
         {canManageDepts && (
           <button
             onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
-            className="btn-primary shrink-0"
+            className="flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,185,129,.25)] transition hover:-translate-y-0.5 hover:brightness-95"
+            style={{ backgroundColor: 'var(--color-emerald-600)' }}
           >
-            + Add Department
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+            Add Department
           </button>
         )}
       </div>
 
-      {/* Stats */}
+      {/* Stats & Search */}
       {!loading && (
-        <div className="flex gap-4">
-          <div className="px-4 py-2 bg-emerald-50 rounded-xl text-sm">
-            <span className="font-bold text-emerald-700">{departments.length}</span>
-            <span className="text-emerald-500 ml-1">Departments</span>
+        <div className="flex flex-col items-start justify-between gap-4 pb-1 sm:flex-row sm:items-center">
+          <div className="flex gap-3">
+            <div className="flex items-center gap-2 rounded-full bg-[#e8f4ff] px-4 py-2.5 text-xs font-bold text-blue-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              {departments.length} Departments
+            </div>
+            <div className="flex items-center gap-2 rounded-full bg-[#e9f8f5] px-4 py-2.5 text-xs font-bold text-emerald-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              {designations.length} Positions
+            </div>
           </div>
-          <div className="px-4 py-2 bg-emerald-50 rounded-xl text-sm">
-            <span className="font-bold text-emerald-700">{designations.length}</span>
-            <span className="text-emerald-500 ml-1">Positions</span>
+          <div className="relative w-full sm:w-72">
+            <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input 
+              type="text" 
+              placeholder="Search departments..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full rounded-full border border-[#dfe8f3] bg-white py-3 pl-11 pr-4 text-sm shadow-sm transition-all focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         </div>
       )}
 
       {/* Department list */}
       {loading ? <PageLoader /> : (
-        <div className="space-y-3">
-          {departments.length === 0 ? (
-            <div className="card text-center py-12 text-gray-400">
-              No departments yet. Add one to get started.
-            </div>
-          ) : departments.map(dept => {
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {(() => {
+            const filteredDepts = departments.filter(d => !searchQuery || d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+            if (departments.length === 0) {
+              return (
+                <div className="card col-span-full text-center py-12 text-gray-400">
+                  No departments yet. Add one to get started.
+                </div>
+              );
+            }
+            if (filteredDepts.length === 0) {
+              return (
+                <div className="card col-span-full text-center py-12 text-gray-400">
+                  No departments match your search.
+                </div>
+              );
+            }
+            return filteredDepts.map((dept, idx) => {
             let positions = desigFor(dept.id);
             if (user?.role === 'tl' && user?.designation?.id) {
               positions = positions.filter(pos => pos.id !== user.designation?.id);
             }
-            const isOpen    = expanded === dept.id;
+            
+            const theme = cardThemes[idx % cardThemes.length];
 
             return (
-              <div key={dept.id} className="card p-0 overflow-hidden">
-
-                {/* ── Dept row ─────────────────────────────────────── */}
-                <div
-                  className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => setExpanded(isOpen ? null : dept.id)}
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    {/* colour swatch from code hash */}
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-                      <span className="text-emerald-700 font-bold text-xs">{dept.code}</span>
+              <div key={dept.id} className="group relative min-h-[310px] overflow-hidden rounded-[18px] border border-[#e5edf7] bg-white p-6 shadow-[0_8px_25px_rgba(62,91,128,.08)] transition-shadow hover:shadow-[0_14px_32px_rgba(62,91,128,.14)]">
+                
+                {/* Abstract shape decoration */}
+                <div className={`pointer-events-none absolute -bottom-20 -right-12 h-52 w-64 rounded-[45%] blur-2xl opacity-70 ${theme.bg}`}></div>
+                
+                <div className="relative z-10 flex flex-col h-full">
+                  {/* Header Row */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex gap-4 items-center">
+                      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[17px] shadow-[0_7px_14px_rgba(30,64,175,.12)] ${theme.iconBg} ${theme.iconText}`}>
+                        {theme.topIcon}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg leading-tight">{dept.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-1 text-gray-500 text-xs font-medium">
+                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                           {positions.length} position{positions.length !== 1 ? 's' : ''}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900">{dept.name}</p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {dept.description || 'No description'}
-                        {' · '}
-                        <span className="text-emerald-500">{positions.length} position{positions.length !== 1 ? 's' : ''}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
                     {canManageDepts && (
                       <div className="relative">
                         <button
@@ -279,157 +342,124 @@ export default function CeoDepartments() {
                             ev.stopPropagation();
                             setDropdownOpen(dropdownOpen === `dept-${dept.id}` ? null : `dept-${dept.id}`);
                           }}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                          title="Options"
+                          className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors focus:outline-none"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-5 h-5 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                           </svg>
                         </button>
-
                         {dropdownOpen === `dept-${dept.id}` && (
-                          <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1">
+                          <div className="absolute right-0 mt-1 w-32 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1">
                             <button
-                              onClick={ev => {
-                                ev.stopPropagation();
-                                setDropdownOpen(null);
-                                setDeptEdit(dept);
-                                setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' });
-                                setDeptErrs({});
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                              Edit
-                            </button>
+                              onClick={ev => { ev.stopPropagation(); setDropdownOpen(null); setDeptEdit(dept); setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' }); setDeptErrs({}); }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600"
+                            >Edit</button>
                             <button
-                              onClick={ev => {
-                                ev.stopPropagation();
-                                setDropdownOpen(null);
-                                setDeptDel(dept);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
-                            >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                              Delete
-                            </button>
+                              onClick={ev => { ev.stopPropagation(); setDropdownOpen(null); setDeptDel(dept); }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600"
+                            >Delete</button>
                           </div>
                         )}
                       </div>
                     )}
-                    {/* Chevron */}
-                    <svg
-                      className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm text-gray-500 mb-4 line-clamp-2 min-h-[40px]">
+                    {dept.description || 'No description provided for this department.'}
+                  </p>
+
+                  {/* Positions List */}
+                  <div className="flex-1">
+                    <ul className="space-y-2 mb-6">
+                      {positions.slice(0, 4).map(pos => (
+                        <li key={pos.id} className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                           <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`}></span>
+                           <span className="truncate">{pos.title}</span>
+                        </li>
+                      ))}
+                      {positions.length > 4 && (
+                        <li className="text-xs text-gray-400 font-medium pl-3.5 italic">+ {positions.length - 4} more</li>
+                      )}
+                    </ul>
+                  </div>
+
+                  {/* Footer Button */}
+                  <div className="mt-auto flex justify-between items-end">
+                    <button 
+                      onClick={() => setPositionsModalDept(dept)}
+                      className={`px-4 py-2 rounded-full font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${theme.btnBg} ${theme.btnText} ${theme.btnHover}`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                       View Positions
+                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </button>
+                    {/* Decorative bottom icon */}
+                    <div className={`absolute bottom-1 right-2 pointer-events-none ${theme.text} opacity-55`}>
+                      {theme.bgGraphic}
+                    </div>
                   </div>
                 </div>
-
-                {/* ── Designations accordion ────────────────────────── */}
-                {isOpen && (
-                  <div className="border-t border-gray-100">
-                    {/* sub-header */}
-                    <div className="flex items-center justify-between px-5 py-3 bg-gray-50">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Positions / Designations
-                      </p>
-                      <button
-                        onClick={() => {
-                          setDesigForm({ ...emptyDesig(), department_id: dept.id });
-                          setDesigErrs({});
-                          setDesigAdd(dept.id);
-                        }}
-                        className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Add Position
-                      </button>
-                    </div>
-
-                    {positions.length === 0 ? (
-                      <p className="px-5 py-4 text-sm text-gray-400">
-                        No positions yet — click "Add Position" above.
-                      </p>
-                    ) : (
-                      <div className="divide-y divide-gray-50">
-                        {positions.map(d => (
-                          <div key={d.id} className="flex items-center justify-between px-5 py-3">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{d.title}</p>
-                              {d.description && (
-                                <p className="text-xs text-gray-400">{d.description}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {!(user?.role === 'tl' && d.created_by !== user?.id) && (
-                                <div className="relative">
-                                  <button
-                                    onClick={ev => {
-                                      ev.stopPropagation();
-                                      setDropdownOpen(dropdownOpen === `desig-${d.id}` ? null : `desig-${d.id}`);
-                                    }}
-                                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                                    title="Options"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                                    </svg>
-                                  </button>
-
-                                  {dropdownOpen === `desig-${d.id}` && (
-                                    <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1">
-                                      <button
-                                        onClick={ev => {
-                                          ev.stopPropagation();
-                                          setDropdownOpen(null);
-                                          setDesigEdit(d);
-                                          setDesigForm({ title: d.title, description: d.description || '', department_id: d.department?.id || 0 });
-                                          setDesigErrs({});
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 flex items-center gap-2"
-                                      >
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit
-                                      </button>
-                                      <button
-                                        onClick={ev => {
-                                          ev.stopPropagation();
-                                          setDropdownOpen(null);
-                                          setDesigDel(d);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
-                                      >
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                        Delete
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
-          })}
+          })})()}
         </div>
       )}
+
+      {/* ── Manage Positions Modal ──────────────────────────────────────────── */}
+      <Modal 
+        open={!!positionsModalDept} 
+        onClose={() => setPositionsModalDept(null)} 
+        title={`Positions — ${positionsModalDept?.name}`} 
+        size="lg"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-500">Manage designations for {positionsModalDept?.name}</p>
+          <button
+            onClick={() => {
+              if (positionsModalDept) {
+                setDesigForm({ ...emptyDesig(), department_id: positionsModalDept.id });
+                setDesigErrs({});
+                setDesigAdd(positionsModalDept.id);
+              }
+            }}
+            className="btn-primary text-xs py-1.5 px-3"
+          >
+            + Add Position
+          </button>
+        </div>
+
+        <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+          {positionsModalDept && (() => {
+             let positions = desigFor(positionsModalDept.id);
+             if (user?.role === 'tl' && user?.designation?.id) {
+               positions = positions.filter(pos => pos.id !== user.designation?.id);
+             }
+             if (positions.length === 0) {
+               return <div className="p-8 text-center text-gray-400 text-sm">No positions found.</div>;
+             }
+             return positions.map(d => (
+                <div key={d.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{d.title}</p>
+                    {d.description && <p className="text-xs text-gray-500 mt-0.5">{d.description}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    {!(user?.role === 'tl' && d.created_by !== user?.id) && (
+                      <>
+                        <button onClick={() => { setDesigEdit(d); setDesigForm({ title: d.title, description: d.description || '', department_id: d.department?.id || 0 }); setDesigErrs({}); }} className="p-1.5 text-gray-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onClick={() => setDesigDel(d)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+             ));
+          })()}
+        </div>
+      </Modal>
 
       {/* ── Add Department Modal ────────────────────────────────────────────── */}
       <Modal open={deptAdd} onClose={() => setDeptAdd(false)} title="Add Department" size="md">
@@ -566,6 +596,7 @@ export default function CeoDepartments() {
           </button>
         </div>
       </Modal>
+      </div>
     </div>
   );
 }
