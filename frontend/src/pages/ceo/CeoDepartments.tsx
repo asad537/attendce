@@ -230,10 +230,7 @@ export default function CeoDepartments() {
       {/* Header */}
       <div className="flex flex-col gap-5 pb-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] text-white shadow-[0_10px_24px_rgba(16,185,129,.25)]"
-            style={{ backgroundColor: 'var(--color-emerald-500)' }}
-          >
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white shadow-[0_10px_24px_rgba(79,70,229,.28)]">
             <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -250,8 +247,7 @@ export default function CeoDepartments() {
         {canManageDepts && (
           <button
             onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
-            className="flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,185,129,.25)] transition hover:-translate-y-0.5 hover:brightness-95"
-            style={{ backgroundColor: 'var(--color-emerald-600)' }}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#4f46e5] px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(79,70,229,.28)] transition hover:-translate-y-0.5 hover:brightness-95"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Add Department
@@ -335,6 +331,7 @@ export default function CeoDepartments() {
                         </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-1.5">
                     {canManageDepts && (
                       <div className="relative">
                         <button
@@ -362,6 +359,14 @@ export default function CeoDepartments() {
                         )}
                       </div>
                     )}
+                      <button
+                        onClick={() => setPositionsModalDept(dept)}
+                        aria-label={`Open ${dept.name}`}
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gray-50 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Description */}
