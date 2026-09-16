@@ -21,9 +21,10 @@ const CODE_STYLE: Record<string, string> = {
 const LEGEND: [string, string][] = [
   ['P', 'Present'], ['A', 'Absent'], ['L', 'Leave'], ['W', 'Work from home'], ['H', 'Holiday'], ['WE', 'Weekend'], ['WOD', 'Weekend Work'],
 ];
-const STATUS_OPTIONS: { status: 'present' | 'late' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday'; label: string }[] = [
+const STATUS_OPTIONS: { status: 'present' | 'late' | 'on_time' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday'; label: string }[] = [
   { status: 'present', label: 'Present' },
   { status: 'late', label: 'Late' },
+  { status: 'on_time', label: 'On Time' },
   { status: 'on_leave', label: 'Leave' },
   { status: 'work_from_home', label: 'Work from home' },
   { status: 'absent', label: 'Absent' },
@@ -42,6 +43,8 @@ export default function AttendanceSheetPage() {
   const monthLabel = useMemo(() => format(new Date(`${month}-01T00:00:00`), 'MMMM yyyy'), [month]);
 
   const [editing, setEditing] = useState<{ userId: number; day: number; x: number; y: number } | null>(null);
+  const [onTimeReasonModal, setOnTimeReasonModal] = useState<{ userId: number; day: number } | null>(null);
+  const [onTimeReason, setOnTimeReason] = useState("");
   const setCell = useMutation({
     mutationFn: reportService.updateSheetCell,
     onSuccess: () => { setEditing(null); queryClient.invalidateQueries({ queryKey: ['attendance-sheet', month] }); },
@@ -131,10 +134,43 @@ export default function AttendanceSheetPage() {
       <div style={{ position: 'fixed', left: editing.x, top: editing.y + 4 }} className="z-50 w-28 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 text-left text-xs shadow-xl">
         {STATUS_OPTIONS.map(o => (
           <button key={o.status} disabled={setCell.isPending}
-            onClick={() => setCell.mutate({ user_id: editing.userId, date: dateFor(editing.day), status: o.status })}
+            onClick={() => {
+              if (o.status === 'on_time') {
+                setOnTimeReasonModal({ userId: editing.userId, day: editing.day });
+                setOnTimeReason("");
+                setEditing(null);
+              } else {
+                setCell.mutate({ user_id: editing.userId, date: dateFor(editing.day), status: o.status });
+              }
+            }}
             className="block w-full px-3 py-1.5 text-left hover:bg-gray-50 disabled:opacity-50">{o.label}</button>
         ))}
       </div>
     </>}
+
+    {onTimeReasonModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+          <h3 className="mb-4 text-lg font-bold text-gray-900">Mark as On Time</h3>
+          <textarea
+            value={onTimeReason}
+            onChange={e => setOnTimeReason(e.target.value)}
+            placeholder="Enter reason for marking on time..."
+            className="h-24 w-full resize-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500"
+          />
+          <div className="mt-6 flex justify-end gap-3">
+            <button onClick={() => setOnTimeReasonModal(null)} className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancel</button>
+            <button
+              onClick={() => {
+                setCell.mutate({ user_id: onTimeReasonModal.userId, date: dateFor(onTimeReasonModal.day), status: 'on_time', note: onTimeReason });
+                setOnTimeReasonModal(null);
+              }}
+              disabled={setCell.isPending || !onTimeReason.trim()}
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >Save</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div></div>;
 }

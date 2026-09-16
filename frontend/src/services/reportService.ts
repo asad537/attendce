@@ -45,7 +45,7 @@ export const reportService = {
     return res.data;
   },
 
-  async updateSheetCell(payload: { user_id: number; date: string; status: 'present' | 'late' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday' }): Promise<void> {
+  async updateSheetCell(payload: { user_id: number; date: string; status: 'present' | 'late' | 'on_time' | 'on_leave' | 'absent' | 'work_from_home' | 'holiday'; note?: string }): Promise<void> {
     await api.post('/reports/attendance-sheet/cell', payload);
   },
 

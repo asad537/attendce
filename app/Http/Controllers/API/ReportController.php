@@ -73,7 +73,8 @@ class ReportController extends Controller
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'date' => 'required|date',
-            'status' => 'required|in:present,late,on_leave,absent,work_from_home,holiday',
+            'status' => 'required|in:present,late,on_time,on_leave,absent,work_from_home,holiday',
+            'note' => 'nullable|string|max:255',
         ]);
 
         // A holiday is organisation-wide — mark the whole date.
@@ -84,16 +85,41 @@ class ReportController extends Controller
 
         if ($data['status'] === 'absent') {
             Attendance::where('user_id', $data['user_id'])->whereDate('date', $data['date'])->delete();
-        } elseif ($data['status'] === 'work_from_home') {
-            Attendance::updateOrCreate(
-                ['user_id' => $data['user_id'], 'date' => $data['date']],
-                ['status' => 'present', 'is_late' => false, 'work_mode' => 'remote']
-            );
         } else {
-            Attendance::updateOrCreate(
-                ['user_id' => $data['user_id'], 'date' => $data['date']],
-                ['status' => $data['status'], 'is_late' => $data['status'] === 'late', 'work_mode' => 'office']
-            );
+            $attendance = Attendance::firstOrNew([
+                'user_id' => $data['user_id'],
+                'date' => $data['date'],
+            ]);
+
+            if ($data['status'] === 'work_from_home') {
+                $attendance->status = 'present';
+                $attendance->is_late = false;
+                $attendance->work_mode = 'remote';
+            } elseif ($data['status'] === 'on_time') {
+                $attendance->status = 'present';
+                $attendance->is_late = false;
+                $attendance->work_mode = 'office';
+                $attendance->note = $data['note'] ?? $attendance->note;
+            } else {
+                $attendance->status = $data['status'];
+                $attendance->is_late = $data['status'] === 'late';
+                $attendance->work_mode = 'office';
+            }
+
+            if (in_array($data['status'], ['present', 'on_time', 'work_from_home'])) {
+                $user = \App\Models\User::with('shift')->find($data['user_id']);
+                $shiftStart = $user && $user->shift && $user->shift->start_time ? $user->shift->start_time : '10:00:00';
+                $shiftEnd = $user && $user->shift && $user->shift->end_time ? $user->shift->end_time : '19:00:00';
+                
+                $attendance->check_in = $data['date'] . ' ' . $shiftStart;
+                $attendance->check_out = $data['date'] . ' ' . $shiftEnd;
+                
+                $start = \Carbon\Carbon::parse($attendance->check_in);
+                $end = \Carbon\Carbon::parse($attendance->check_out);
+                $attendance->working_minutes = max(0, $start->diffInMinutes($end));
+            }
+
+            $attendance->save();
         }
 
         return response()->json(['ok' => true]);

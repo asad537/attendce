@@ -86,8 +86,24 @@ class AttendanceService
         }
 
         $status = $isLate ? 'late' : 'present';
+
+        if ($isLate) {
+            $latesThisMonth = \App\Models\Attendance::where('user_id', $user->id)
+                ->whereYear('date', $now->year)
+                ->whereMonth('date', $now->month)
+                ->where('is_late', true)
+                ->count();
+            
+            // This check-in counts as an additional late. If the total is even, mark as absent.
+            if (($latesThisMonth + 1) % 2 === 0) {
+                $status = 'absent';
+            }
+        }
+
         if (!empty($data['work_mode']) && $data['work_mode'] === 'remote') {
-            $status = 'work_from_home';
+            if ($status !== 'absent') {
+                $status = 'work_from_home';
+            }
         }
 
         $attendance = Attendance::updateOrCreate(
