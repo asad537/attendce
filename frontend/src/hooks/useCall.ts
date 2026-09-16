@@ -330,7 +330,7 @@ export function useCall(meId?: number, opts: UseCallOpts = {}) {
         // brief grace period for a Wi-Fi hiccup, then end the abandoned peer.
         window.setTimeout(() => {
           if (pc.connectionState === 'disconnected') removePeer(id);
-        }, 12000);
+        }, 3000);
       }
       if (st === 'failed' || st === 'closed') removePeer(id);
     };
