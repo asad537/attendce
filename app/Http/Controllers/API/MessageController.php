@@ -211,7 +211,9 @@ class MessageController extends Controller
             'label' => $data['label'] ?? null, 'is_draft' => (bool) ($data['is_draft'] ?? false),
             'parent_id' => $data['parent_id'] ?? null, 'is_forwarded' => (bool) ($data['is_forwarded'] ?? false),
         ] + $attachment);
-        Cache::forget($this->typingKey($request->user()->id, $message->recipient_id));
+        if ($message->recipient_id) {
+            Cache::forget($this->typingKey($request->user()->id, $message->recipient_id));
+        }
         if (! $message->is_draft && $message->recipient_id) {
             NotificationService::send(
                 $message->recipient,
