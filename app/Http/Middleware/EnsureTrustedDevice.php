@@ -12,8 +12,8 @@ class EnsureTrustedDevice
     {
         $user = $request->user();
         if ($user && ($reason = DeviceLockService::check($user, $request))) {
-            // Kill the session so a stolen token is useless off the trusted device.
-            optional($user->currentAccessToken())->delete();
+            // Device lock is scoped to clock-in; keep the user signed in so
+            // dashboard and other HR actions remain usable from this device.
             return response()->json(['message' => $reason, 'code' => 'device_locked'], 403);
         }
 

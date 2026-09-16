@@ -45,7 +45,7 @@ Route::get('/messages/{message}/attachment', [MessageController::class, 'downloa
     ->name('messages.attachment');
 
 // ── Authenticated ────────────────────────────────────────────────────────
-Route::middleware(['auth:sanctum', 'active', 'device'])->group(function () {
+Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Auth & Sidebar Counts
     Route::post('/logout',         [AuthController::class, 'logout']);
@@ -98,7 +98,10 @@ Route::middleware(['auth:sanctum', 'active', 'device'])->group(function () {
     Route::get('/attendance/today',         [AttendanceController::class, 'today']);
     Route::get('/attendance/team-status',   [AttendanceController::class, 'teamStatus']);
     Route::get('/attendance/{id}',          [AttendanceController::class, 'show']);
-    Route::post('/attendance/check-in',     [AttendanceController::class, 'checkIn']);
+    // Device lock is intentionally enforced only when clocking in. Login,
+    // dashboard access, checkout and other HR actions remain available from
+    // any device as requested.
+    Route::post('/attendance/check-in',     [AttendanceController::class, 'checkIn'])->middleware('device');
     Route::post('/attendance/check-out',    [AttendanceController::class, 'checkOut']);
 
     // Breaks

@@ -12,7 +12,7 @@ const api: AxiosInstance = axios.create({
 });
 
 // A random id this browser keeps forever. Accounts with "device lock" on
-// only work from the device(s) whose id the server has registered.
+// can clock in only from the device(s) whose id the server has registered.
 export function getDeviceId(): string {
   try {
     let id = localStorage.getItem('device_id');
@@ -42,16 +42,9 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 api.interceptors.response.use(
   (res) => res,
   (error: AxiosError<ApiError>) => {
-    // The account is locked to another device: the server already revoked the
-    // token, so drop the session and explain on the login page.
+    // A clock-in from an untrusted device is rejected, but the session remains
+    // valid because device lock is intentionally scoped to check-in only.
     if (error.response?.status === 403 && (error.response.data as { code?: string } | undefined)?.code === 'device_locked') {
-      const message = (error.response.data as { message?: string } | undefined)?.message || 'This account is locked to another device.';
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
-      try { sessionStorage.setItem('auth_notice', message); } catch { /* ignore */ }
-      if (window.location.pathname !== '/login') {
-        window.location.assign('/login');
-      }
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {

@@ -7,9 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
- * Device lock: an account with device_lock on only works from a trusted
- * browser/device. The browser sends a random, persistent X-Device-Id header;
- * the first device to use the account is trusted automatically, every other
+ * Device lock: an account with device_lock on can clock in only from a
+ * trusted browser/device. The browser sends a random, persistent X-Device-Id
+ * header; the first device to clock in is trusted automatically, every other
  * device is refused until the President resets the account's devices.
  *
  * (A web app cannot read MAC addresses — browsers never expose them and
@@ -42,8 +42,8 @@ class DeviceLockService
         $device = TrustedDevice::where('user_id', $user->id)->where('device_id', $deviceId)->first();
         if (!$device) {
             if (TrustedDevice::where('user_id', $user->id)->exists()) {
-                AuditService::log('device_blocked', 'auth', "Blocked sign-in for {$user->name} from an unregistered device ({$request->ip()})", $user->id);
-                return 'This account is locked to another device. Ask the President to reset your device access.';
+                AuditService::log('device_blocked', 'auth', "Blocked clock-in for {$user->name} from an unregistered device ({$request->ip()})", $user->id);
+                return 'Clock-in is locked to another device. Ask the President to reset your device access.';
             }
             // First device wins and becomes the trusted one.
             $device = TrustedDevice::create([
