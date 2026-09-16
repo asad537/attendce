@@ -16,6 +16,7 @@ const AttendanceHistory = lazy(() => import('./pages/employee/AttendanceHistory'
 const LeaveManagement = lazy(() => import('./pages/employee/LeaveManagement'));
 const WfhManagement = lazy(() => import('./pages/employee/WfhManagement'));
 const RateEmployeesPage = lazy(() => import('./pages/employee/RateEmployeesPage'));
+const EmployeePerformance = lazy(() => import('./pages/employee/EmployeePerformance'));
 
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'));
 const ManagerLeaveApprovals = lazy(() => import('./pages/manager/ManagerLeaveApprovals'));
@@ -84,6 +85,7 @@ function App() {
           <Route path="leaves" element={<LeaveManagement />} />
           <Route path="wfh" element={<WfhManagement />} />
           <Route path="rate-peers" element={<RateEmployeesPage />} />
+          <Route path="performance" element={<EmployeePerformance />} />
         </Route>
       </Route>
 

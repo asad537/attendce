@@ -6,9 +6,10 @@ import autoTable from 'jspdf-autotable';
 import { reportService } from '../../services/reportService';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import { userDisplayTitle } from '../../utils/userDisplay';
+import { useAuth } from '../../contexts/AuthContext';
 
 type ReportRow = {
-  user: { id: number; name: string; employee_id?: string; role?: string; designation?: { title?: string; name?: string }; department?: { name?: string } };
+  user: { id: number; name: string; employee_id?: string; role?: string; designation?: { title?: string; name?: string }; department?: { name?: string }; team_lead?: { name?: string; designation?: { title?: string; name?: string } } | null };
   total_days?: number; working_days_in_period?: number; present?: number; work_from_home?: number;
   on_leave?: number; days_worked_excl_weekends?: number; total_working_hours?: number; avg_working_hours?: number;
   assigned_tickets?: number; completed_tickets?: number; in_progress_tickets?: number; overdue_tickets?: number;
@@ -56,7 +57,9 @@ function rowIndex(row: ReportRow) {
   return assigned ? Math.round(attendance * .6 + completion * .4) : attendance;
 }
 
-export default function CeoReports() {
+export default function CeoReports({ personal = false }: { personal?: boolean }) {
+  const { user } = useAuth();
+  const isPersonal = personal || user?.role === 'employee';
   const [period, setPeriod] = useState('This Month');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -71,7 +74,7 @@ export default function CeoReports() {
   }, [period]);
 
   const { data = [], isLoading } = useQuery<ReportRow[]>({
-    queryKey: ['company-reports', range.startDate, range.endDate],
+    queryKey: [isPersonal ? 'my-performance' : 'company-reports', user?.id, range.startDate, range.endDate],
     queryFn: () => fetchReportRows(range.startDate, range.endDate),
   });
 
@@ -81,7 +84,7 @@ export default function CeoReports() {
     return { startDate: format(startOfMonth(previous), 'yyyy-MM-dd'), endDate: format(endOfMonth(previous), 'yyyy-MM-dd') };
   }, [period]);
   const { data: previousData = [] } = useQuery<ReportRow[]>({
-    queryKey: ['company-reports-previous', previousRange.startDate, previousRange.endDate],
+    queryKey: [isPersonal ? 'my-performance-previous' : 'company-reports-previous', user?.id, previousRange.startDate, previousRange.endDate],
     queryFn: () => fetchReportRows(previousRange.startDate, previousRange.endDate),
   });
 
@@ -93,7 +96,13 @@ export default function CeoReports() {
     const completedTickets = Number(row.completed_tickets || 0);
     const completionRate = assignedTickets ? Math.min(100, Math.round(completedTickets / assignedTickets * 100)) : 0;
     const score = rowIndex(row);
-    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role: userDisplayTitle(row.user), department: row.user.department?.name || 'Operations' };
+    const isTl = row.user.role === 'tl';
+    const teamLead = isTl ? row.user.name : (row.user.team_lead?.name || 'Not assigned');
+    const teamLeadDesignation = isTl ? 'TL' : '';
+    const role = isTl
+      ? `${userDisplayTitle(row.user)} (TL)`
+      : `${userDisplayTitle(row.user)} · TL: ${teamLead}`;
+    return { ...row, attendance, assignedTickets, completedTickets, completionRate, score, workingHours: Number(row.total_working_hours || 0), ticketHours: Number(row.ticket_worklog_hours || 0), inProgressTickets: Number(row.in_progress_tickets || 0), overdueTickets: Number(row.overdue_tickets || 0), role, department: row.user.department?.name || 'Operations', teamLead, teamLeadDesignation };
   }), [data]);
 
   const filtered = useMemo(() => {
@@ -160,7 +169,7 @@ export default function CeoReports() {
   return <div className="min-h-full bg-[#f7f9f8] px-4 py-6 text-[#17251f] sm:px-6 lg:px-8">
     <div className="mx-auto max-w-[1560px]">
       <header className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div><h1 className="text-[26px] font-bold tracking-[-.035em]">Performance</h1><p className="mt-1 text-sm text-[#8a9691]"><span className="font-semibold text-emerald-500">Dashboard</span><span className="mx-2">/</span>Performance</p></div>
+        <div><h1 className="text-[26px] font-bold tracking-[-.035em]">{isPersonal ? 'My Performance' : 'Performance'}</h1><p className="mt-1 text-sm text-[#8a9691]"><span className="font-semibold text-emerald-500">Dashboard</span><span className="mx-2">/</span>{isPersonal ? 'My Performance' : 'Performance'}</p></div>
         <div className="flex flex-col gap-3 sm:flex-row">
           <label className="relative block sm:w-80"><svg className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#50605a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search anything" className="h-12 w-full rounded-2xl border border-[#edf1ef] bg-white pl-12 pr-4 text-sm outline-none focus:border-[#49b9a2] focus:ring-4 focus:ring-emerald-100" /></label>
           <button onClick={() => exportPdf()} className="h-12 rounded-2xl bg-emerald-100 px-5 text-sm font-bold text-[#245849] ">Export report</button>
@@ -179,7 +188,7 @@ export default function CeoReports() {
           <div className="grid gap-5 lg:grid-cols-[minmax(330px,.9fr)_minmax(420px,1.3fr)]">
             <Card className="p-5 sm:p-6">
               <div className="mb-7 flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold">Company Performance</h2>
+                <h2 className="text-lg font-bold">{isPersonal ? 'My Performance' : 'Company Performance'}</h2>
                 <PeriodSelect value={period} onChange={value => { setPeriod(value); setPage(1); }} />
               </div>
               <div className="flex h-64 items-end justify-around gap-3 border-b border-[#edf1ef] px-1">
@@ -196,7 +205,7 @@ export default function CeoReports() {
           </div>
 
           <Card className="overflow-hidden">
-            <div className="flex flex-col gap-3 border-b border-[#edf1ef] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><h2 className="text-lg font-bold">Employee Activity</h2><p className="mt-1 text-xs text-[#929d98]">Live attendance, ticket and worklog totals from your system</p></div><PeriodSelect value={period} onChange={value => { setPeriod(value); setPage(1); }} /></div>
+            <div className="flex flex-col gap-3 border-b border-[#edf1ef] p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><h2 className="text-lg font-bold">{isPersonal ? 'My Activity' : 'Employee Activity'}</h2><p className="mt-1 text-xs text-[#929d98]">{isPersonal ? 'Your attendance, ticket and worklog totals' : 'Live attendance, ticket and worklog totals from your system'}</p></div><PeriodSelect value={period} onChange={value => { setPeriod(value); setPage(1); }} /></div>
             <div id="employee-activity" className="overflow-x-auto"><table className="w-full min-w-[1080px] text-left"><thead className="bg-[#fafbfa] text-[11px] font-semibold text-[#8b9691]"><tr><th className="px-6 py-4">{sortLabel('Name','name')}</th><th className="px-4 py-4">{sortLabel('Job Title','role')}</th><th className="px-4 py-4 text-center">{sortLabel('Attendance','attendance')}</th><th className="px-4 py-4 text-center">{sortLabel('Working Hours','workingHours')}</th><th className="px-4 py-4 text-center">{sortLabel('Assigned Tickets','assignedTickets')}</th><th className="px-4 py-4 text-center">{sortLabel('Completed','completedTickets')}</th><th className="px-4 py-4 text-center">{sortLabel('Ticket Worklog','ticketHours')}</th><th className="px-4 py-4 text-center">{sortLabel('Leaves','leaves')}</th><th className="px-6 py-4 text-center">{sortLabel('Index','score')}</th></tr></thead>
               <tbody className="divide-y divide-[#edf1ef]">{visible.length ? visible.map((employee,index) => <tr key={employee.user.id} className="hover:bg-[#fbfdfc]"><td className="px-6 py-4"><div className="flex items-center gap-3"><Avatar name={employee.user.name} index={index}/><span><b className="block text-sm">{employee.user.name}</b><small className="text-[#9aa49f]">{employee.user.employee_id || `EMP-${String(employee.user.id).padStart(4,'0')}`}</small></span></div></td><td className="px-4 py-4"><b className="block text-sm font-semibold text-[#45534e]">{employee.role}</b><small className="text-[#9aa49f]">{employee.department}</small></td><td className="px-4 py-4 text-center text-sm font-semibold">{employee.attendance}%<small className="block font-normal text-[#9aa49f]">{employee.days_worked_excl_weekends || 0} days</small></td><td className="px-4 py-4 text-center text-sm font-semibold">{employee.workingHours.toFixed(1)}h<small className="block font-normal text-[#9aa49f]">avg {Number(employee.avg_working_hours || 0).toFixed(1)}h</small></td><td className="px-4 py-4 text-center text-sm font-semibold">{employee.assignedTickets}<small className="block font-normal text-[#9aa49f]">{employee.inProgressTickets} active</small></td><td className="px-4 py-4 text-center text-sm font-bold text-emerald-700">{employee.completedTickets}<small className="block font-normal text-[#9aa49f]">{employee.completionRate}% rate</small></td><td className="px-4 py-4 text-center text-sm font-semibold">{employee.ticketHours.toFixed(1)}h</td><td className="px-4 py-4 text-center text-sm font-semibold">{employee.on_leave || 0}<small className="block font-normal text-[#9aa49f]">WFM {employee.work_from_home || 0}</small></td><td className="px-6 py-4 text-center text-sm font-extrabold text-emerald-700">{employee.score}</td></tr>) : <tr><td colSpan={9} className="px-6 py-12 text-center text-sm text-[#929d98]">No employee matches your search.</td></tr>}</tbody>
             </table></div>
