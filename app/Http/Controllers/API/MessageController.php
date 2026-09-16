@@ -134,7 +134,7 @@ class MessageController extends Controller
         Message::where('sender_id', $target->id)->where('recipient_id', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
         $messages = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar', 'parent.sender:id,name,email,avatar'])
             ->where('is_draft', false)
-            ->where(function ($query) use ($current, $user) {
+            ->where(function ($query) use ($current, $target) {
             $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $target->id)->whereNull('deleted_by_sender_at'))
                     ->orWhere(fn ($q) => $q->where('sender_id', $target->id)->where('recipient_id', $current->id)->whereNull('deleted_by_recipient_at'));
             })->oldest()->limit(500)->get();
