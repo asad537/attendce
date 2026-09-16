@@ -979,10 +979,15 @@ export default function InboxPage() {
                                                     <div
                                                         key={item.id}
                                                         className={`group mb-2 flex ${mine ? "justify-end" : "justify-start"}`}
-                                                    >
+                                                        >
                                                         <div
                                                             className={`relative max-w-[85%] rounded-2xl px-3.5 py-2 pr-10 shadow-sm sm:max-w-[72%] ${mine ? "rounded-tr-none bg-emerald-600 text-white" : "rounded-tl-none border border-slate-200 bg-white text-slate-800"}`}
                                                         >
+                                                            {thread?.user.role === "group" && !mine && (
+                                                                <div className="mb-1 text-[11px] font-bold text-emerald-700">
+                                                                    {item.sender.name}
+                                                                </div>
+                                                            )}
                                                             {item.is_deleted ? (
                                                                 <p
                                                                     className={`flex items-center gap-1.5 py-0.5 pr-12 text-[13px] italic leading-5 ${mine ? "text-emerald-100" : "text-[#8996a0]"}`}
