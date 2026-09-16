@@ -380,7 +380,9 @@ export default function InboxPage() {
     const { data: conversations = [], isLoading } = useQuery({
         queryKey: ["chat-conversations", search],
         queryFn: () => messageService.conversations(search),
-        refetchInterval: 1000,
+        // Keep the list live without repeatedly re-requesting signed avatar
+        // URLs (which can trigger rate limiting on the avatar endpoint).
+        refetchInterval: 5000,
     });
     const visibleConversations = useMemo(
         () =>
@@ -399,13 +401,13 @@ export default function InboxPage() {
         queryKey: ["chat-thread", selectedUserId],
         queryFn: () => messageService.thread(selectedUserId as number),
         enabled: selectedUserId !== null,
-        refetchInterval: 500,
+        refetchInterval: 1500,
     });
     const { data: typingStatus } = useQuery({
         queryKey: ["chat-typing", selectedUserId],
         queryFn: () => messageService.typingStatus(selectedUserId as number),
         enabled: selectedUserId !== null,
-        refetchInterval: 250,
+        refetchInterval: 1000,
     });
 
     const threadMessages = useMemo(
