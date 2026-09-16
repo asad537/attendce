@@ -24,13 +24,8 @@ class AttendanceService
         
         $isWeekendWork = ($data['work_mode'] ?? '') === 'weekend';
 
-        // Prevent check in after working hours
-        if ($user->shift && !$isWeekendWork) {
-            $shiftEnd = \Carbon\Carbon::parse($today . ' ' . $user->shift->end_time);
-            if ($now->greaterThanOrEqualTo($shiftEnd)) {
-                throw new \Exception('You cannot check in after your working hours have ended.');
-            }
-        }
+        // Check-in remains available after shift end so late arrivals can still
+        // be recorded. The shift start/grace period below marks them as late.
 
         // Already checked in today?
         $existing = Attendance::where('user_id', $user->id)->whereDate('date', $today)->first();

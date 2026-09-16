@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { PageLoader } from '../../components/common/LoadingSpinner';
@@ -7,6 +7,7 @@ import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { attendanceService, breakService } from '../../services/attendanceService';
 import { Attendance } from '../../types';
 import UpcomingHolidaysWidget from '../../components/common/UpcomingHolidaysWidget';
+import { getErrorMessage } from '../../services/api';
 
 const FALLBACK_START = '10:00:00';
 const FALLBACK_END = '19:00:00';
@@ -55,6 +56,7 @@ export default function EmployeeDashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [breakLoading, setBreakLoading] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const lateNoticeShown = useRef(false);
   const [activeTab, setActiveTab] = useState<'regular' | 'weekend'>(() => {
     const isWeekend = new Date().getDay() === 0 || new Date().getDay() === 6;
     return isWeekend ? 'weekend' : 'regular';
@@ -70,8 +72,13 @@ export default function EmployeeDashboard() {
     try {
       const result = await attendanceService.getToday();
       setAttendance(result.attendance);
-    } catch {
-      toast.error('Failed to load attendance');
+      const current = new Date();
+      if (!result.attendance?.check_in && current.getHours() >= 11 && !lateNoticeShown.current) {
+        lateNoticeShown.current = true;
+        toast('You are late. Please check in.', { icon: '⚠️' });
+      }
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
