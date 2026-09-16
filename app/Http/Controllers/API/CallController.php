@@ -8,6 +8,8 @@ use App\Models\CallSignal;
 use App\Models\CallRoom;
 use Illuminate\Support\Facades\DB;
 use App\Models\Message;
+use App\Models\User;
+use App\Models\GroupChat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,7 +23,7 @@ class CallController extends Controller
     public function log(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'to_user_id' => 'required|exists:users,id',
+            'to_user_id' => 'required|integer',
             'kind' => 'required|in:voice,video',
             'outcome' => 'required|in:ended,missed,declined,cancelled',
             'duration' => 'nullable|integer|min:0',
@@ -32,30 +34,55 @@ class CallController extends Controller
 
         abort_if($peerId === $userId, 422, 'You cannot call yourself.');
 
-        // Prevent duplicate call logs between the same 2 users within 10 seconds
-        $recentLog = Message::where('label', 'call')
-            ->where(function ($q) use ($userId, $peerId) {
-                $q->where(fn ($x) => $x->where('sender_id', $userId)->where('recipient_id', $peerId))
-                  ->orWhere(fn ($x) => $x->where('sender_id', $peerId)->where('recipient_id', $userId));
-            })
-            ->where('created_at', '>=', now()->subSeconds(10))
-            ->first();
+        if ($peerId < 0) {
+            $groupId = abs($peerId);
+            $recentLog = Message::where('label', 'call')
+                ->where('sender_id', $userId)
+                ->where('conversation_id', $groupId)
+                ->where('created_at', '>=', now()->subSeconds(10))
+                ->first();
 
-        if ($recentLog) {
-            return response()->json(['ok' => true, 'id' => $recentLog->id, 'duplicate' => true], 200);
+            if ($recentLog) return response()->json(['ok' => true, 'id' => $recentLog->id, 'duplicate' => true], 200);
+
+            $message = Message::create([
+                'sender_id' => $userId,
+                'conversation_id' => $groupId,
+                'subject' => '(Call)',
+                'body' => json_encode([
+                    'kind' => $data['kind'],
+                    'outcome' => $data['outcome'],
+                    'duration' => (int) ($data['duration'] ?? 0),
+                ]),
+                'label' => 'call',
+            ]);
+        } else {
+            // Prevent duplicate call logs between the same 2 users within 10 seconds
+            $recentLog = Message::where('label', 'call')
+                ->where(function ($q) use ($userId, $peerId) {
+                    $q->where(fn ($x) => $x->where('sender_id', $userId)->where('recipient_id', $peerId))
+                      ->orWhere(fn ($x) => $x->where('sender_id', $peerId)->where('recipient_id', $userId));
+                })
+                ->where('created_at', '>=', now()->subSeconds(10))
+                ->first();
+
+            if ($recentLog) {
+                return response()->json(['ok' => true, 'id' => $recentLog->id, 'duplicate' => true], 200);
+            }
+
+            abort_unless(\App\Models\User::where('id', $peerId)->exists(), 422, 'User not found.');
+
+            $message = Message::create([
+                'sender_id' => $userId,
+                'recipient_id' => $peerId,
+                'subject' => '(Call)',
+                'body' => json_encode([
+                    'kind' => $data['kind'],
+                    'outcome' => $data['outcome'],
+                    'duration' => (int) ($data['duration'] ?? 0),
+                ]),
+                'label' => 'call',
+            ]);
         }
-
-        $message = Message::create([
-            'sender_id' => $userId,
-            'recipient_id' => $peerId,
-            'subject' => '(Call)',
-            'body' => json_encode([
-                'kind' => $data['kind'],
-                'outcome' => $data['outcome'],
-                'duration' => (int) ($data['duration'] ?? 0),
-            ]),
-            'label' => 'call',
-        ]);
 
         return response()->json(['ok' => true, 'id' => $message->id], 201);
     }
@@ -149,24 +176,44 @@ class CallController extends Controller
     {
         $data = $request->validate([
             'call_id' => 'required|string|max:40',
-            'to_user_id' => 'required|exists:users,id',
+            'to_user_id' => 'required|integer',
             'type' => 'required|in:offer,answer,ice,hangup,reject,cancel,invite,join,leave,camera,mute,reaction,chat,hand,caption',
             'data' => 'nullable',
         ]);
 
-        abort_if((int) $data['to_user_id'] === (int) $request->user()->id, 422, 'You cannot call yourself.');
+        $userId = $request->user()->id;
+        $toUserId = (int) $data['to_user_id'];
+
+        abort_if($toUserId === $userId, 422, 'You cannot call yourself.');
         CallRoom::ensureActive($data['call_id']);
         if ($data['type'] === 'invite') {
-            CallRoom::firstOrCreate(['call_id' => $data['call_id']], ['host_id' => $request->user()->id]);
+            CallRoom::firstOrCreate(['call_id' => $data['call_id']], ['host_id' => $userId]);
         }
 
-        CallSignal::create([
-            'call_id' => $data['call_id'],
-            'from_user_id' => $request->user()->id,
-            'to_user_id' => $data['to_user_id'],
-            'type' => $data['type'],
-            'data' => isset($data['data']) ? json_encode($data['data']) : null,
-        ]);
+        $targets = [];
+        if ($toUserId < 0) {
+            $groupId = abs($toUserId);
+            $group = GroupChat::with('members')->findOrFail($groupId);
+            abort_unless($group->members->contains('id', $userId), 403, 'You are not in this group.');
+            foreach ($group->members as $member) {
+                if ($member->id !== $userId) {
+                    $targets[] = $member->id;
+                }
+            }
+        } else {
+            abort_unless(User::where('id', $toUserId)->exists(), 422, 'User not found.');
+            $targets[] = $toUserId;
+        }
+
+        foreach ($targets as $targetId) {
+            CallSignal::create([
+                'call_id' => $data['call_id'],
+                'from_user_id' => $userId,
+                'to_user_id' => $targetId,
+                'type' => $data['type'],
+                'data' => isset($data['data']) ? json_encode($data['data']) : null,
+            ]);
+        }
 
         return response()->json(['ok' => true]);
     }
