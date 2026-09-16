@@ -350,7 +350,7 @@ export default function InboxPage() {
     const atBottomRef = useRef(true);                      // only auto-scroll when already at the bottom
     const prevThreadCountRef = useRef(0);                  // detect genuinely-new messages
     const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState<"all" | "unread" | "recent" | "new">(
+    const [filter, setFilter] = useState<"all" | "unread" | "recent" | "new" | "groups">(
         "all",
     );
     const [activeUserId, setActiveUserId] = useState<number | null>(null);
@@ -369,6 +369,11 @@ export default function InboxPage() {
         useState<InboxMessage | null>(null);
     const [forwardModalOpen, setForwardModalOpen] = useState(false);
     const [forwardSearch, setForwardSearch] = useState("");
+    const [groupModalOpen, setGroupModalOpen] = useState(false);
+    const [groupName, setGroupName] = useState("");
+    const [groupDescription, setGroupDescription] = useState("");
+    const [groupMembers, setGroupMembers] = useState<number[]>([]);
+    const { data: recipients = [], isLoading: recipientsLoading } = useQuery({ queryKey: ["chat-recipients"], queryFn: messageService.recipients, enabled: groupModalOpen });
     const call = useCallContext();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const lastTypingSentAt = useRef(0);
@@ -384,6 +389,7 @@ export default function InboxPage() {
                 if (filter === "recent")
                     return Boolean(conversation.last_message);
                 if (filter === "new") return !conversation.last_message;
+                if (filter === "groups") return Boolean(conversation.is_group);
                 return true;
             }),
         [conversations, filter],
@@ -517,6 +523,11 @@ export default function InboxPage() {
             invalidate();
         },
     });
+    const createGroup = useMutation({
+        mutationFn: () => messageService.createGroup({ name: groupName, description: groupDescription, member_ids: groupMembers }),
+        onSuccess: (group) => { setGroupModalOpen(false); setGroupName(""); setGroupDescription(""); setGroupMembers([]); queryClient.invalidateQueries({ queryKey: ["chat-conversations"] }); setActiveUserId(group.id); toast.success("Group created"); },
+        onError: (error) => toast.error(getErrorMessage(error)),
+    });
 
     const forwardMutation = useMutation({
         mutationFn: ({
@@ -646,6 +657,7 @@ export default function InboxPage() {
                     <header className="border-b border-[#e7ecea] bg-white px-3 py-3">
                         <div className="flex items-center gap-3 px-1">
                             <h1 className="text-xl font-bold">Chats</h1>
+                            <button type="button" title="Create group chat" aria-label="Create group chat" onClick={() => setGroupModalOpen(true)} className="ml-auto grid h-8 w-8 place-items-center rounded-full bg-emerald-50 text-xl font-medium leading-none text-emerald-700 hover:bg-emerald-100">+</button>
                         </div>
                         <label className="relative mt-3 block">
                             <svg
@@ -686,6 +698,7 @@ export default function InboxPage() {
                                     ["unread", "Unread"],
                                     ["recent", "Recent"],
                                     ["new", "New"],
+                                    ["groups", "Group Chats"],
                                 ] as const
                             ).map(([key, label]) => (
                                 <button
@@ -735,7 +748,9 @@ export default function InboxPage() {
                                             <small
                                                 className={`truncate ${conversation.unread_count ? "font-semibold text-[#33463f]" : "text-[#87938e]"}`}
                                             >
-                                                {conversation.last_message ? (
+                                                {conversation.is_group ? (
+                                                    <span className="truncate text-xs text-slate-500">{conversation.group_members?.join(", ") || "No members"}</span>
+                                                ) : conversation.last_message ? (
                                                     <>
                                                         {conversation
                                                             .last_message
@@ -826,7 +841,7 @@ export default function InboxPage() {
                                                 />
                                             ) : (
                                                 <small className="block truncate text-[#7f8c87]">
-                                                    {displayRole(thread.user)}
+                                                    {thread.user.role === "group" ? (thread.user.group_members?.join(", ") || "Group chat") : displayRole(thread.user)}
                                                 </small>
                                             )}
                                         </div>
@@ -1635,6 +1650,18 @@ export default function InboxPage() {
                             )}
                         </div>
                     </div>
+                </div>
+            )}
+            {groupModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                    <form onSubmit={(e) => { e.preventDefault(); if (groupName.trim()) createGroup.mutate(); }} className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
+                        <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-bold">Create group chat</h3><button type="button" onClick={() => setGroupModalOpen(false)} className="text-xl text-slate-400">×</button></div>
+                        <label className="mb-3 block text-sm font-semibold text-slate-700">Group name<input required value={groupName} onChange={e => setGroupName(e.target.value)} className="mt-1 h-10 w-full rounded-lg border px-3 font-normal outline-none focus:border-emerald-500" placeholder="e.g. Content Team" /></label>
+                        <label className="mb-4 block text-sm font-semibold text-slate-700">Description <span className="font-normal text-slate-400">(optional)</span><textarea value={groupDescription} onChange={e => setGroupDescription(e.target.value)} className="mt-1 min-h-20 w-full rounded-lg border px-3 py-2 font-normal outline-none focus:border-emerald-500" placeholder="What is this group for?" /></label>
+                        <p className="mb-2 text-sm font-semibold text-slate-700">Add members <span className="font-normal text-slate-400">(optional)</span></p>
+                        <div className="mb-5 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">{recipientsLoading ? <p className="p-4 text-center text-sm text-slate-400">Loading members…</p> : recipients.length ? recipients.map(person => <label key={person.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition ${groupMembers.includes(person.id) ? "border-emerald-200 bg-emerald-50" : "border-transparent bg-white hover:border-slate-200"}`}><input className="h-4 w-4 accent-emerald-600" type="checkbox" checked={groupMembers.includes(person.id)} onChange={() => setGroupMembers(current => current.includes(person.id) ? current.filter(id => id !== person.id) : [...current, person.id])} /><span className="text-sm font-medium text-slate-700">{person.name}</span><span className="ml-auto text-xs text-slate-400">{person.role === "tl" ? "Team Lead" : person.role === "manager" ? "Manager" : "Employee"}</span></label>) : <p className="p-4 text-center text-sm text-slate-400">No active members found.</p>}</div>
+                        <div className="flex justify-end gap-2"><button type="button" onClick={() => setGroupModalOpen(false)} className="rounded-lg border px-4 py-2 text-sm font-semibold">Cancel</button><button disabled={createGroup.isPending} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{createGroup.isPending ? "Creating…" : "Create group"}</button></div>
+                    </form>
                 </div>
             )}
         </div>

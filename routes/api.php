@@ -61,6 +61,7 @@ Route::middleware(['auth:sanctum', 'active', 'device'])->group(function () {
     Route::get('/messages',                    [MessageController::class, 'index']);
     Route::get('/messages/recipients',         [MessageController::class, 'recipients']);
     Route::get('/messages/conversations',      [MessageController::class, 'conversations']);
+    Route::post('/messages/groups',            [MessageController::class, 'createGroup']);
     Route::get('/messages/thread/{user}',      [MessageController::class, 'thread']);
     Route::post('/messages/typing',            [MessageController::class, 'typing']);
     Route::get('/messages/typing/{user}',      [MessageController::class, 'typingStatus']);

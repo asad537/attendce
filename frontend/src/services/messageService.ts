@@ -1,7 +1,7 @@
 import api from './api';
 import { sidebarService } from './sidebarService';
 
-export interface MessageUser { id: number; name: string; email: string; role?: string; designation?: string | null; avatar?: string | null; avatar_url?: string | null }
+export interface MessageUser { id: number; name: string; email: string; role?: string; designation?: string | null; avatar?: string | null; avatar_url?: string | null; group_members?: string[] }
 export interface MessageAttachment { url: string; name: string; mime: string; size: number; is_image: boolean }
 export interface InboxMessage {
   id: number; subject: string; body: string; label?: string | null; is_draft: boolean; is_read: boolean;
@@ -11,7 +11,7 @@ export interface InboxMessage {
   sender: MessageUser; recipient?: MessageUser | null; created_at: string;
 }
 export interface MessageCounts { inbox: number; unread: number; starred: number; sent: number; drafts: number; spam: number; trash: number }
-export interface Conversation { user: MessageUser & { role?: string }; last_message?: { id: number; body: string; subject: string; created_at: string; sent_by_me: boolean; is_read: boolean } | null; unread_count: number }
+export interface Conversation { user: MessageUser & { role?: string }; is_group?: boolean; group_description?: string | null; group_members?: string[]; last_message?: { id: number; body: string; subject: string; created_at: string; sent_by_me: boolean; is_read: boolean } | null; unread_count: number }
 
 export const messageService = {
   async list(folder: string, search = ''): Promise<{ messages: InboxMessage[]; counts: MessageCounts }> {
@@ -25,6 +25,10 @@ export const messageService = {
   async conversations(search = ''): Promise<Conversation[]> {
     const response = await api.get('/messages/conversations', { params: { search: search || undefined } });
     return response.data.conversations;
+  },
+  async createGroup(payload: { name: string; description?: string; member_ids: number[] }): Promise<MessageUser> {
+    const response = await api.post('/messages/groups', payload);
+    return response.data.group;
   },
   async thread(userId: number): Promise<{ user: MessageUser & { role?: string }; messages: InboxMessage[] }> {
     const response = await api.get(`/messages/thread/${userId}`);

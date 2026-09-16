@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\GroupChat;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class MessageController extends Controller
 
     public function recipients(Request $request): JsonResponse
     {
-        $users = User::active()->with('designation:id,title')->whereKeyNot($request->user()->id)->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role', 'designation_id']);
+        $users = User::active()->with('designation:id,title')->where('id', '!=', $request->user()->id)->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role', 'designation_id']);
         return response()->json(['users' => $users->map(fn ($user) => $this->userPayload($user))]);
     }
 
@@ -62,7 +63,7 @@ class MessageController extends Controller
     {
         $current = $request->user();
         $search = trim((string) $request->get('search', ''));
-        $users = User::active()->with('designation:id,title')->whereKeyNot($current->id)
+        $users = User::active()->with('designation:id,title')->where('id', '!=', $current->id)
             ->when($search, fn ($query) => $query->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->orderBy('name')->get(['id', 'name', 'email', 'avatar', 'role', 'designation_id']);
 
@@ -84,24 +85,62 @@ class MessageController extends Controller
             ];
         })->sortByDesc(fn ($conversation) => $conversation['last_message']['created_at'] ?? null)->values();
 
-        return response()->json(['conversations' => $conversations]);
+        $groups = GroupChat::with(['members:id,name,email,avatar,role', 'messages' => fn ($q) => $q->latest()->limit(1)])
+            ->whereHas('members', fn ($q) => $q->whereKey($current->id))
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->get()->map(function ($group) use ($current) {
+                $latest = $group->messages->first();
+                $unread = Message::where('conversation_id', $group->id)->where('sender_id', '!=', $current->id)->whereNull('read_at')->count();
+                return [
+                    'user' => ['id' => -$group->id, 'name' => $group->name, 'email' => '', 'role' => 'group', 'avatar' => null, 'avatar_url' => null],
+                    'is_group' => true,
+                    'group_members' => $group->members->pluck('name')->values(),
+                    'group_description' => $group->description,
+                    'last_message' => $latest ? ['id' => $latest->id, 'body' => $this->preview($latest), 'subject' => $latest->subject, 'created_at' => $latest->created_at, 'sent_by_me' => $latest->sender_id === $current->id, 'is_read' => (bool) $latest->read_at] : null,
+                    'unread_count' => $unread,
+                ];
+            });
+        return response()->json(['conversations' => $conversations->concat($groups)->sortByDesc(fn ($c) => $c['last_message']['created_at'] ?? null)->values()]);
     }
 
-    public function thread(Request $request, User $user): JsonResponse
+    public function createGroup(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:120',
+            'description' => 'nullable|string|max:1000',
+            'member_ids' => 'nullable|array',
+            'member_ids.*' => 'integer|exists:users,id',
+        ]);
+        $user = $request->user();
+        $group = GroupChat::create(['created_by' => $user->id, 'name' => trim($data['name']), 'description' => $data['description'] ?? null]);
+        $members = collect($data['member_ids'] ?? [])->push($user->id)->unique()->values();
+        $group->members()->sync($members);
+        return response()->json(['group' => ['id' => -$group->id, 'name' => $group->name, 'email' => '', 'role' => 'group', 'avatar' => null, 'avatar_url' => null]], 201);
+    }
+
+    public function thread(Request $request, int $user): JsonResponse
     {
         $current = $request->user();
-        abort_if($user->id === $current->id || $user->status !== 'active', 404);
+        if ($user < 0) {
+            $group = GroupChat::with('members:id,name,email,avatar,role')->whereKey(abs($user))->firstOrFail();
+            abort_unless($group->members->contains($current->id), 403);
+            Message::where('conversation_id', $group->id)->where('sender_id', '!=', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
+            $messages = Message::with(['sender:id,name,email,avatar', 'parent.sender:id,name,email,avatar'])->where('conversation_id', $group->id)->where('is_draft', false)->oldest()->limit(500)->get();
+            return response()->json(['user' => ['id' => -$group->id, 'name' => $group->name, 'email' => '', 'role' => 'group', 'avatar' => null, 'avatar_url' => null, 'group_members' => $group->members->pluck('name')->values()], 'messages' => $messages->map(fn ($message) => $this->format($message, $current->id))]);
+        }
+        $target = User::findOrFail($user);
+        abort_if($target->id === $current->id || $target->status !== 'active', 404);
 
-        Message::where('sender_id', $user->id)->where('recipient_id', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
+        Message::where('sender_id', $target->id)->where('recipient_id', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
         $messages = Message::with(['sender:id,name,email,avatar', 'recipient:id,name,email,avatar', 'parent.sender:id,name,email,avatar'])
             ->where('is_draft', false)
             ->where(function ($query) use ($current, $user) {
-                $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $user->id)->whereNull('deleted_by_sender_at'))
-                    ->orWhere(fn ($q) => $q->where('sender_id', $user->id)->where('recipient_id', $current->id)->whereNull('deleted_by_recipient_at'));
+            $query->where(fn ($q) => $q->where('sender_id', $current->id)->where('recipient_id', $target->id)->whereNull('deleted_by_sender_at'))
+                    ->orWhere(fn ($q) => $q->where('sender_id', $target->id)->where('recipient_id', $current->id)->whereNull('deleted_by_recipient_at'));
             })->oldest()->limit(500)->get();
 
         return response()->json([
-            'user' => $this->userPayload($user->loadMissing('designation:id,title')),
+            'user' => $this->userPayload($target->loadMissing('designation:id,title')),
             'messages' => $messages->map(fn ($message) => $this->format($message, $current->id)),
         ]);
     }
@@ -129,7 +168,7 @@ class MessageController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'recipient_id' => 'nullable|required_unless:is_draft,true|exists:users,id',
+            'recipient_id' => 'nullable|required_unless:is_draft,true|integer',
             'subject' => 'nullable|string|max:200', 'body' => 'nullable|string|max:20000',
             'label' => 'nullable|in:hr,leave,interview,admin', 'is_draft' => 'sometimes|boolean',
             'parent_id' => 'nullable|exists:messages,id', 'is_forwarded' => 'sometimes|boolean',
@@ -137,6 +176,12 @@ class MessageController extends Controller
             // active content) and keep attachments on the private disk.
             'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp3,mp4,wav,m4a,ogg',
         ]);
+        $group = null;
+        if (($data['recipient_id'] ?? 0) < 0) {
+            $group = GroupChat::with('members')->findOrFail(abs((int) $data['recipient_id']));
+            abort_unless($group->members->contains($request->user()->id), 403);
+            $data['recipient_id'] = null;
+        }
         abort_if(isset($data['recipient_id']) && (int) $data['recipient_id'] === (int) $request->user()->id, 422, 'You cannot message yourself.');
         abort_if(trim($data['body'] ?? '') === '' && ! $request->hasFile('attachment'), 422, 'Message cannot be empty.');
 
@@ -161,6 +206,7 @@ class MessageController extends Controller
 
         $message = Message::create([
             'sender_id' => $request->user()->id, 'recipient_id' => $data['recipient_id'] ?? null,
+            'conversation_id' => $group ? $group->id : null,
             'subject' => trim($data['subject'] ?? '') ?: '(No subject)', 'body' => $data['body'] ?? '',
             'label' => $data['label'] ?? null, 'is_draft' => (bool) ($data['is_draft'] ?? false),
             'parent_id' => $data['parent_id'] ?? null, 'is_forwarded' => (bool) ($data['is_forwarded'] ?? false),
