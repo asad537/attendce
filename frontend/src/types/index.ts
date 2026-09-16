@@ -59,6 +59,8 @@ export interface User {
   gender?: 'male' | 'female' | 'other';
   avatar_url?: string;
   allowed_ip?: string;
+  device_lock?: boolean;
+  trusted_devices?: TrustedDevice[];
   role: Role;
   employment_type: EmploymentType;
   work_mode?: WorkMode;
@@ -116,8 +118,17 @@ export interface CreateEmployeePayload {
   address?: string;
   emergency_contact?: string;
   allowed_ip?: string;
+  device_lock?: boolean;
   status?: UserStatus;
   new_password?: string;
+}
+
+export interface TrustedDevice {
+  id: number;
+  label: string | null;
+  ip_address: string | null;
+  last_used_at: string | null;
+  created_at: string | null;
 }
 
 /** Response from POST /api/users */

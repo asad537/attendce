@@ -26,6 +26,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Your account is not active. Please contact HR.'], 403);
         }
 
+        if ($reason = \App\Services\DeviceLockService::check($user, $request)) {
+            return response()->json(['message' => $reason, 'code' => 'device_locked'], 403);
+        }
+
         $token = $user->createToken('auth-token', ['*'], now()->addDays(7))->plainTextToken;
 
         AuditService::log('login', 'auth', "User {$user->name} logged in", $user->id);

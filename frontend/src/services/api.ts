@@ -11,12 +11,30 @@ const api: AxiosInstance = axios.create({
   withCredentials: false,
 });
 
-// Attach token from localStorage
+// A random id this browser keeps forever. Accounts with "device lock" on
+// only work from the device(s) whose id the server has registered.
+export function getDeviceId(): string {
+  try {
+    let id = localStorage.getItem('device_id');
+    if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
+      id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+        ? crypto.randomUUID().replace(/-/g, '')
+        : Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+      localStorage.setItem('device_id', id);
+    }
+    return id;
+  } catch {
+    return 'nostorage0000000000';
+  }
+}
+
+// Attach token + device id from localStorage
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers['X-Device-Id'] = getDeviceId();
   return config;
 });
 
@@ -24,6 +42,18 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 api.interceptors.response.use(
   (res) => res,
   (error: AxiosError<ApiError>) => {
+    // The account is locked to another device: the server already revoked the
+    // token, so drop the session and explain on the login page.
+    if (error.response?.status === 403 && (error.response.data as { code?: string } | undefined)?.code === 'device_locked') {
+      const message = (error.response.data as { message?: string } | undefined)?.message || 'This account is locked to another device.';
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      try { sessionStorage.setItem('auth_notice', message); } catch { /* ignore */ }
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401) {
       // A slow request from an earlier session must never clear a token that
       // was saved by a newer, successful login. This happens frequently in

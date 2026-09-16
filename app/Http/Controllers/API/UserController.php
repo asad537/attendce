@@ -191,8 +191,21 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
         return response()->json([
-            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager', 'teamLeads'])),
+            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager', 'teamLeads', 'trustedDevices'])),
         ]);
+    }
+
+    /** DELETE /api/users/{id}/devices — forget the account's trusted devices. */
+    public function resetDevices(Request $request, User $user): JsonResponse
+    {
+        $this->authorize('update', $user);
+        abort_if($request->user()->id === $user->id && !$request->user()->isCeo(), 403, 'Ask the President to reset your device.');
+
+        $user->trustedDevices()->delete();
+        $user->tokens()->delete(); // sign the account out everywhere
+        AuditService::log('device_reset', 'auth', "Trusted devices reset for {$user->name}", $request->user()->id);
+
+        return response()->json(['message' => 'Device access reset. The next device to sign in will be registered.']);
     }
 
     /** PUT /api/users/{id} */
@@ -211,7 +224,7 @@ class UserController extends Controller
             'designation_id', 'shift_id', 'manager_id', 'join_date',
             // allowed_ip enforces the office-network attendance geofence, so a
             // user must not be able to change their own to defeat it.
-            'allowed_ip',
+            'allowed_ip', 'device_lock',
         ];
 
         // Self-service profile updates cannot change authorization or employment state.

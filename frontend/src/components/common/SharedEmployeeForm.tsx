@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreateEmployeePayload, Department, Designation, User } from '../../types';
+import { CreateEmployeePayload, Department, Designation, TrustedDevice, User } from '../../types';
 
 // SVGs for sections and inputs
 const Icons = {
@@ -33,12 +33,16 @@ export interface SharedEmployeeFormProps {
   // Specific to CEO
   showManagerSelection?: boolean;
   allLeads?: User[];
+
+  // Device lock (edit mode): the account's registered devices + reset action
+  trustedDevices?: TrustedDevice[];
+  onResetDevices?: () => void | Promise<void>;
 }
 
 export function SharedEmployeeForm({
   form, errors, departments, filteredDesigs, roleOptions, submitting,
   onField, onDeptChange, onSubmit, onCancel, mode,
-  showManagerSelection, allLeads = []
+  showManagerSelection, allLeads = [], trustedDevices = [], onResetDevices
 }: SharedEmployeeFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   
@@ -293,6 +297,42 @@ export function SharedEmployeeForm({
                 />
               </div>
               <Err field="allowed_ip" />
+            </div>
+            <div className="md:col-span-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  checked={Boolean(form.device_lock)}
+                  onChange={(e) => onField('device_lock')({ target: { value: e.target.checked } } as any)}
+                />
+                <span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-gray-800"><Icons.Lock /> Device lock</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">
+                    The account only works from the first device it signs in on. Anyone trying from another phone or computer is blocked, even with the right password.
+                  </span>
+                </span>
+              </label>
+              {mode === 'edit' && Boolean(form.device_lock) && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                  <div className="text-xs text-gray-600">
+                    {trustedDevices.length === 0 ? (
+                      <span>No device registered yet. The next sign-in will register one.</span>
+                    ) : trustedDevices.map((d) => (
+                      <div key={d.id}>
+                        <span className="font-semibold text-gray-800">{d.label || 'Registered device'}</span>
+                        {d.ip_address && <span className="text-gray-400"> · {d.ip_address}</span>}
+                        {d.last_used_at && <span className="text-gray-400"> · last used {new Date(d.last_used_at).toLocaleString()}</span>}
+                      </div>
+                    ))}
+                  </div>
+                  {onResetDevices && trustedDevices.length > 0 && (
+                    <button type="button" onClick={() => onResetDevices()} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100">
+                      Reset device
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="label">Join Date <span className="text-red-500">*</span></label>

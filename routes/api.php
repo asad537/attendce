@@ -45,7 +45,7 @@ Route::get('/messages/{message}/attachment', [MessageController::class, 'downloa
     ->name('messages.attachment');
 
 // ── Authenticated ────────────────────────────────────────────────────────
-Route::middleware(['auth:sanctum', 'active'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'device'])->group(function () {
 
     // Auth & Sidebar Counts
     Route::post('/logout',         [AuthController::class, 'logout']);
@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/users/{user}',    [UserController::class, 'show']);
     Route::put('/users/{user}',    [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    Route::delete('/users/{user}/devices', [UserController::class, 'resetDevices']);
     Route::get('/users/{user}/profile-stats', [EmployeeProfileController::class, 'stats']);
     Route::get('/users/{user}/notes',      [EmployeeProfileController::class, 'notes']);
     Route::post('/users/{user}/notes',     [EmployeeProfileController::class, 'storeNote']);

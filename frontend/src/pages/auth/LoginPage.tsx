@@ -17,6 +17,14 @@ export default function LoginPage() {
     if (user) navigate(getDashboardPath(user.role), { replace: true });
   }, [user, navigate]);
 
+  // A device-lock sign-out leaves its reason here so the user knows why.
+  React.useEffect(() => {
+    try {
+      const notice = sessionStorage.getItem('auth_notice');
+      if (notice) { sessionStorage.removeItem('auth_notice'); toast.error(notice, { duration: 8000 }); }
+    } catch { /* ignore */ }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

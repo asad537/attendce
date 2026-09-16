@@ -32,6 +32,7 @@ class UpdateUserRequest extends FormRequest
             // ── Role & Employment ─────────────────────────────────
             'role'            => 'sometimes|in:employee,tl,manager',
             'allowed_ip'      => 'sometimes|nullable|string|ip',
+            'device_lock'     => 'sometimes|boolean',
             'employment_type' => 'sometimes|in:full_time,part_time,contract,intern',
             'work_mode'       => 'sometimes|in:office,remote,hybrid',
             'status'          => 'sometimes|in:active,inactive,suspended',

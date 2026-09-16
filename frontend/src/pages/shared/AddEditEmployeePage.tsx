@@ -43,6 +43,7 @@ const emptyForm = (): CreateEmployeePayload => ({
   address: '',
   emergency_contact: '',
   allowed_ip: '',
+  device_lock: false,
   status: 'active',
   new_password: '',
 });
@@ -118,6 +119,7 @@ export default function AddEditEmployeePage() {
           address:         userRes.address || '',
           emergency_contact: userRes.emergency_contact || '',
           allowed_ip:      userRes.allowed_ip || '',
+          device_lock:     Boolean(userRes.device_lock),
           status:          userRes.status,
           new_password:    '',
         });
@@ -203,6 +205,18 @@ export default function AddEditEmployeePage() {
     if (errors.department_id) setErrors(prev => ({ ...prev, department_id: '' }));
   };
 
+  // Forget the trusted device(s) so the next sign-in registers a new one.
+  const resetDevices = async () => {
+    if (!editUser) return;
+    try {
+      const res = await userService.resetDevices(editUser.id);
+      toast.success(res.message);
+      setEditUser({ ...editUser, trusted_devices: [] });
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate(form);
@@ -224,6 +238,7 @@ export default function AddEditEmployeePage() {
           employment_type: form.employment_type,
           work_mode:      form.work_mode,
           allowed_ip:     form.allowed_ip || null,
+          device_lock:    Boolean(form.device_lock),
           status:         form.status,
           department_id:  form.department_id,
           designation_id: form.designation_id,
@@ -309,6 +324,8 @@ export default function AddEditEmployeePage() {
           onSubmit={handleSubmit}
           onCancel={() => navigate(-1)}
           mode={isEdit ? 'edit' : 'create'}
+          trustedDevices={editUser?.trusted_devices || []}
+          onResetDevices={isEdit && editUser ? resetDevices : undefined}
         />
       </div>
 

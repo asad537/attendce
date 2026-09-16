@@ -27,6 +27,7 @@ class User extends Authenticatable
         'avatar',
         'role',
         'allowed_ip',
+        'device_lock',
         'employment_type',
         'work_mode',
         'status',
@@ -54,6 +55,7 @@ class User extends Authenticatable
         'join_date'            => 'date',
         'birth_date'           => 'date',
         'tickets_last_seen_at' => 'datetime',
+        'device_lock'          => 'boolean',
     ];
 
     // ─── Role Helpers ─────────────────────────────────────────────
@@ -75,6 +77,8 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Designation::class);
     }
+
+    public function trustedDevices() { return $this->hasMany(TrustedDevice::class); }
 
     public function shift()
     {

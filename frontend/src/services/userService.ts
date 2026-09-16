@@ -40,6 +40,10 @@ export const userService = {
     return res.data; // { message, temporary_password, user }
   },
 
+  async resetDevices(id: number): Promise<{ message: string }> {
+    const res = await api.delete(`/users/${id}/devices`);
+    return res.data;
+  },
   async update(id: number, data: FormData | Record<string, unknown>): Promise<User> {
     const res = await api.put(`/users/${id}`, data, {
       headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},

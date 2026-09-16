@@ -28,6 +28,15 @@ class UserResource extends JsonResource
             'work_mode'       => $this->work_mode,
             'status'          => $this->status,
             'current_status'  => $this->current_status,
+            'allowed_ip'      => $this->allowed_ip,
+            'device_lock'     => (bool) $this->device_lock,
+            'trusted_devices' => $this->whenLoaded('trustedDevices', function () {
+                return $this->trustedDevices->map(fn ($d) => [
+                    'id' => $d->id, 'label' => $d->label, 'ip_address' => $d->ip_address,
+                    'last_used_at' => optional($d->last_used_at)->toISOString(),
+                    'created_at' => optional($d->created_at)->toISOString(),
+                ])->values();
+            }),
 
             'department'      => new DepartmentResource($this->whenLoaded('department')),
             'designation'     => new DesignationResource($this->whenLoaded('designation')),
