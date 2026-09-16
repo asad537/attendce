@@ -100,7 +100,8 @@ class MessageController extends Controller
                     'unread_count' => $unread,
                 ];
             });
-        return response()->json(['conversations' => $conversations->concat($groups)->sortByDesc(fn ($c) => $c['last_message']['created_at'] ?? null)->values()]);
+        // Group chat is disabled; only private conversations are exposed.
+        return response()->json(['conversations' => $conversations]);
     }
 
     public function createGroup(Request $request): JsonResponse
