@@ -691,7 +691,7 @@ export default function InboxPage() {
                                 </button>
                             )}
                         </label>
-                        <div className="mt-3 flex gap-2 overflow-x-auto">
+                        <div className="mt-3 flex flex-wrap gap-2 overflow-visible">
                             {(
                                 [
                                     ["all", "All"],
