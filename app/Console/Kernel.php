@@ -15,6 +15,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        // Interpret all scheduled wall-clock times in Pakistan time, while
+        // the server and database may continue using UTC.
+        $schedule->useTimezone(config('app.business_timezone', 'Asia/Karachi'));
         $schedule->command('attendance:reminders')->everyMinute();
         $schedule->command('notifications:birthdays')->dailyAt('09:00')->timezone(config('app.business_timezone'));
         // Runs often so people are checked out shortly after their shift's
