@@ -13,6 +13,7 @@ class LeaveBalanceResource extends JsonResource
             'leave_type'      => new LeaveTypeResource($this->whenLoaded('leaveType')),
             'year'            => $this->year,
             'allocated'       => (float) $this->allocated,
+            'monthly_allocated' => $this->monthly_allocated === null ? null : (float) $this->monthly_allocated,
             'used'            => (float) $this->used,
             'carried_forward' => (float) $this->carried_forward,
             'remaining'       => $this->remaining,

@@ -208,6 +208,7 @@ export interface LeaveBalance {
   leave_type?: LeaveType;
   year: number;
   allocated: number;
+  monthly_allocated?: number | null;
   used: number;
   carried_forward: number;
   remaining: number;

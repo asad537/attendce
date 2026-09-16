@@ -101,13 +101,16 @@ export default function LeaveManagement() {
 
       {balances.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {balances.slice(0, 4).map((b) => (
+          {balances.slice(0, 4).map((b) => {
+            const monthlyLimit = b.monthly_allocated ?? b.allocated;
+            return (
             <div key={b.id} className="card py-4 text-center">
-              <div className="text-2xl font-bold text-emerald-600">{b.remaining}</div>
+              <div className="text-2xl font-bold text-emerald-600">{b.monthly_allocated !== null && b.monthly_allocated !== undefined ? monthlyLimit : b.remaining}</div>
               <div className="text-xs text-gray-500 mt-1">{b.leave_type?.name}</div>
-              <div className="text-xs text-gray-400">{b.used} used of {b.allocated}</div>
+              <div className="text-xs text-gray-400">{b.used} used of {monthlyLimit}</div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

@@ -44,6 +44,10 @@ export const leaveService = {
     return res.data;
   },
 
+  async setMonthlyBalance(data: { leave_type_id: number; year: number; monthly_allocated: number }): Promise<void> {
+    const res = await api.put('/leaves/balances', data);
+  },
+
   async getPendingCount(): Promise<number> {
     const res = await api.get('/leaves/pending-count');
     return res.data.count;

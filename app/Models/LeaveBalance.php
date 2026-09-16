@@ -14,12 +14,14 @@ class LeaveBalance extends Model
         'leave_type_id',
         'year',
         'allocated',
+        'monthly_allocated',
         'used',
         'carried_forward',
     ];
 
     protected $casts = [
         'allocated'       => 'decimal:1',
+        'monthly_allocated' => 'decimal:1',
         'used'            => 'decimal:1',
         'carried_forward' => 'decimal:1',
     ];

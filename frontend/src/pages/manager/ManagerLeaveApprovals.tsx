@@ -7,6 +7,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { format, parseISO } from 'date-fns';
+import LeaveQuotaSetter from '../../components/shared/LeaveQuotaSetter';
 
 type FilterStatus = '' | 'pending' | 'manager_approved' | 'manager_rejected' | 'approved' | 'rejected';
 const plainReason = (value = '') => { const element = document.createElement('div'); element.innerHTML = value; return (element.textContent || element.innerText || '').replace(/\s+/g, ' ').trim(); };
@@ -91,9 +92,12 @@ export default function ManagerLeaveApprovals() {
   return (
     <div className="p-4 lg:p-6 space-y-5">
       {/* Header */}
-      <div>
+      <div className="flex items-start justify-between gap-4">
+        <div>
         <h1 className="text-xl font-bold text-gray-900">Leave Approvals</h1>
         <p className="text-sm text-gray-500 mt-0.5">Review and approve employee leave requests</p>
+        </div>
+        <LeaveQuotaSetter />
       </div>
 
       {/* Summary chips */}

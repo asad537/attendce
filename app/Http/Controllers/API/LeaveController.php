@@ -10,6 +10,7 @@ use App\Http\Resources\LeaveResource;
 use App\Models\Leave;
 use App\Models\LeaveBalance;
 use App\Models\User;
+use App\Models\LeaveType;
 use App\Services\LeaveService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -178,6 +179,29 @@ class LeaveController extends Controller
             'balances' => LeaveBalanceResource::collection($balances),
             'year'     => $year,
         ]);
+    }
+
+    public function updateBalance(Request $request): JsonResponse
+    {
+        abort_unless(in_array($request->user()->role, ['manager', 'ceo'], true), 403);
+        $data = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'year' => 'required|integer|min:2020|max:2100',
+            'monthly_allocated' => 'required|numeric|min:0|max:100',
+        ]);
+        $users = User::active()->where('role', '!=', 'ceo')->get(['id']);
+        foreach ($users as $user) {
+            LeaveBalance::updateOrCreate(
+                ['user_id' => $user->id, 'leave_type_id' => $data['leave_type_id'], 'year' => $data['year']],
+                ['monthly_allocated' => $data['monthly_allocated']]
+            );
+        }
+        return response()->json(['message' => 'Monthly leave limit applied to all employees.', 'updated' => $users->count()]);
+    }
+
+    public function types(): JsonResponse
+    {
+        return response()->json(['leave_types' => LeaveType::active()->orderBy('name')->get()]);
     }
 
     /** GET /api/leaves/pending-count - for dashboard badges */

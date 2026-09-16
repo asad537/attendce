@@ -106,6 +106,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
     // Leaves
     Route::get('/leaves/balances',       [LeaveController::class, 'balances']);
+    Route::get('/leave-types',           [LeaveController::class, 'types']);
+    Route::put('/leaves/balances',       [LeaveController::class, 'updateBalance']);
     Route::get('/leaves/pending-count',  [LeaveController::class, 'pendingCount']);
     Route::get('/leaves',                [LeaveController::class, 'index']);
     Route::post('/leaves',               [LeaveController::class, 'store']);
