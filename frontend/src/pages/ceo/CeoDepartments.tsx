@@ -225,7 +225,7 @@ export default function CeoDepartments() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full bg-[#f8fbff] p-4 text-[#172b45] sm:p-6 lg:p-8">
-      <div className="w-full space-y-5">
+      <div className="w-full space-y-7">
 
       {/* Header */}
       <div className="flex flex-col gap-5 pb-1 sm:flex-row sm:items-center sm:justify-between">
@@ -258,17 +258,17 @@ export default function CeoDepartments() {
       {/* Stats & Search */}
       {!loading && (
         <div className="flex flex-col items-start justify-between gap-4 pb-1 sm:flex-row sm:items-center">
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 rounded-full bg-[#e8f4ff] px-4 py-2.5 text-xs font-bold text-blue-600">
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 rounded-full border border-blue-100 bg-[#edf7ff] px-5 py-3 text-sm font-bold text-[#315d9b] shadow-sm">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
               {departments.length} Departments
             </div>
-            <div className="flex items-center gap-2 rounded-full bg-[#e9f8f5] px-4 py-2.5 text-xs font-bold text-emerald-600">
+            <div className="flex items-center gap-2 rounded-full border border-emerald-100 bg-[#edf9f6] px-5 py-3 text-sm font-bold text-[#318c72] shadow-sm">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               {designations.length} Positions
             </div>
           </div>
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full sm:w-[28rem]">
             <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
@@ -277,7 +277,7 @@ export default function CeoDepartments() {
               placeholder="Search departments..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full rounded-full border border-[#dfe8f3] bg-white py-3 pl-11 pr-4 text-sm shadow-sm transition-all focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-full border border-[#dfe8f3] bg-white py-3.5 pl-12 pr-4 text-sm shadow-[0_5px_18px_rgba(62,91,128,.06)] transition-all placeholder:text-[#9aaac0] focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ export default function CeoDepartments() {
             const theme = cardThemes[idx % cardThemes.length];
 
             return (
-              <div key={dept.id} className="group relative min-h-[310px] overflow-hidden rounded-[18px] border border-[#e5edf7] bg-white p-6 shadow-[0_8px_25px_rgba(62,91,128,.08)] transition-shadow hover:shadow-[0_14px_32px_rgba(62,91,128,.14)]">
+              <div key={dept.id} className="group relative min-h-[420px] overflow-hidden rounded-[20px] border border-[#e5edf7] bg-white p-7 shadow-[0_8px_25px_rgba(62,91,128,.08)] transition-shadow hover:shadow-[0_14px_32px_rgba(62,91,128,.14)]">
                 
                 {/* Abstract shape decoration */}
                 <div className={`pointer-events-none absolute -bottom-20 -right-12 h-52 w-64 rounded-[45%] blur-2xl opacity-70 ${theme.bg}`}></div>
