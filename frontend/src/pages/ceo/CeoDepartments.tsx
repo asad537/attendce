@@ -311,10 +311,10 @@ export default function CeoDepartments() {
             const theme = cardThemes[idx % cardThemes.length];
 
             return (
-              <div key={dept.id} className="group relative min-h-[420px] overflow-hidden rounded-[20px] border border-[#e5edf7] bg-white p-7 shadow-[0_8px_25px_rgba(62,91,128,.08)] transition-shadow hover:shadow-[0_14px_32px_rgba(62,91,128,.14)]">
+              <div key={dept.id} className="group relative min-h-[320px] overflow-hidden rounded-[20px] border border-[#e5edf7] bg-white p-6 shadow-[0_8px_25px_rgba(62,91,128,.08)] transition-shadow hover:shadow-[0_14px_32px_rgba(62,91,128,.14)]">
                 
                 {/* Abstract shape decoration */}
-                <div className={`pointer-events-none absolute -bottom-20 -right-12 h-52 w-64 rounded-[45%] blur-2xl opacity-70 ${theme.bg}`}></div>
+                <div className={`pointer-events-none absolute -bottom-16 -right-10 h-40 w-52 rounded-[45%] blur-2xl opacity-70 ${theme.bg}`}></div>
                 
                 <div className="relative z-10 flex flex-col h-full">
                   {/* Header Row */}
@@ -400,7 +400,7 @@ export default function CeoDepartments() {
                     </button>
                     {/* Decorative bottom icon */}
                     <div className={`absolute bottom-1 right-2 pointer-events-none ${theme.text} opacity-55`}>
-                      {theme.bgGraphic}
+                      {React.cloneElement(theme.bgGraphic, { className: 'h-16 w-16' })}
                     </div>
                   </div>
                 </div>
