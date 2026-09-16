@@ -146,7 +146,7 @@ class ReportService
 
         // Attendance rows indexed [user_id][day].
         $byUserDay = [];
-        foreach (Attendance::whereIn('user_id', $ids)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get(['user_id', 'date', 'status', 'is_late', 'work_mode']) as $r) {
+        foreach (Attendance::whereIn('user_id', $ids)->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get(['user_id', 'date', 'status', 'is_late', 'work_mode', 'note']) as $r) {
             $byUserDay[$r->user_id][(int) Carbon::parse($r->date)->day] = $r;
         }
 
@@ -197,7 +197,7 @@ class ReportService
                 elseif ($date->isWeekend()) { $code = 'WE'; }
                 elseif ($date->toDateString() > $todayStr) { $code = ''; }
                 else { $code = 'A'; $totals['absent']++; }
-                $days[] = ['day' => $n, 'code' => $code, 'late' => $late];
+                $days[] = ['day' => $n, 'code' => $code, 'late' => $late, 'note' => $rec ? $rec->note : null];
             }
             $pr = $payrolls->get($user->id);
             $salary = $pr ? ((float) $pr->base_salary + (float) $pr->allowances + (float) $pr->incentives - (float) $pr->deductions) : 0;

@@ -42,8 +42,9 @@ export default function AttendanceSheetPage() {
   const { data, isLoading } = useQuery({ queryKey: ['attendance-sheet', month], queryFn: () => reportService.getAttendanceSheet(month) });
   const monthLabel = useMemo(() => format(new Date(`${month}-01T00:00:00`), 'MMMM yyyy'), [month]);
 
-  const [editing, setEditing] = useState<{ userId: number; day: number; x: number; y: number } | null>(null);
-  const [onTimeReasonModal, setOnTimeReasonModal] = useState<{ userId: number; day: number } | null>(null);
+  const [editing, setEditing] = useState<{ userId: number; day: number; x: number; y: number; prevCode: string } | null>(null);
+  const [onTimeReasonModal, setOnTimeReasonModal] = useState<{ userId: number; day: number; prevCode: string } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ x: number; y: number; note: string } | null>(null);
   const [onTimeReason, setOnTimeReason] = useState("");
   const setCell = useMutation({
     mutationFn: reportService.updateSheetCell,
@@ -113,7 +114,9 @@ export default function AttendanceSheetPage() {
               const clickable = canEdit && c.code !== 'WE' && c.code !== 'H';
               return <td key={c.day} className="px-0 py-1.5">
                 <span
-                  onClick={e => { if (clickable) { const rect = e.currentTarget.getBoundingClientRect(); setEditing({ userId: r.user.id, day: c.day, x: rect.left, y: rect.bottom }); } }}
+                  onClick={e => { if (clickable) { const rect = e.currentTarget.getBoundingClientRect(); setEditing({ userId: r.user.id, day: c.day, x: rect.left, y: rect.bottom, prevCode: c.code }); } }}
+                  onMouseEnter={e => { if (c.note) { const rect = e.currentTarget.getBoundingClientRect(); setHoveredCell({ x: rect.left + rect.width / 2, y: rect.top - 8, note: c.note }); } }}
+                  onMouseLeave={() => setHoveredCell(null)}
                   className={`relative mx-auto grid h-6 min-w-[24px] w-fit place-items-center rounded px-1 text-[10px] font-bold ${CODE_STYLE[c.code]} ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-emerald-300' : ''}`}>
                   {cellText(c)}{c.late && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-amber-500" title="Late" />}
                 </span>
@@ -136,7 +139,7 @@ export default function AttendanceSheetPage() {
           <button key={o.status} disabled={setCell.isPending}
             onClick={() => {
               if (o.status === 'on_time') {
-                setOnTimeReasonModal({ userId: editing.userId, day: editing.day });
+                setOnTimeReasonModal({ userId: editing.userId, day: editing.day, prevCode: editing.prevCode });
                 setOnTimeReason("");
                 setEditing(null);
               } else {
@@ -162,7 +165,9 @@ export default function AttendanceSheetPage() {
             <button onClick={() => setOnTimeReasonModal(null)} className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100">Cancel</button>
             <button
               onClick={() => {
-                setCell.mutate({ user_id: onTimeReasonModal.userId, date: dateFor(onTimeReasonModal.day), status: 'on_time', note: onTimeReason });
+                const prevLabel = LEGEND.find(l => l[0] === onTimeReasonModal.prevCode)?.[1] || 'Absent';
+                const fullNote = `State changed: ${prevLabel} to On Time\nReason: ${onTimeReason}`;
+                setCell.mutate({ user_id: onTimeReasonModal.userId, date: dateFor(onTimeReasonModal.day), status: 'on_time', note: fullNote });
                 setOnTimeReasonModal(null);
               }}
               disabled={setCell.isPending || !onTimeReason.trim()}
@@ -170,6 +175,23 @@ export default function AttendanceSheetPage() {
             >Save</button>
           </div>
         </div>
+      </div>
+    )}
+
+    {hoveredCell && (
+      <div 
+        style={{ left: hoveredCell.x, top: hoveredCell.y, transform: 'translate(-50%, -100%)' }}
+        className="pointer-events-none fixed z-[60] w-max max-w-xs rounded bg-gray-900 px-3 py-2.5 text-xs font-medium text-white shadow-lg"
+      >
+        {hoveredCell.note.includes('Reason:') ? (
+          <div className="flex flex-col gap-1 text-left">
+            <span className="text-[10px] text-gray-400">{hoveredCell.note.split('\n')[0]}</span>
+            <span className="mt-0.5"><span className="font-bold text-emerald-400">Reason:</span> {hoveredCell.note.split('Reason:')[1]?.trim()}</span>
+          </div>
+        ) : (
+          <div className="whitespace-pre-wrap text-left">{hoveredCell.note}</div>
+        )}
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
       </div>
     )}
   </div></div>;

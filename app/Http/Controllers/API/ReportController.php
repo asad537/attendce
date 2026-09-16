@@ -95,6 +95,7 @@ class ReportController extends Controller
                 $attendance->status = 'present';
                 $attendance->is_late = false;
                 $attendance->work_mode = 'remote';
+                if (isset($attendance->note) && str_starts_with($attendance->note, 'State changed:')) $attendance->note = null;
             } elseif ($data['status'] === 'on_time') {
                 $attendance->status = 'present';
                 $attendance->is_late = false;
@@ -104,6 +105,7 @@ class ReportController extends Controller
                 $attendance->status = $data['status'];
                 $attendance->is_late = $data['status'] === 'late';
                 $attendance->work_mode = 'office';
+                if (isset($attendance->note) && str_starts_with($attendance->note, 'State changed:')) $attendance->note = null;
             }
 
             if (in_array($data['status'], ['present', 'on_time', 'work_from_home'])) {
