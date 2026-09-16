@@ -89,7 +89,7 @@ export default function CeoProjects() {
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [p, u] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200, all_staff: 1 })]);
+      const [p, u] = await Promise.all([projectService.getAll(), userService.getList({ per_page: 200, all_staff: 1, project_picker: 1 })]);
       setProjects(p);
       setLeads(u.data);
 
@@ -130,7 +130,16 @@ export default function CeoProjects() {
     setOpen(true);
   };
 
-  const startCreate = () => { setEditing(null); setForm(blank()); setLeadIds([]); setMemberIds([]); setOpen(true); };
+  const startCreate = () => {
+    setEditing(null);
+    setForm(blank());
+    const defaults = user?.role === 'tl'
+      ? [user.id, user.manager?.id, leads.find(candidate => candidate.role === 'ceo')?.id].filter((id): id is number => Boolean(id))
+      : [];
+    setLeadIds([...new Set(defaults)]);
+    setMemberIds([]);
+    setOpen(true);
+  };
   const canDeleteProjects = user?.role === 'ceo' || user?.role === 'manager';
 
   const remove = async (project: Project) => {

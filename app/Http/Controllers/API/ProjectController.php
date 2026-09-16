@@ -123,6 +123,14 @@ class ProjectController extends Controller
         $leadIds = $request->has('lead_ids') ? $data['lead_ids'] ?? [] : null;
         $memberIds = $request->has('member_ids') ? $data['member_ids'] ?? [] : null;
 
+        // When a TL creates a project, keep the TL, their manager, and CEO
+        // attached as project leads automatically.
+        if ($user->isTl()) {
+            $autoLeadIds = collect([$user->id, $user->manager_id, User::where('role', 'ceo')->value('id')])
+                ->filter()->map(fn ($id) => (int) $id);
+            $leadIds = $autoLeadIds->merge($leadIds ?? [])->unique()->values()->all();
+        }
+
         // Default single lead: explicit column, else first of lead_ids, else creator.
         $primaryLead = $data['project_lead_id'] ?? ($leadIds[0] ?? $user->id);
 

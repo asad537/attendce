@@ -26,7 +26,8 @@ class UserController extends Controller
         $query = User::with(['department', 'designation', 'shift', 'manager'])
             ->withTrashed(false)
             // The CEO and throwaway call guests never appear in the staff list.
-            ->whereNotIn('role', ['ceo', 'guest'])
+            ->when(!$request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['ceo', 'guest']))
+            ->when($request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['guest']))
             ->orderBy('first_name')
             ->orderBy('last_name');
 
