@@ -91,6 +91,12 @@ class ReportService
                 [
                     'department' => $user->department ? $user->department->only(['id', 'name']) : null,
                     'designation' => $user->designation ? $user->designation->only(['id', 'title']) : null,
+                    'team_lead' => $user->manager ? [
+                        'id' => $user->manager->id,
+                        'name' => $user->manager->name,
+                        'role' => $user->manager->role,
+                        'designation' => $user->manager->designation ? $user->manager->designation->only(['id', 'title']) : null,
+                    ] : null,
                 ]
             ),
             'period'          => ['start' => $start, 'end' => $end],
