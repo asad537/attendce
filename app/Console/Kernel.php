@@ -15,16 +15,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Interpret all scheduled wall-clock times in Pakistan time, while
-        // the server and database may continue using UTC.
-        $schedule->useTimezone(config('app.business_timezone', 'Asia/Karachi'));
         $schedule->command('attendance:reminders')->everyMinute();
         $schedule->command('notifications:birthdays')->dailyAt('09:00')->timezone(config('app.business_timezone'));
         // Runs often so people are checked out shortly after their shift's
         // overtime window closes, instead of once a day at 23:59 UTC (5 AM PKT).
         $schedule->command('attendance:autocheckout')->everyFiveMinutes()->withoutOverlapping();
         $schedule->command('tickets:check-deadlines')->everyFiveMinutes()->withoutOverlapping();
-        $schedule->command('notifications:prune')->daily();
+        $schedule->command('notifications:prune')->daily()->timezone(config('app.business_timezone', 'Asia/Karachi'));
     }
 
     /**
