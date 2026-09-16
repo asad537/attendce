@@ -397,6 +397,7 @@ export default function InboxPage() {
         [conversations, filter],
     );
     const selectedUserId = activeUserId ?? conversations[0]?.user.id ?? null;
+    const isGroupSelected = selectedUserId !== null && selectedUserId < 0;
     const { data: thread, isLoading: threadLoading } = useQuery({
         queryKey: ["chat-thread", selectedUserId],
         queryFn: () => messageService.thread(selectedUserId as number),
@@ -406,7 +407,7 @@ export default function InboxPage() {
     const { data: typingStatus } = useQuery({
         queryKey: ["chat-typing", selectedUserId],
         queryFn: () => messageService.typingStatus(selectedUserId as number),
-        enabled: selectedUserId !== null,
+        enabled: selectedUserId !== null && !isGroupSelected,
         refetchInterval: 1000,
     });
 
@@ -619,6 +620,7 @@ export default function InboxPage() {
         setMessage(value);
         if (
             !selectedUserId ||
+            isGroupSelected ||
             !value.trim() ||
             Date.now() - lastTypingSentAt.current < 750
         )
