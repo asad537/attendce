@@ -100,11 +100,13 @@ class MessageController extends Controller
                     'unread_count' => $unread,
                 ];
             });
-        return response()->json(['conversations' => $conversations->concat($groups)->sortByDesc(fn ($c) => $c['last_message']['created_at'] ?? null)->values()]);
+        // Group chat is disabled; only private conversations are exposed.
+        return response()->json(['conversations' => $conversations]);
     }
 
     public function createGroup(Request $request): JsonResponse
     {
+        abort(410, 'Group chat is currently disabled.');
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:1000',
@@ -122,6 +124,7 @@ class MessageController extends Controller
     {
         $current = $request->user();
         if ($user < 0) {
+            abort(410, 'Group chat is currently disabled.');
             $group = GroupChat::with('members:id,name,email,avatar,role')->whereKey(abs($user))->firstOrFail();
             abort_unless($group->members->contains($current->id), 403);
             Message::where('conversation_id', $group->id)->where('sender_id', '!=', $current->id)->whereNull('read_at')->update(['read_at' => now()]);
@@ -178,6 +181,7 @@ class MessageController extends Controller
         ]);
         $group = null;
         if (($data['recipient_id'] ?? 0) < 0) {
+            abort(410, 'Group chat is currently disabled.');
             $group = GroupChat::with('members')->findOrFail(abs((int) $data['recipient_id']));
             abort_unless($group->members->contains($request->user()->id), 403);
             $data['recipient_id'] = null;

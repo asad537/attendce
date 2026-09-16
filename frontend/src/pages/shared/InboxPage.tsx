@@ -661,7 +661,7 @@ export default function InboxPage() {
                     <header className="border-b border-[#e7ecea] bg-white px-3 py-3">
                         <div className="flex items-center gap-3 px-1">
                             <h1 className="text-xl font-bold">Chats</h1>
-                            <button type="button" title="Create group chat" aria-label="Create group chat" onClick={() => setGroupModalOpen(true)} className="ml-auto grid h-8 w-8 place-items-center rounded-full bg-emerald-50 text-xl font-medium leading-none text-emerald-700 hover:bg-emerald-100">+</button>
+                            
                         </div>
                         <label className="relative mt-3 block">
                             <svg
@@ -702,7 +702,7 @@ export default function InboxPage() {
                                     ["unread", "Unread"],
                                     ["recent", "Recent"],
                                     ["new", "New"],
-                                    ["groups", "Group Chats"],
+                                    
                                 ] as const
                             ).map(([key, label]) => (
                                 <button
