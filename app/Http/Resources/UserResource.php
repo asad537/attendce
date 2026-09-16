@@ -51,6 +51,7 @@ class UserResource extends JsonResource
             'annual_leave_balance'  => $this->annual_leave_balance,
             'sick_leave_balance'    => $this->sick_leave_balance,
             'casual_leave_balance'  => $this->casual_leave_balance,
+            'average_rating'  => $this->average_rating ? (float) $this->average_rating : null,
             'created_at'      => $this->created_at ? $this->created_at->toISOString() : null,
         ];
     }

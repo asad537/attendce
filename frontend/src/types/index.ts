@@ -79,6 +79,7 @@ export interface User {
   annual_leave_balance: number;
   sick_leave_balance: number;
   casual_leave_balance: number;
+  average_rating?: number | null;
   created_at?: string;
 }
 

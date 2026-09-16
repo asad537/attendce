@@ -24,6 +24,7 @@ class UserController extends Controller
     {
         $auth  = $request->user();
         $query = User::with(['department', 'designation', 'shift', 'manager', 'teamLeads'])
+            ->withAvg('assignedTickets as average_rating', 'rating')
             ->withTrashed(false)
             // The CEO and throwaway call guests never appear in the staff list.
             ->when(!$request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['ceo', 'guest']))
@@ -191,7 +192,7 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
         return response()->json([
-            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager', 'teamLeads', 'trustedDevices'])),
+            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager', 'teamLeads', 'trustedDevices'])->loadAvg('assignedTickets as average_rating', 'rating')),
         ]);
     }
 

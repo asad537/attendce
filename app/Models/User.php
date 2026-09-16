@@ -145,6 +145,11 @@ class User extends Authenticatable
         return $this->hasMany(UserDocument::class);
     }
 
+    public function assignedTickets()
+    {
+        return $this->hasMany(ProjectTicket::class, 'assignee_id');
+    }
+
     // ─── Scopes ────────────────────────────────────────────────────
     public function scopeActive($query)
     {
