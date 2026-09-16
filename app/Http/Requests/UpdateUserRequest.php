@@ -41,6 +41,8 @@ class UpdateUserRequest extends FormRequest
             'designation_id'  => 'sometimes|nullable|exists:designations,id',
             'shift_id'        => 'sometimes|nullable|exists:shifts,id',
             'manager_id'      => 'sometimes|nullable|exists:users,id',
+            'team_lead_ids'   => 'sometimes|array',
+            'team_lead_ids.*' => 'integer|exists:users,id',
 
             // ── Dates ─────────────────────────────────────────────
             'join_date'       => 'sometimes|nullable|date',

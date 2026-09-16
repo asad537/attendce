@@ -52,13 +52,19 @@ export function SharedEmployeeForm({
     if (form.role === 'tl') return allLeads.filter(u => u.role === 'manager');
     const tls  = allLeads.filter(u => u.role === 'tl');
     const mgrs = allLeads.filter(u => u.role === 'manager');
-    return [...tls, ...mgrs];
+    return form.role === 'employee' ? tls : [...tls, ...mgrs];
   })();
 
   const reportingLabel = form.role === 'tl' ? 'Reporting Manager' : 'Reporting Team Lead (TL)';
   const reportingPlaceholder = form.role === 'manager'
     ? 'Reports directly to President'
     : form.role === 'tl' ? 'Select manager…' : 'Select team lead…';
+
+  const toggleTeamLead = (id: number) => {
+    const current = form.team_lead_ids || [];
+    const next = current.includes(id) ? current.filter(x => x !== id) : [...current, id];
+    onField('team_lead_ids')({ target: { value: next } } as any);
+  };
 
   const COUNTRY_CODES = [
     { code: '+1', flag: '🇺🇸', name: 'US' },
@@ -373,14 +379,26 @@ export function SharedEmployeeForm({
             
             {showManagerSelection && (
               <div className="md:col-span-2">
-                <label className="label">{reportingLabel}</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <Icons.User />
-                  </div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <label className="label mb-0">{reportingLabel}</label>
+                  {form.role === 'employee' && (
+                    <span className="text-xs text-gray-400">Optional · {(form.team_lead_ids || []).length} selected</span>
+                  )}
+                </div>
+                <div>
                   {form.role === 'manager' ? (
                     <div className="input pl-10 bg-gray-50 text-gray-400 cursor-not-allowed flex items-center">
                       Reports directly to President
+                    </div>
+                  ) : form.role === 'employee' ? (
+                    <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-2 max-h-48 overflow-y-auto space-y-1">
+                      {reportingLeads.map(m => (
+                        <label key={m.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer transition-colors ${(form.team_lead_ids || []).includes(m.id) ? 'border-emerald-200 bg-emerald-50' : 'border-transparent bg-white hover:border-gray-200 hover:bg-white'}`}>
+                          <input className="h-4 w-4 accent-emerald-600" type="checkbox" checked={(form.team_lead_ids || []).includes(m.id)} onChange={() => toggleTeamLead(m.id)} />
+                          <span className="min-w-0 text-sm font-medium text-gray-700">{m.name} <span className="text-xs font-normal text-gray-400">(Team Lead)</span></span>
+                        </label>
+                      ))}
+                      {reportingLeads.length === 0 && <span className="text-sm text-gray-400 px-2">No team leads found.</span>}
                     </div>
                   ) : (
                     <select

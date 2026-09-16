@@ -23,7 +23,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $auth  = $request->user();
-        $query = User::with(['department', 'designation', 'shift', 'manager'])
+        $query = User::with(['department', 'designation', 'shift', 'manager', 'teamLeads'])
             ->withTrashed(false)
             // The CEO and throwaway call guests never appear in the staff list.
             ->when(!$request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['ceo', 'guest']))
@@ -88,6 +88,8 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         $data = $request->validated();
+        $teamLeadIds = array_values(array_unique(array_map('intval', $data['team_lead_ids'] ?? [])));
+        unset($data['team_lead_ids']);
 
         // Derive the `name` column from first + last for backward compatibility
         $data['name'] = trim($data['first_name'] . ' ' . $data['last_name']);
@@ -117,7 +119,15 @@ class UserController extends Controller
             $data['manager_id'] = $creator->id;
         }
 
+        if (($data['role'] ?? null) !== 'employee') {
+            $teamLeadIds = [];
+        }
+        if (!empty($teamLeadIds) && empty($data['manager_id'])) {
+            $data['manager_id'] = $teamLeadIds[0];
+        }
+
         $user = User::create($data);
+        $user->teamLeads()->sync($teamLeadIds);
         $user->assignRole($data['role']);
 
         // Initialize leave balances for current year
@@ -172,7 +182,7 @@ class UserController extends Controller
             'message'            => 'Employee created successfully.',
             // Return plain password ONCE so the CEO can share it with the new employee
             'temporary_password' => $plainPassword,
-            'user'               => new UserResource($user->load(['department', 'designation', 'shift'])),
+            'user'               => new UserResource($user->load(['department', 'designation', 'shift', 'teamLeads'])),
         ], 201);
     }
 
@@ -181,7 +191,7 @@ class UserController extends Controller
     {
         $this->authorize('view', $user);
         return response()->json([
-            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager'])),
+            'user' => new UserResource($user->load(['department', 'designation', 'shift', 'manager', 'teamLeads'])),
         ]);
     }
 
@@ -191,6 +201,9 @@ class UserController extends Controller
         $this->authorize('update', $user);
 
         $data = $request->validated();
+        $hasTeamLeadIds = array_key_exists('team_lead_ids', $data);
+        $teamLeadIds = array_values(array_unique(array_map('intval', $data['team_lead_ids'] ?? [])));
+        unset($data['team_lead_ids']);
 
         $actor = $request->user();
         $privilegedFields = [
@@ -256,6 +269,9 @@ class UserController extends Controller
         }
 
         $user->update($data);
+        if ($hasTeamLeadIds) {
+            $user->teamLeads()->sync(($data['role'] ?? $user->role) === 'employee' ? $teamLeadIds : []);
+        }
 
         $securityStateChanged = isset($data['role']) && $data['role'] !== $oldRole;
         $securityStateChanged = $securityStateChanged
@@ -314,7 +330,7 @@ class UserController extends Controller
 
         $response = [
             'message' => 'Employee updated.',
-            'user'    => new UserResource($user->fresh(['department', 'designation', 'shift'])),
+            'user'    => new UserResource($user->fresh(['department', 'designation', 'shift', 'teamLeads'])),
         ];
 
         if ($emailChanged && $plainPasswordForEmailChange) {

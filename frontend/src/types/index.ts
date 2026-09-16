@@ -13,6 +13,7 @@ export interface Department {
   is_active: boolean;
   employee_count?: number;
   manager?: UserBrief;
+  team_leads?: UserBrief[];
 }
 
 export interface Designation {
@@ -67,6 +68,7 @@ export interface User {
   designation?: Designation;
   shift?: Shift;
   manager?: UserBrief;
+  team_leads?: UserBrief[];
   join_date?: string;
   birth_date?: string;
   address?: string;
@@ -109,6 +111,7 @@ export interface CreateEmployeePayload {
   designation_id: number;
   shift_id?: number | null;
   manager_id?: number | null;
+  team_lead_ids?: number[];
   join_date?: string;
   address?: string;
   emergency_contact?: string;

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '../../services/api';
@@ -20,7 +21,7 @@ export default function MyTickets() {
 
     const load = async () => {
         try {
-            const res = await api.get('/my-tickets');
+            const res = await api.get('/my-tickets', { params: { _t: Date.now() } });
             setTickets(res.data.tickets || []);
             // Mark tickets as seen so badge count clears
             await api.post('/my-tickets/mark-seen').catch(() => {});
@@ -34,6 +35,8 @@ export default function MyTickets() {
     useEffect(() => {
         load();
     }, []);
+
+    useAutoRefresh(load);
 
     if (loading) return <PageLoader />;
 

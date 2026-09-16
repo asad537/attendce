@@ -47,6 +47,8 @@ class StoreUserRequest extends FormRequest
             'designation_id'  => 'required|exists:designations,id',
             'shift_id'        => 'nullable|exists:shifts,id',
             'manager_id'      => 'nullable|exists:users,id',
+            'team_lead_ids'   => 'sometimes|array',
+            'team_lead_ids.*' => 'integer|exists:users,id',
 
             // ── Dates ─────────────────────────────────────────────
             'join_date'       => 'nullable|date',

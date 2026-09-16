@@ -91,6 +91,16 @@ class User extends Authenticatable
         return $this->hasMany(User::class, 'manager_id');
     }
 
+    public function teamLeads()
+    {
+        return $this->belongsToMany(User::class, 'user_team_leads', 'user_id', 'team_lead_id');
+    }
+
+    public function ledEmployees()
+    {
+        return $this->belongsToMany(User::class, 'user_team_leads', 'team_lead_id', 'user_id');
+    }
+
     public function attendance()
     {
         return $this->hasMany(Attendance::class);

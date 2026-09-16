@@ -38,7 +38,7 @@ export default function LeaveQuotaSetter() {
       <form onSubmit={save} className="space-y-4">
         <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">This limit will apply to all active employees.</p>
         <label className="label">Leave type<select className="input mt-1" value={typeId} onChange={event => setTypeId(event.target.value)}><option value="">Select leave type</option>{types.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}</select></label>
-        <label className="label">Leaves allowed per month<input className="input mt-1" type="number" min="0" max="100" step="0.5" value={amount} onChange={event => setAmount(event.target.value)} placeholder="e.g. 2" /></label>
+        <label className="label">Leaves allowed per month<input className="input mt-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" type="number" min="0" max="100" step="0.5" value={amount} onChange={event => setAmount(event.target.value)} placeholder="e.g. 2" /></label>
         <div className="flex justify-end gap-3 pt-2"><button type="button" className="btn-secondary" onClick={() => setOpen(false)}>Cancel</button><button className="btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save limit'}</button></div>
       </form>
     </Modal>

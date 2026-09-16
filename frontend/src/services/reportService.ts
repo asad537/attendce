@@ -64,7 +64,9 @@ export const reportService = {
 
 export const notificationService = {
   async getList(unread?: boolean): Promise<{ data: import('../types').AppNotification[]; unread_count: number }> {
-    const res = await api.get('/notifications', { params: unread ? { unread: 1 } : {} });
+    const res = await api.get('/notifications', {
+      params: { ...(unread ? { unread: 1 } : {}), _t: Date.now() },
+    });
     return res.data;
   },
 

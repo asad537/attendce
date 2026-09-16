@@ -285,8 +285,15 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
   const filtered = navItems
     .filter((item) => user && item.roles.includes(user.role))
     .sort((a, b) => {
-      if (a.label === 'Dashboard') return -1;
-      if (b.label === 'Dashboard') return 1;
+      const priority = (label: string) => {
+        if (label === 'Dashboard') return 0;
+        if (label === 'Inbox') return 1;
+        if (label === 'Attendance Sheet') return 2;
+        if (label === 'Performance') return 3;
+        return 4;
+      };
+      const priorityDiff = priority(a.label) - priority(b.label);
+      if (priorityDiff !== 0) return priorityDiff;
       return a.label.localeCompare(b.label);
     });
 

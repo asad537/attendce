@@ -33,6 +33,7 @@ class UserResource extends JsonResource
             'designation'     => new DesignationResource($this->whenLoaded('designation')),
             'shift'           => new ShiftResource($this->whenLoaded('shift')),
             'manager'         => new UserBriefResource($this->whenLoaded('manager')),
+            'team_leads'      => UserBriefResource::collection($this->whenLoaded('teamLeads')),
 
             'join_date'       => $this->join_date ? $this->join_date->toDateString() : null,
             'address'         => $this->address,

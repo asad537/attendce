@@ -23,7 +23,7 @@ class UserTicketController extends Controller
 
         return response()->json([
             'tickets' => $tickets
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     /**

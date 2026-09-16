@@ -29,7 +29,7 @@ class NotificationController extends Controller
                 'current_page' => $notifications->currentPage(),
                 'last_page'    => $notifications->lastPage(),
             ],
-        ]);
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     /** POST /api/notifications/{id}/read */
