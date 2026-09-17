@@ -261,52 +261,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* OR Divider */}
-          <div className="mt-6 lg:mt-8 relative">
-            <div className="absolute inset-0 flex items-center" aria-hidden="true">
-              <div className="w-full border-t border-slate-100 lg:border-slate-200" />
-            </div>
-            <div className="relative flex justify-center text-xs lg:text-sm">
-              <span className="px-3 bg-white text-slate-400 font-medium tracking-widest uppercase">
-                OR
-              </span>
-            </div>
-          </div>
 
-          {/* Demo credentials */}
-          <div className="mt-6 lg:mt-8 bg-white border border-slate-100 lg:border-slate-200 rounded-xl p-4 lg:p-5 shadow-sm">
-            <p className="text-xs text-slate-800 font-bold mb-3 lg:mb-4">Demo Accounts</p>
-            <div className="grid grid-cols-1 gap-2 lg:gap-3">
-              {[
-                { label: 'President', email: 'ceo@jmdsol.com', password: 'password', iconText: 'PRES' },
-                { label: 'Employee', email: 'carol@attendance.com', password: 'password', iconText: 'EMP' },
-              ].map((d) => (
-                <button
-                  key={d.email}
-                  type="button"
-                  onClick={() => { setEmail(d.email); setPassword(d.password); }}
-                  className="w-full flex items-center justify-between p-2.5 lg:p-3 rounded-lg border border-slate-100 bg-slate-50 hover:bg-slate-100 transition-colors group text-left"
-                >
-                  <div className="flex items-center gap-3 lg:gap-4">
-                    <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
-                      <svg className="w-4 h-4 lg:w-5 lg:h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-[13px] lg:text-sm font-semibold text-emerald-600 group-hover:text-emerald-700">{d.label}</div>
-                      <div className="text-[11px] lg:text-xs text-slate-500">{d.email}</div>
-                    </div>
-                  </div>
-                  <div className="text-slate-300 group-hover:text-emerald-400 transition-colors">
-                    <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
