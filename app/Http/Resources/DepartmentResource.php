@@ -13,6 +13,7 @@ class DepartmentResource extends JsonResource
             'name'           => $this->name,
             'code'           => $this->code,
             'description'    => $this->description,
+            'image'          => $this->image,
             'is_active'      => $this->is_active,
             'employee_count' => $this->employee_count,
             'manager'        => new UserBriefResource($this->whenLoaded('manager')),
