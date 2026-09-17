@@ -4,16 +4,16 @@ import { Department, Designation } from '../../types';
 import Modal from '../../components/common/Modal';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { getErrorMessage } from '../../services/api';
+import api, { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface DeptForm { name: string; code: string; description: string; }
+interface DeptForm { name: string; code: string; description: string; image?: string; }
 interface DesigForm { title: string; description: string; department_id: number; }
 
-const emptyDept   = (): DeptForm  => ({ name: '', code: '', description: '' });
+const emptyDept   = (): DeptForm  => ({ name: '', code: '', description: '', image: '' });
 const emptyDesig  = (): DesigForm => ({ title: '', description: '', department_id: 0 });
 
 const cardThemes = [
@@ -126,6 +126,7 @@ export default function CeoDepartments() {
         name: deptForm.name.trim(),
         code: deptForm.code.trim().toUpperCase(),
         description: deptForm.description.trim(),
+        image: deptForm.image || undefined,
       });
       toast.success(`Department "${deptForm.name}" created.`);
       setDeptAdd(false);
@@ -148,6 +149,7 @@ export default function CeoDepartments() {
         name: deptForm.name.trim(),
         code: deptForm.code.trim().toUpperCase(),
         description: deptForm.description.trim(),
+        image: deptForm.image || undefined,
       });
       toast.success('Department updated.');
       setDeptEdit(null);
@@ -230,7 +232,7 @@ export default function CeoDepartments() {
       {/* Header */}
       <div className="flex flex-col gap-5 pb-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br from-[#6366f1] to-[#4f46e5] text-white shadow-[0_10px_24px_rgba(79,70,229,.28)]">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-emerald-600 text-white shadow-[0_10px_24px_rgba(16,185,129,0.3)]">
             <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
@@ -247,7 +249,7 @@ export default function CeoDepartments() {
         {canManageDepts && (
           <button
             onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#4f46e5] px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(79,70,229,.28)] transition hover:-translate-y-0.5 hover:brightness-95"
+            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:brightness-95"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Add Department
@@ -348,7 +350,7 @@ export default function CeoDepartments() {
                         {dropdownOpen === `dept-${dept.id}` && (
                           <div className="absolute right-0 mt-1 w-32 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1">
                             <button
-                              onClick={ev => { ev.stopPropagation(); setDropdownOpen(null); setDeptEdit(dept); setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '' }); setDeptErrs({}); }}
+                              onClick={ev => { ev.stopPropagation(); setDropdownOpen(null); setDeptEdit(dept); setDeptForm({ name: dept.name, code: dept.code, description: dept.description || '', image: dept.image || '' }); setDeptErrs({}); }}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-emerald-50 hover:text-emerald-600"
                             >Edit</button>
                             <button
@@ -398,9 +400,15 @@ export default function CeoDepartments() {
                        View Positions
                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                     </button>
-                    {/* Decorative bottom icon */}
-                    <div className={`absolute bottom-1 right-2 pointer-events-none ${theme.text} opacity-55`}>
-                      {React.cloneElement(theme.bgGraphic, { className: 'h-16 w-16' })}
+                    {/* Decorative bottom icon or uploaded image */}
+                    <div className="absolute bottom-1 right-2 pointer-events-none">
+                      {dept.image ? (
+                        <img src={dept.image} alt="" className="h-28 w-28 object-contain translate-x-2 translate-y-2 drop-shadow-xl" />
+                      ) : (
+                        <div className={`opacity-55 ${theme.text}`}>
+                          {React.cloneElement(theme.bgGraphic, { className: 'h-16 w-16' })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -486,6 +494,54 @@ export default function CeoDepartments() {
             <textarea className="input resize-none" rows={2} placeholder="Brief description…" value={deptForm.description}
               onChange={e => setDeptForm(f => ({ ...f, description: e.target.value }))} />
           </div>
+          <div>
+            <label className="label">Department Image (3D Icon)</label>
+            <div className="flex items-center gap-4 mt-1">
+              <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                {deptForm.image ? (
+                  <img src={deptForm.image} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="btn-secondary h-8 text-xs font-semibold px-3 py-1 cursor-pointer inline-flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Image
+                    <input 
+                      type="file" accept="image/*" className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5MB');
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const toastId = toast.loading('Uploading department image...');
+                        try {
+                          const res = await api.post('/upload/file', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                          setDeptForm(prev => ({ ...prev, image: res.data.url }));
+                          toast.success('Image uploaded successfully!', { id: toastId });
+                        } catch (err) { toast.error(getErrorMessage(err), { id: toastId }); }
+                      }}
+                    />
+                  </label>
+                  {deptForm.image && (
+                    <button type="button" className="text-xs font-semibold text-red-600 hover:underline px-2 py-1"
+                      onClick={() => setDeptForm(prev => ({ ...prev, image: '' }))}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input type="text" className="input h-8 text-xs" placeholder="Or enter image URL (https://...)" 
+                  value={deptForm.image || ''} onChange={e => setDeptForm(f => ({ ...f, image: e.target.value }))} />
+              </div>
+            </div>
+          </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setDeptAdd(false)} className="btn-secondary flex-1">Cancel</button>
             <button type="submit" className="btn-primary flex-1" disabled={submitting}>
@@ -514,6 +570,54 @@ export default function CeoDepartments() {
             <label className="label">Description</label>
             <textarea className="input resize-none" rows={2} value={deptForm.description}
               onChange={e => setDeptForm(f => ({ ...f, description: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label">Department Image (3D Icon)</label>
+            <div className="flex items-center gap-4 mt-1">
+              <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                {deptForm.image ? (
+                  <img src={deptForm.image} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="btn-secondary h-8 text-xs font-semibold px-3 py-1 cursor-pointer inline-flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Image
+                    <input 
+                      type="file" accept="image/*" className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5MB');
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const toastId = toast.loading('Uploading department image...');
+                        try {
+                          const res = await api.post('/upload/file', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                          setDeptForm(prev => ({ ...prev, image: res.data.url }));
+                          toast.success('Image uploaded successfully!', { id: toastId });
+                        } catch (err) { toast.error(getErrorMessage(err), { id: toastId }); }
+                      }}
+                    />
+                  </label>
+                  {deptForm.image && (
+                    <button type="button" className="text-xs font-semibold text-red-600 hover:underline px-2 py-1"
+                      onClick={() => setDeptForm(prev => ({ ...prev, image: '' }))}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input type="text" className="input h-8 text-xs" placeholder="Or enter image URL (https://...)" 
+                  value={deptForm.image || ''} onChange={e => setDeptForm(f => ({ ...f, image: e.target.value }))} />
+              </div>
+            </div>
           </div>
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setDeptEdit(null)} className="btn-secondary flex-1">Cancel</button>

@@ -35,6 +35,7 @@ class DepartmentController extends Controller
             'name'       => 'sometimes|string|max:100',
             'code'       => "sometimes|string|max:10|unique:departments,code,{$department->id}",
             'description'=> 'nullable|string|max:500',
+            'image'      => 'nullable|string',
             'manager_id' => 'nullable|exists:users,id',
             'is_active'  => 'boolean',
         ]);

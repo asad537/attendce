@@ -10,6 +10,7 @@ export interface Department {
   name: string;
   code: string;
   description?: string;
+  image?: string | null;
   is_active: boolean;
   employee_count?: number;
   manager?: UserBrief;

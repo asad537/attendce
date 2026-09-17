@@ -14,6 +14,7 @@ class StoreDepartmentRequest extends FormRequest
             'name'       => 'required|string|max:100',
             'code'       => 'required|string|max:10|unique:departments,code',
             'description'=> 'nullable|string|max:500',
+            'image'      => 'nullable|string',
             'manager_id' => 'nullable|exists:users,id',
         ];
     }
