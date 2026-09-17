@@ -709,12 +709,7 @@ export default function CeoProjects() {
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label">Status</label>
-              <select className="input" value={form.status} onChange={e => setForm({ ...form, status: e.target.value as ProjectStatus })}>
-                {statusOptions.map(s => <option key={s} value={s}>{statusMeta[s].label}</option>)}
-              </select>
-            </div>
+
             <div>
               <label className="label">Start date</label>
               <input type="date" className="input" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
