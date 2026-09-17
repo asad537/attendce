@@ -231,9 +231,14 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
   useEffect(() => {
     // Fetch for every role — backend already scopes the list per role
     // (CEO=all, Manager/TL=owned+led, Employee=projects with an assigned ticket).
-    if (user) {
-      projectService.getAll().then(setProjects).catch(() => {});
-    }
+    const fetchProjects = () => {
+      if (user) {
+        projectService.getAll().then(setProjects).catch(() => {});
+      }
+    };
+    fetchProjects();
+    window.addEventListener('projects-update', fetchProjects);
+    return () => window.removeEventListener('projects-update', fetchProjects);
   }, [user]);
 
   // Sidebar badge counts (refreshes on navigation, event, and interval polling).

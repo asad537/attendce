@@ -148,6 +148,7 @@ export default function CeoProjects() {
       await projectService.remove(project.id);
       toast.success('Project deleted.');
       load();
+      window.dispatchEvent(new Event('projects-update'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -169,6 +170,7 @@ export default function CeoProjects() {
       toast.success(editing ? 'Project updated.' : 'Project created.');
       setOpen(false);
       load();
+      window.dispatchEvent(new Event('projects-update'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
