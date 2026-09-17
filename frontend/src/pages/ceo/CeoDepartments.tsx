@@ -126,7 +126,7 @@ export default function CeoDepartments() {
         name: deptForm.name.trim(),
         code: deptForm.code.trim().toUpperCase(),
         description: deptForm.description.trim(),
-        image: deptForm.image || undefined,
+        image: deptForm.image || null,
       });
       toast.success(`Department "${deptForm.name}" created.`);
       setDeptAdd(false);
@@ -149,7 +149,7 @@ export default function CeoDepartments() {
         name: deptForm.name.trim(),
         code: deptForm.code.trim().toUpperCase(),
         description: deptForm.description.trim(),
-        image: deptForm.image || undefined,
+        image: deptForm.image || null,
       });
       toast.success('Department updated.');
       setDeptEdit(null);
@@ -403,7 +403,14 @@ export default function CeoDepartments() {
                     {/* Decorative bottom icon or uploaded image */}
                     <div className="absolute bottom-1 right-2 pointer-events-none">
                       {dept.image ? (
-                        <img src={dept.image} alt="" className="h-28 w-28 object-contain translate-x-2 translate-y-2 drop-shadow-xl" />
+                        <img 
+                          src={dept.image} 
+                          alt="" 
+                          className="h-28 w-28 object-contain translate-x-2 translate-y-2 drop-shadow-xl"
+                          loading="eager"
+                          fetchPriority="high"
+                          decoding="sync"
+                        />
                       ) : (
                         <div className={`opacity-55 ${theme.text}`}>
                           {React.cloneElement(theme.bgGraphic, { className: 'h-16 w-16' })}
