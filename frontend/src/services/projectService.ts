@@ -3,11 +3,11 @@ import { Project, ProjectStatus } from '../types';
 
 export interface CreateProjectPayload {
   name: string;
-  description?: string;
-  image?: string;
+  description?: string | null;
+  image?: string | null;
   status: ProjectStatus;
-  start_date?: string;
-  due_date?: string;
+  start_date?: string | null;
+  due_date?: string | null;
   project_lead_id?: number;
   lead_ids?: number[];
   member_ids?: number[];
