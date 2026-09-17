@@ -100,6 +100,8 @@ export default function ProjectTickets() {
     const [priorityFilter, setPriorityFilter] = useState("all");
     const [assigneeFilter, setAssigneeFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [pendingStatusMove, setPendingStatusMove] = useState<{ ticketId: number, nextStatus: string } | null>(null);
+    const [statusReason, setStatusReason] = useState("");
     const [canManage, setCanManage] = useState(false);
     const [showList, setShowList] = useState(false);
     const [form, setForm] = useState({
@@ -274,6 +276,18 @@ export default function ProjectTickets() {
             toast.error("Only President, Manager, or Team Lead can move tickets from Review to Done.");
             return;
         }
+
+        if (ticket.status === 'done' && status !== 'done') {
+            if (!isManagement) {
+                toast.error("Employees cannot reopen a completed ticket.");
+                return;
+            } else {
+                setPendingStatusMove({ ticketId, nextStatus: status });
+                setStatusReason("");
+                return;
+            }
+        }
+
         setTickets(current => current.map(item => item.id === ticketId ? { ...item, status } : item));
         try { await api.put(`/tickets/${ticketId}`, { status }); toast.success(`Moved to ${cols.find(col => col.key === status)?.name}`); }
         catch (err) { toast.error(getErrorMessage(err)); load(); }
@@ -758,17 +772,26 @@ export default function ProjectTickets() {
                                     <div className="flex-1 border border-emerald-300 rounded p-4 hover:border-emerald-400 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all bg-white shadow-sm">
                                         <div className="border border-gray-900 rounded p-1">
                                             <input 
-                                                className="w-full bg-transparent border-0 focus:ring-0 text-[14px] text-gray-900 placeholder-gray-500 px-2 py-1"
+                                                className="w-full bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-[14px] text-gray-900 placeholder-gray-500 px-2 py-1"
                                                 placeholder="Add a comment..."
                                                 value={commentText}
                                                 onChange={e => setCommentText(e.target.value)}
                                                 onKeyDown={handleAddComment}
                                             />
                                         </div>
-                                        <div className="flex items-center gap-2 mt-3">
-                                            <button onClick={()=>handleAddComment(undefined, "Can I get more info...?")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Can I get more info...?</button>
-                                            <button onClick={()=>handleAddComment(undefined, "Status update...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
-                                            <button onClick={()=>handleAddComment(undefined, "Thanks...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <button onClick={()=>handleAddComment(undefined, "Can I get more info...?")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Can I get more info...?</button>
+                                                <button onClick={()=>handleAddComment(undefined, "Status update...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Status update...</button>
+                                                <button onClick={()=>handleAddComment(undefined, "Thanks...")} className="text-[12px] font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2.5 py-1 rounded transition-colors">Thanks...</button>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleAddComment()} 
+                                                disabled={!commentText.trim()}
+                                                className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-[13px] font-medium px-4 py-1.5 rounded transition-colors"
+                                            >
+                                                Submit
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -820,10 +843,23 @@ export default function ProjectTickets() {
                                 onChange={async (e) => {
                                     const nextStatus = e.target.value as any;
                                     const isManagement = ['ceo', 'manager', 'tl'].includes(currentUser?.role || '');
+                                    
                                     if (detail.status === 'in_review' && nextStatus === 'done' && !isManagement) {
                                         toast.error("Only President, Manager, or Team Lead can move a ticket from Review to Done.");
                                         return;
                                     }
+                                    
+                                    if (detail.status === 'done' && nextStatus !== 'done') {
+                                        if (!isManagement) {
+                                            toast.error("Employees cannot reopen a completed ticket.");
+                                            return;
+                                        } else {
+                                            setPendingStatusMove({ ticketId: detail.id, nextStatus });
+                                            setStatusReason("");
+                                            return;
+                                        }
+                                    }
+
                                     try {
                                         await api.put(`/tickets/${detail.id}`, { status: nextStatus });
                                         // Backend snaps a done ticket to 100% — mirror that here.
@@ -954,6 +990,44 @@ export default function ProjectTickets() {
                     onSuccess={() => { loadActivity(detail.id); load(); }}
                 />
             )}
+            <Modal open={!!pendingStatusMove} onClose={() => setPendingStatusMove(null)} title="Reopen Ticket">
+                <div className="p-4 space-y-4">
+                    <p className="text-sm text-gray-600">Please provide a reason for reopening this ticket. This will be added as a comment.</p>
+                    <textarea 
+                        className="input min-h-[100px]" 
+                        placeholder="Reason for reopening..."
+                        value={statusReason}
+                        onChange={(e) => setStatusReason(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-3 mt-4">
+                        <button className="btn-secondary" onClick={() => setPendingStatusMove(null)}>Cancel</button>
+                        <button 
+                            className="btn-primary" 
+                            disabled={!statusReason.trim()}
+                            onClick={async () => {
+                                if (!pendingStatusMove) return;
+                                try {
+                                    await api.post(`/tickets/${pendingStatusMove.ticketId}/comments`, { body: statusReason.trim() });
+                                    await api.put(`/tickets/${pendingStatusMove.ticketId}`, { status: pendingStatusMove.nextStatus });
+                                    toast.success("Ticket reopened successfully.");
+                                    
+                                    setTickets(current => current.map(item => item.id === pendingStatusMove.ticketId ? { ...item, status: pendingStatusMove.nextStatus as any } : item));
+                                    if (detail && detail.id === pendingStatusMove.ticketId) {
+                                        setDetail({...detail, status: pendingStatusMove.nextStatus as any});
+                                        loadActivity(detail.id);
+                                    }
+                                    load();
+                                } catch (err) {
+                                    toast.error(getErrorMessage(err));
+                                } finally {
+                                    setPendingStatusMove(null);
+                                    setStatusReason("");
+                                }
+                            }}
+                        >Submit & Reopen</button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
