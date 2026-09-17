@@ -163,10 +163,12 @@ export default function ProjectTickets() {
         load();
     }, [projectId]);
 
+    const [isInteractingWithDetail, setIsInteractingWithDetail] = useState(false);
+
     // Live AJAX board sync. Ticket moves made by another person appear within
     // three seconds without reloading the page. Pause only while this user is
     // submitting the create/edit form so their in-progress fields stay intact.
-    useAutoRefresh(loadTicketsSilent, { intervalMs: 3_000, enabled: !open });
+    useAutoRefresh(loadTicketsSilent, { intervalMs: 3_000, enabled: !open && !isInteractingWithDetail });
 
     // Assignee pool = the whole project team (leads + members). The CEO / project
     // leads decide who is on the team, so any team member can receive a ticket.
@@ -667,7 +669,9 @@ export default function ProjectTickets() {
                                     onChange={(e) => {
                                         setDetail({...detail, title: e.target.value});
                                     }}
+                                    onFocus={() => setIsInteractingWithDetail(true)}
                                     onBlur={() => {
+                                        setIsInteractingWithDetail(false);
                                         if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, title: detail.title }).then(() => { load(); loadActivity(detail.id); }); }
                                     }}
                                 />
@@ -681,7 +685,9 @@ export default function ProjectTickets() {
                                     placeholder="Add a description..."
                                     value={detail.description || ""}
                                     onChange={(e) => setDetail({...detail, description: e.target.value})}
+                                    onFocus={() => setIsInteractingWithDetail(true)}
                                     onBlur={() => {
+                                        setIsInteractingWithDetail(false);
                                         if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description }).then(() => { load(); loadActivity(detail.id); }); }
                                     }}
                                 />
