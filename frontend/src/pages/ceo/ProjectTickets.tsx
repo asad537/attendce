@@ -10,6 +10,7 @@ import Modal from "../../components/common/Modal";
 import TicketModal from "../../components/common/TicketModal";
 import TimeTrackingModal from "../../components/common/TimeTrackingModal";
 import PriorityDropdown, { getPriorityIconSVG } from "../../components/common/PriorityDropdown";
+import RichTextComposer from "../../components/common/RichTextComposer";
 import { User } from "../../types";
 
 const formatMinutesToJira = (totalMins: number) => {
@@ -614,13 +615,11 @@ export default function ProjectTickets() {
                         }
                         required
                     />
-                    <textarea
-                        className="input"
-                        placeholder="Description"
+                    <RichTextComposer
                         value={form.description}
-                        onChange={(e) =>
-                            setForm({ ...form, description: e.target.value })
-                        }
+                        onChange={(val) => setForm({ ...form, description: val })}
+                        placeholder="Add a description..."
+                        hideAdvancedOptions={true}
                     />
                     <select
                         className="input"
@@ -679,18 +678,20 @@ export default function ProjectTickets() {
 
                             <div className="space-y-3">
                                 <h3 className="text-[15px] font-semibold text-gray-800">Description</h3>
-                                <textarea
-                                    readOnly={!canManage}
-                                    className={`w-full min-h-[100px] border text-[14px] text-gray-800 p-3 rounded transition-colors resize-y ${canManage ? 'border-gray-400 hover:border-gray-600 focus:border-gray-900 focus:ring-0' : 'border-gray-200 bg-gray-50 cursor-default'}`}
-                                    placeholder="Add a description..."
-                                    value={detail.description || ""}
-                                    onChange={(e) => setDetail({...detail, description: e.target.value})}
-                                    onFocus={() => setIsInteractingWithDetail(true)}
-                                    onBlur={() => {
-                                        setIsInteractingWithDetail(false);
-                                        if (canManage) { api.put(`/tickets/${detail.id}`, { ...detail, description: detail.description }).then(() => { load(); loadActivity(detail.id); }); }
-                                    }}
-                                />
+                                <div onFocus={() => setIsInteractingWithDetail(true)} onBlur={() => setIsInteractingWithDetail(false)}>
+                                    <RichTextComposer
+                                        value={detail.description || ""}
+                                        onChange={(val) => {
+                                            setDetail({...detail, description: val});
+                                            if (canManage) { 
+                                                api.put(`/tickets/${detail.id}`, { ...detail, description: val }).then(() => { load(); loadActivity(detail.id); }); 
+                                            }
+                                        }}
+                                        readOnly={!canManage}
+                                        placeholder="Add a description..."
+                                        hideAdvancedOptions={true}
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-3">

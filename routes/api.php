@@ -27,6 +27,7 @@ use App\Http\Controllers\API\ResignationController;
 use App\Http\Controllers\API\PayrollController;
 use App\Http\Controllers\API\SidebarController;
 use App\Http\Controllers\API\CalendarEventController;
+use App\Http\Controllers\API\UploadController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,6 +53,10 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/me',              [AuthController::class, 'me']);
     Route::post('/me',             [AuthController::class, 'updateProfile']);
     Route::get('/sidebar/counts',  [SidebarController::class, 'counts']);
+    
+    // File Uploads
+    Route::post('/upload/file',    [UploadController::class, 'uploadFile']);
+
     Route::get('/calendar-events', [CalendarEventController::class, 'index']);
     Route::post('/calendar-events', [CalendarEventController::class, 'store']);
     Route::put('/calendar-events/{calendarEvent}', [CalendarEventController::class, 'update']);

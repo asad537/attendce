@@ -10,8 +10,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Project, ProjectStatus, User } from '../../types';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { confirmDialog } from '../../components/common/ConfirmDialog';
+import RichTextComposer from '../../components/common/RichTextComposer';
 
 const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', status, start_date: '', due_date: '' });
+
+const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>?/gm, '') : '';
 
 const statusMeta: Record<ProjectStatus, { label: string; badge: string; progressColor: string }> = {
   planning:    { label: 'To Do',       badge: 'bg-indigo-50 text-indigo-700 border border-indigo-100', progressColor: 'bg-indigo-500' },
@@ -429,7 +432,7 @@ export default function CeoProjects() {
                   <div className="mt-4">
                     <h3 className="font-bold text-gray-900 text-base leading-tight hover:text-emerald-600 transition-colors">{p.name}</h3>
                     <p className="mt-1 line-clamp-2 text-xs font-medium text-gray-500">
-                      {p.description || 'No description'}
+                      {stripHtml(p.description) || 'No description'}
                     </p>
                   </div>
 
@@ -515,7 +518,7 @@ export default function CeoProjects() {
                     <tr key={p.id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/projects/${p.id}`)}>
                       <td>
                         <p className="font-semibold text-gray-900">{p.name}</p>
-                        <p className="max-w-md truncate text-xs text-gray-500">{p.description || 'No description'}</p>
+                        <p className="max-w-md truncate text-xs text-gray-500">{stripHtml(p.description) || 'No description'}</p>
                       </td>
                       <td>
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.badge}`}>{meta.label}</span>
@@ -592,7 +595,11 @@ export default function CeoProjects() {
           </div>
           <div>
             <label className="label">Description</label>
-            <textarea className="input min-h-24" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            <RichTextComposer
+              value={form.description}
+              onChange={val => setForm({ ...form, description: val })}
+              placeholder="Add a description..."
+            />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
