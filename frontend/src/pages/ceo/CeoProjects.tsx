@@ -712,11 +712,11 @@ export default function CeoProjects() {
 
             <div>
               <label className="label">Start date</label>
-              <input type="date" className="input" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} />
+              <input type="date" className="input" value={form.start_date || ''} onChange={e => setForm({ ...form, start_date: e.target.value })} />
             </div>
             <div>
               <label className="label">Due date</label>
-              <input type="date" min={form.start_date || undefined} className="input" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} />
+              <input type="date" min={form.start_date || undefined} className="input" value={form.due_date || ''} onChange={e => setForm({ ...form, due_date: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
