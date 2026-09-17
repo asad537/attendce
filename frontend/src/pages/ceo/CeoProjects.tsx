@@ -176,7 +176,7 @@ export default function CeoProjects() {
     }
     setSaving(true);
     try {
-      const data = { ...form, name: form.name.trim(), description: form.description || undefined, image: form.image || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined, lead_ids: leadIds, member_ids: memberIds };
+      const data = { ...form, name: form.name.trim(), description: form.description || null, image: form.image || null, start_date: form.start_date || null, due_date: form.due_date || null, lead_ids: leadIds, member_ids: memberIds };
       if (editing) await projectService.update(editing.id, data);
       else await projectService.create(data);
       toast.success(editing ? 'Project updated.' : 'Project created.');
