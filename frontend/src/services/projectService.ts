@@ -4,6 +4,7 @@ import { Project, ProjectStatus } from '../types';
 export interface CreateProjectPayload {
   name: string;
   description?: string;
+  image?: string;
   status: ProjectStatus;
   start_date?: string;
   due_date?: string;

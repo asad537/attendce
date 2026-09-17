@@ -12,17 +12,26 @@ import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { confirmDialog } from '../../components/common/ConfirmDialog';
 import RichTextComposer from '../../components/common/RichTextComposer';
 
-const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', status, start_date: '', due_date: '' });
+const blank = (status: ProjectStatus = 'planning'): CreateProjectPayload => ({ name: '', description: '', image: '', status, start_date: '', due_date: '' });
 
 const stripHtml = (html?: string) => html ? html.replace(/<[^>]*>?/gm, '') : '';
 
-const statusMeta: Record<ProjectStatus, { label: string; badge: string; progressColor: string }> = {
-  planning:    { label: 'To Do',       badge: 'bg-indigo-50 text-indigo-700 border border-indigo-100', progressColor: 'bg-indigo-500' },
-  in_progress: { label: 'In Progress', badge: 'bg-blue-50 text-blue-700 border border-blue-100', progressColor: 'bg-blue-600' },
-  on_hold:     { label: 'On Hold',     badge: 'bg-red-50 text-red-700 border border-red-100', progressColor: 'bg-red-500' },
-  completed:   { label: 'Completed',   badge: 'bg-emerald-50 text-emerald-700 border border-emerald-100', progressColor: 'bg-emerald-500' },
+const statusMeta: Record<ProjectStatus, { label: string; badge: string; dot: string; progressColor: string }> = {
+  planning:    { label: 'To Do',       badge: 'bg-indigo-50/80 text-indigo-700 border border-indigo-100', dot: 'bg-indigo-500', progressColor: 'bg-indigo-600' },
+  in_progress: { label: 'In Progress', badge: 'bg-emerald-50/80 text-emerald-700 border border-emerald-100', dot: 'bg-emerald-500', progressColor: 'bg-emerald-500' },
+  on_hold:     { label: 'On Hold',     badge: 'bg-amber-50/80 text-amber-700 border border-amber-100', dot: 'bg-amber-500', progressColor: 'bg-amber-500' },
+  completed:   { label: 'Completed',   badge: 'bg-emerald-50/80 text-emerald-700 border border-emerald-100', dot: 'bg-emerald-500', progressColor: 'bg-emerald-600' },
 };
 const statusOptions = Object.keys(statusMeta) as ProjectStatus[];
+
+const cardAccents = [
+  { gradient: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500', iconBg: 'bg-blue-50 text-blue-600', fill: 'bg-gradient-to-r from-blue-500 to-indigo-600' },
+  { gradient: 'bg-gradient-to-r from-purple-500 via-pink-500 to-rose-400', iconBg: 'bg-purple-50 text-purple-600', fill: 'bg-gradient-to-r from-purple-500 to-pink-500' },
+  { gradient: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500', iconBg: 'bg-teal-50 text-teal-600', fill: 'bg-gradient-to-r from-emerald-500 to-teal-500' },
+  { gradient: 'bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500', iconBg: 'bg-amber-50 text-amber-600', fill: 'bg-gradient-to-r from-amber-400 to-orange-500' },
+  { gradient: 'bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500', iconBg: 'bg-violet-50 text-violet-600', fill: 'bg-gradient-to-r from-violet-500 to-indigo-600' },
+  { gradient: 'bg-gradient-to-r from-rose-500 via-pink-500 to-red-400', iconBg: 'bg-pink-50 text-pink-600', fill: 'bg-gradient-to-r from-rose-500 to-pink-500' },
+];
 
 function fmtDate(value?: string | null) {
   if (!value) return '—';
@@ -126,7 +135,7 @@ export default function CeoProjects() {
 
   const edit = (p: Project) => {
     setEditing(p);
-    setForm({ name: p.name, description: p.description || '', status: p.status, start_date: p.start_date?.slice(0, 10) || '', due_date: p.due_date?.slice(0, 10) || '', project_lead_id: p.project_lead?.id });
+    setForm({ name: p.name, description: p.description || '', image: p.image || '', status: p.status, start_date: p.start_date?.slice(0, 10) || '', due_date: p.due_date?.slice(0, 10) || '', project_lead_id: p.project_lead?.id });
     const ls = (p.leads && p.leads.length ? p.leads.map(l => l.id) : (p.project_lead ? [p.project_lead.id] : []));
     setLeadIds(ls);
     setMemberIds((p.members || []).map(m => m.id));
@@ -167,7 +176,7 @@ export default function CeoProjects() {
     }
     setSaving(true);
     try {
-      const data = { ...form, name: form.name.trim(), description: form.description || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined, lead_ids: leadIds, member_ids: memberIds };
+      const data = { ...form, name: form.name.trim(), description: form.description || undefined, image: form.image || undefined, start_date: form.start_date || undefined, due_date: form.due_date || undefined, lead_ids: leadIds, member_ids: memberIds };
       if (editing) await projectService.update(editing.id, data);
       else await projectService.create(data);
       toast.success(editing ? 'Project updated.' : 'Project created.');
@@ -380,28 +389,53 @@ export default function CeoProjects() {
           <p className="text-sm text-gray-400 mt-1">Try refining your search query or add a new project.</p>
         </div>
       ) : viewMode === 'card' ? (
-        /* Card Grid view */
+        /* Card Grid view - Figma UI Clone */
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {currentProjects.map(p => {
+          {currentProjects.map((p, idx) => {
             const meta = statusMeta[p.status] || statusMeta.planning;
+            const accent = cardAccents[idx % cardAccents.length];
+            const progress = projectMetrics[p.id]?.progress || 0;
+
             return (
               <div 
                 key={p.id} 
-                className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-lg transition-shadow duration-200 flex flex-col justify-between h-full cursor-pointer relative shadow-sm"
+                className="bg-white rounded-2xl border border-gray-200/90 hover:border-gray-300 p-5 hover:shadow-lg transition-all duration-200 flex flex-col justify-between cursor-pointer relative overflow-hidden group shadow-xs"
                 onClick={() => navigate(`/projects/${p.id}`)}
               >
-                <div>
-                  {/* Card Header: status & actions */}
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${meta.badge}`}>
-                      {meta.label}
-                    </span>
-                    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                {/* Top Accent Gradient Bar */}
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${accent.gradient}`} />
 
+                <div>
+                  {/* Card Header: Icon/Image + Name on Left, Status + Kebab on Right */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-xl border border-gray-100 bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className={`w-full h-full flex items-center justify-center ${accent.iconBg}`}>
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-gray-900 text-base leading-tight hover:text-blue-600 transition-colors truncate" title={p.name}>
+                          {p.name}
+                        </h3>
+                        <p className="text-xs text-gray-400 font-medium truncate max-w-[140px] mt-0.5">
+                          {stripHtml(p.description) || 'No description'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      {/* Status Badge removed as per user request */}
                       <div className="relative">
                         <button 
                           onClick={() => setDropdownOpen(dropdownOpen === `proj-${p.id}` ? null : `proj-${p.id}`)} 
-                          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 focus:outline-none"
+                          className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                           title="Options"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -409,86 +443,97 @@ export default function CeoProjects() {
                           </svg>
                         </button>
                         {dropdownOpen === `proj-${p.id}` && (
-                          <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1">
+                          <div className="absolute right-0 mt-1 w-32 bg-white rounded-xl shadow-xl border border-gray-100 z-20 py-1">
                             <button 
                               onClick={() => { setDropdownOpen(null); edit(p); }} 
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 flex items-center gap-2 transition-colors"
+                              className="w-full text-left px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               Edit
                             </button>
-                            {canDeleteProjects && <button
-                              onClick={() => { setDropdownOpen(null); void remove(p); }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
-                            >
-                              Delete
-                            </button>}
+                            {canDeleteProjects && (
+                              <button
+                                onClick={() => { setDropdownOpen(null); void remove(p); }}
+                                className="w-full text-left px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Project Name and Client */}
-                  <div className="mt-4">
-                    <h3 className="font-bold text-gray-900 text-base leading-tight hover:text-emerald-600 transition-colors">{p.name}</h3>
-                    <p className="mt-1 line-clamp-2 text-xs font-medium text-gray-500">
-                      {stripHtml(p.description) || 'No description'}
-                    </p>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mt-6">
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${meta.progressColor} transition-all duration-500`} style={{ width: `${projectMetrics[p.id]?.progress || 0}%` }}></div>
+                  {/* Progress Section */}
+                  <div className="mt-5">
+                    <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
+                      <span className="text-gray-600">Progress</span>
+                      <span className="text-gray-900 font-bold">{progress}%</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500 mt-2 font-semibold">
-                      <span>Progress</span>
-                      <span>{projectMetrics[p.id]?.progress || 0}%</span>
+                    <div className="w-full bg-blue-50/80 h-2 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${accent.fill}`} style={{ width: `${progress}%` }} />
                     </div>
                   </div>
 
                   {/* Lead and Date info grid */}
-                  <div className="mt-6 grid grid-cols-3 gap-4 border-t border-gray-100 pt-4">
+                  <div className="mt-5 pt-4 border-t border-gray-100 grid grid-cols-3 gap-2">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Lead</span>
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Lead
+                      </span>
                       <div className="flex items-center gap-1.5 mt-1 min-w-0">
-                        <div className="w-5 h-5 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+                        <div className="w-5 h-5 rounded-full bg-emerald-700 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
                           {p.project_lead?.name?.substring(0, 2).toUpperCase() || 'NA'}
                         </div>
-                        <span className="text-xs font-semibold text-gray-700 truncate" title={p.project_lead?.name}>{p.project_lead?.name || 'Unassigned'}</span>
+                        <span className="text-xs font-semibold text-gray-800 truncate" title={p.project_lead?.name}>{p.project_lead?.name || 'Unassigned'}</span>
                       </div>
                     </div>
+
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Start date</span>
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Start Date
+                      </span>
                       <span className="text-xs font-semibold text-gray-700 block mt-1">{fmtDateShort(p.start_date)}</span>
                     </div>
+
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">Due date</span>
+                      <span className="flex items-center gap-1 text-[11px] font-medium text-gray-400">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Due Date
+                      </span>
                       <span className="text-xs font-semibold text-gray-700 block mt-1">{fmtDateShort(p.due_date)}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Card Footer: Ticket and Team count */}
-                <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-                  <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
+                {/* Card Footer: Ticket and Team count + Figma circular arrow */}
+                <div className="mt-5 pt-3.5 border-t border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3.5 text-xs font-medium text-gray-500">
                     <span className="flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                       </svg>
                       {projectMetrics[p.id]?.total || 0} Tickets
                     </span>
                     <span className="flex items-center gap-1.5">
                       <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                       {projectMetrics[p.id]?.members || 1} Team members
                     </span>
                   </div>
                   
-                  <button className="w-8 h-8 rounded-xl bg-gray-50 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 flex items-center justify-center transition-colors shadow-sm" onClick={() => navigate(`/projects/${p.id}`)}>
+                  <button className="w-8 h-8 rounded-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white transition-all flex items-center justify-center shrink-0 shadow-xs" onClick={() => navigate(`/projects/${p.id}`)} title="View Project">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   </button>
                 </div>
@@ -594,9 +639,71 @@ export default function CeoProjects() {
             <input className="input" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
+            <label className="label">Project Image / Icon</label>
+            <div className="flex items-center gap-4 mt-1">
+              <div className="w-14 h-14 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                {form.image ? (
+                  <img src={form.image} alt="Project Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label className="btn-secondary h-8 text-xs font-semibold px-3 py-1 cursor-pointer inline-flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Upload Image
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5MB');
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const toastId = toast.loading('Uploading project image...');
+                        try {
+                          const res = await api.post('/upload/file', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+                          setForm(prev => ({ ...prev, image: res.data.url }));
+                          toast.success('Image uploaded successfully!', { id: toastId });
+                        } catch (err) {
+                          toast.error(getErrorMessage(err), { id: toastId });
+                        }
+                      }}
+                    />
+                  </label>
+                  {form.image && (
+                    <button 
+                      type="button" 
+                      className="text-xs font-semibold text-red-600 hover:underline px-2 py-1"
+                      onClick={() => setForm(prev => ({ ...prev, image: '' }))}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <input 
+                  type="text" 
+                  className="input h-8 text-xs" 
+                  placeholder="Or enter image URL (https://...)" 
+                  value={form.image || ''} 
+                  onChange={e => setForm({ ...form, image: e.target.value })} 
+                />
+              </div>
+            </div>
+          </div>
+          <div>
             <label className="label">Description</label>
             <RichTextComposer
-              value={form.description}
+              value={form.description || ''}
               onChange={val => setForm({ ...form, description: val })}
               placeholder="Add a description..."
             />

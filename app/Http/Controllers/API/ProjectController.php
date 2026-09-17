@@ -111,7 +111,7 @@ class ProjectController extends Controller
         }
 
         $data = $request->validate([
-            'name' => 'required|string|max:150', 'description' => 'nullable|string|max:2000',
+            'name' => 'required|string|max:150', 'description' => 'nullable|string', 'image' => 'nullable|string',
             'status' => 'nullable|in:planning,in_progress,on_hold,completed',
             'start_date' => 'nullable|date', 'due_date' => 'nullable|date|after_or_equal:start_date',
             'project_lead_id' => 'nullable|exists:users,id',
@@ -137,6 +137,7 @@ class ProjectController extends Controller
         $project = Project::create([
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
+            'image' => $data['image'] ?? null,
             'status' => $data['status'] ?? 'planning',
             'start_date' => $data['start_date'] ?? null,
             'due_date' => $data['due_date'] ?? null,
@@ -159,7 +160,7 @@ class ProjectController extends Controller
         abort_unless($this->canManageProject($user, $project), 403, 'You are not allowed to update this project.');
 
         $data = $request->validate([
-            'name' => 'sometimes|required|string|max:150', 'description' => 'nullable|string|max:2000',
+            'name' => 'sometimes|required|string|max:150', 'description' => 'nullable|string', 'image' => 'nullable|string',
             'status' => 'sometimes|in:planning,in_progress,on_hold,completed',
             'start_date' => 'nullable|date', 'due_date' => 'nullable|date|after_or_equal:start_date',
             'project_lead_id' => 'nullable|exists:users,id',
@@ -172,7 +173,7 @@ class ProjectController extends Controller
         $memberIds = $request->has('member_ids') ? $data['member_ids'] ?? [] : null;
 
         $project->update(array_intersect_key($data, array_flip([
-            'name', 'description', 'status', 'start_date', 'due_date', 'project_lead_id',
+            'name', 'description', 'image', 'status', 'start_date', 'due_date', 'project_lead_id',
         ])));
 
         $this->syncTeam($project, $leadIds, $memberIds, (int) ($project->project_lead_id ?: $user->id));

@@ -2,7 +2,7 @@ import api from './api';
 import { AttendanceSummary, AuditLog, DailySnapshot, Holiday, PaginatedResponse } from '../types';
 
 export interface SheetDay { day: number; weekday: string; is_weekend: boolean; is_holiday: boolean; holiday: string | null }
-export interface SheetCell { day: number; code: '' | 'P' | 'A' | 'L' | 'W' | 'H' | 'WE'; late: boolean }
+export interface SheetCell { day: number; code: '' | 'P' | 'A' | 'L' | 'W' | 'H' | 'WE'; late: boolean; note?: string }
 export interface SheetRow {
   user: { id: number; name: string; employee_id: string | null; role: string; department: string | null };
   days: SheetCell[];
