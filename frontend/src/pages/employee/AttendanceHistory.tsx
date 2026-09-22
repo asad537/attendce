@@ -6,8 +6,10 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function AttendanceHistory() {
+  const { user } = useAuth();
   const [data, setData]   = useState<PaginatedResponse<Attendance> | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage]   = useState(1);
@@ -15,15 +17,22 @@ export default function AttendanceHistory() {
   const [endDate, setEnd]     = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
   const load = async (silent = false) => {
+    if (!user?.id) return;
     if (!silent) setLoading(true);
     try {
-      const res = await attendanceService.getList({ start_date: startDate, end_date: endDate, page, per_page: 20 });
+      const res = await attendanceService.getList({
+        user_id: user.id,
+        start_date: startDate,
+        end_date: endDate,
+        page,
+        per_page: 20,
+      });
       setData(res);
     } catch { if (!silent) toast.error('Failed to load attendance'); }
     finally { if (!silent) setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [page, startDate, endDate]);
+  useEffect(() => { load(); }, [user?.id, page, startDate, endDate]);
   useAutoRefresh(() => { void load(true); });
 
   const summary = useMemo(() => {
