@@ -19,7 +19,7 @@ class WfhRequestController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isManager() || $user->isTl()) {
+        } elseif ($user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }

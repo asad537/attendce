@@ -11,8 +11,8 @@ class WfhRequestPolicy
 
     public function view(User $auth, WfhRequest $wfhRequest): bool
     {
-        if ($auth->isCeo()) return true;
-        if ($auth->isManager() || $auth->isTl()) {
+        if ($auth->isCeo() || $auth->isManager()) return true;
+        if ($auth->isTl()) {
             return $wfhRequest->user_id === $auth->id || $wfhRequest->user->manager_id === $auth->id;
         }
         return $wfhRequest->user_id === $auth->id;

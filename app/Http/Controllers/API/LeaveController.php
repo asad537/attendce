@@ -31,7 +31,7 @@ class LeaveController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isTeamLead()) {
+        } elseif ($user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
@@ -165,7 +165,7 @@ class LeaveController extends Controller
         // Employees (and TLs/managers checking own) can only see own balances
         if ($user->isEmployee()) {
             $userId = $user->id;
-        } elseif ($user->isTeamLead()) {
+        } elseif ($user->isTl()) {
             $allowedIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             abort_unless($allowedIds->contains((int) $userId), 403);
         }
@@ -210,14 +210,14 @@ class LeaveController extends Controller
         $user  = $request->user();
 
         // CEO sees all pending leave requests across the company
-        if ($user->isCeo()) {
+        if ($user->isCeo() || $user->isManager()) {
             $count = Leave::where('status', 'pending')->count();
             return response()->json(['count' => $count]);
         }
 
         $query = Leave::where('status', 'pending');
 
-        if ($user->isTeamLead()) {
+        if ($user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id');
             $query->whereIn('user_id', $teamIds);
         } else {

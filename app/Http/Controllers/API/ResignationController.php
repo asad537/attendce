@@ -17,11 +17,11 @@ class ResignationController extends Controller
         $auth = $request->user();
         $query = Resignation::with(['user:id,name,employee_id,role,department_id', 'user.department:id,name', 'reviewer:id,name'])->latest();
 
-        // Either the employee's manager OR the CEO can approve, so the CEO sees
-        // the whole list while a manager/TL sees only their own reports (+ their own).
-        if ($auth->role === 'ceo') {
+        // The CEO and managers can inspect the whole company. Team leads remain
+        // restricted to their own reports (+ their own request).
+        if (in_array($auth->role, ['ceo', 'manager'], true)) {
             // all resignations
-        } elseif (in_array($auth->role, ['manager', 'tl'])) {
+        } elseif ($auth->role === 'tl') {
             $ids = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id);
             $query->whereIn('user_id', $ids);
         } else {

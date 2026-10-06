@@ -28,11 +28,11 @@ class AttendanceController extends Controller
 
         if ($user->isEmployee()) {
             $query->where('user_id', $user->id);
-        } elseif ($user->isTeamLead()) {
+        } elseif ($user->isTl()) {
             $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);
             $query->whereIn('user_id', $teamIds);
         }
-        // CEO gets all
+        // Managers and the CEO get the whole company.
 
         if ($request->filled('date')) {
             $query->whereDate('date', $request->date);
@@ -124,7 +124,7 @@ class AttendanceController extends Controller
         // The CEO administers but is not shown on the live team-status board.
         $query = User::with(['todayAttendance.breaks', 'department'])->active()->where('role', '!=', 'ceo');
 
-        if ($user->isTeamLead()) {
+        if ($user->isTl()) {
             $query->where(function ($q) use ($user) {
                 $q->where('manager_id', $user->id)->orWhere('id', $user->id);
             });

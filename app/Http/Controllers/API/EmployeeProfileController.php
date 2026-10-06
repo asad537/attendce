@@ -28,7 +28,7 @@ class EmployeeProfileController extends Controller
         $auth = $request->user();
         // Compensation is sensitive: expose it only to the employee themselves,
         // the CEO, or their direct manager — never to peers.
-        $canSeePayroll = $auth->isCeo() || $auth->id === $user->id || (int) $user->manager_id === (int) $auth->id;
+        $canSeePayroll = $auth->isCeo() || $auth->isManager() || $auth->id === $user->id;
 
         return response()->json([
             'work_model'  => $this->workModel($user),

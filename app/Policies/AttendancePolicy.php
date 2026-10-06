@@ -16,8 +16,8 @@ class AttendancePolicy
     /** Employee sees own; Manager sees team; CEO sees all */
     public function view(User $auth, Attendance $attendance): bool
     {
-        if ($auth->isCeo()) return true;
-        if ($auth->isTeamLead()) {
+        if ($auth->isCeo() || $auth->isManager()) return true;
+        if ($auth->isTl()) {
             return $attendance->user_id === $auth->id
                 || $attendance->user->manager_id === $auth->id;
         }

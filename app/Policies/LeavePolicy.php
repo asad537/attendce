@@ -14,10 +14,10 @@ class LeavePolicy
 
     public function view(User $auth, Leave $leave): bool
     {
-        if ($auth->isCeo()) return true;
+        if ($auth->isCeo() || $auth->isManager()) return true;
 
-        // Manager or TL can see their direct reports' leaves
-        if ($auth->isManager() || $auth->isTl()) {
+        // Team leads can see their direct reports' leaves.
+        if ($auth->isTl()) {
             return $leave->user_id === $auth->id
                 || $leave->user->manager_id === $auth->id;
         }

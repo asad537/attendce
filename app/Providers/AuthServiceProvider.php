@@ -28,8 +28,8 @@ class AuthServiceProvider extends ServiceProvider
             if ($user->isCeo()) return true;
         });
 
-        Gate::define('manage-organization', fn (User $user): bool => $user->isCeo());
-        Gate::define('view-audit-logs', fn (User $user): bool => $user->isCeo());
+        Gate::define('manage-organization', fn (User $user): bool => $user->isCeo() || $user->isManager());
+        Gate::define('view-audit-logs', fn (User $user): bool => $user->isCeo() || $user->isManager());
 
         // Departments can be managed by the CEO and managers
         // (the CEO still passes via the Gate::before bypass above).

@@ -22,7 +22,7 @@ class ReportController extends Controller
     public function dailySnapshot(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!$user->isCeo()) {
+        if (!($user->isCeo() || $user->isManager())) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
         $cacheKey = 'daily_snapshot_' . date('Y-m-d');
@@ -133,9 +133,9 @@ class ReportController extends Controller
         $auth = $request->user();
         abort_if($auth->isEmployee(), 403, 'Forbidden.');
 
-        // CEO sees the whole company; manager / team lead see their team.
+        // CEO and manager see the whole company; team lead sees their team.
         // The CEO is never counted as workforce in any of these stats.
-        $users = $auth->isCeo()
+        $users = ($auth->isCeo() || $auth->isManager())
             ? \App\Models\User::active()->where('role', '!=', 'ceo')->get(['id', 'employment_type'])
             : \App\Models\User::active()->where('manager_id', $auth->id)->get(['id', 'employment_type']);
         $ids = $users->pluck('id')->all();
@@ -316,7 +316,7 @@ class ReportController extends Controller
 
         if ($auth->isEmployee()) {
             $userId = $auth->id;
-        } elseif ($auth->isTeamLead()) {
+        } elseif ($auth->isTl()) {
             $allowedIds = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id);
             if ($userId) {
                 abort_unless($allowedIds->contains((int) $userId), 403);
@@ -341,7 +341,7 @@ class ReportController extends Controller
 
         if ($auth->isEmployee()) {
             $query->where('user_id', $auth->id);
-        } elseif ($auth->isTeamLead()) {
+        } elseif ($auth->isTl()) {
             $teamIds = User::where('manager_id', $auth->id)->pluck('id')->push($auth->id);
             $query->whereIn('user_id', $teamIds);
         }

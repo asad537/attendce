@@ -18,6 +18,7 @@ class ProjectController extends Controller
     private function canManageProject(User $user, Project $project): bool
     {
         return $user->isCeo()
+            || $user->isManager()
             || (int) $project->created_by === (int) $user->id
             || $project->isLead($user->id);
     }
@@ -80,7 +81,7 @@ class ProjectController extends Controller
         $user = $request->user();
 
         $projects = Project::with($this->teamLoad())
-            ->when(!$user->isCeo(), function ($query) use ($user) {
+            ->when(!($user->isCeo() || $user->isManager()), function ($query) use ($user) {
                 $query->where(function ($scope) use ($user) {
                     $scope->where('created_by', $user->id)
                           ->orWhere('project_lead_id', $user->id)

@@ -21,11 +21,8 @@ class UserDocumentController extends Controller
 
         if ($authUser->id === $user->id) {
             $canView = true;
-        } elseif ($authUser->isCeo()) {
+        } elseif ($authUser->isCeo() || $authUser->isManager()) {
             $canView = true;
-        } elseif ($authUser->isManager() && $authUser->department_id === $user->department_id) {
-            $canView = true;
-            $hiddenTypes = [UserDocument::TYPE_BANK_DETAILS, UserDocument::TYPE_DISCIPLINARY];
         } elseif ($authUser->isTl() && $user->manager_id === $authUser->id) {
             $canView = true;
             $hiddenTypes = [UserDocument::TYPE_SALARY_DOCUMENT, UserDocument::TYPE_BANK_DETAILS, UserDocument::TYPE_DISCIPLINARY];
@@ -98,11 +95,8 @@ class UserDocumentController extends Controller
 
         if ($authUser->id === $user->id) {
             $canView = true;
-        } elseif ($authUser->isCeo()) {
+        } elseif ($authUser->isCeo() || $authUser->isManager()) {
             $canView = true;
-        } elseif ($authUser->isManager() && $authUser->department_id === $user->department_id) {
-            $canView = true;
-            $hiddenTypes = [UserDocument::TYPE_BANK_DETAILS, UserDocument::TYPE_DISCIPLINARY];
         } elseif ($authUser->isTl() && $user->manager_id === $authUser->id) {
             $canView = true;
             $hiddenTypes = [UserDocument::TYPE_SALARY_DOCUMENT, UserDocument::TYPE_BANK_DETAILS, UserDocument::TYPE_DISCIPLINARY];
