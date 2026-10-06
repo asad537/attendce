@@ -112,27 +112,27 @@ const navItems: NavItem[] = [
   // ── CEO ───────────────────────────────────────────────────────────────────
   {
     label: 'Dashboard', path: '/ceo',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
   },
   {
     label: 'Payroll', path: '/ceo/payroll',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16v12H4V6Zm3 3h.01M17 15h.01M9 12h6m-3-3v6" /></svg>,
   },
   {
     label: 'Attendance',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
     subItems: [
-      { label: 'All Attendance', path: '/ceo/attendance' },
+      { label: 'All Attendance', path: '/manager/attendance' },
       { label: 'Leave Approvals', path: '/ceo/leave-approvals' },
       { label: 'WFM Approvals', path: '/ceo/wfh-approvals' },
     ],
   },
   {
     label: 'Employees', path: '/ceo/employees',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
   },
   {
@@ -167,17 +167,17 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Performance', path: '/ceo/reports',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
   },
   {
     label: 'Holidays', path: '/ceo/holidays',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
   },
   {
     label: 'Audit Logs', path: '/ceo/audit-logs',
-    roles: ['ceo'],
+    roles: ['ceo', 'manager'],
     icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
   },
   {
@@ -278,6 +278,15 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
     return 'bg-red-500 text-white font-bold';
   };
 
+  // CEO pages have manager equivalents so managers can use the same
+  // organisation-wide tools without being sent to a CEO-only route.
+  const routeForRole = (path: string): string => {
+    if (user?.role !== 'manager') return path;
+    if (path === '/ceo') return '/manager';
+    if (path.startsWith('/ceo/')) return path.replace('/ceo/', '/manager/');
+    return path;
+  };
+
   const getItemBadgeCount = (item: NavItem): number => {
     if (item.path) return getPathBadgeCount(item.path);
     if (item.subItems && item.subItems.length > 0) {
@@ -371,7 +380,7 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
           <React.Fragment key={item.label}>
             {item.path ? (
               <Link
-                to={item.path}
+                to={routeForRole(item.path)}
                 onClick={() => { setActiveTab(item.label); onClose?.(); setExpandedItems({}); }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none ${
                   isParentActive
@@ -423,7 +432,7 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
                   return (
                     <Link
                       key={sub.path}
-                      to={sub.path}
+                      to={routeForRole(sub.path)}
                       onClick={onClose}
                       className={`group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors focus:outline-none ${
                         subActive

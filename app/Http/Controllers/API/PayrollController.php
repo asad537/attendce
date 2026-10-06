@@ -14,7 +14,7 @@ class PayrollController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless($request->user()->isCeo(), 403);
+        abort_unless($request->user()->isCeo() || $request->user()->isManager(), 403);
         $month = Carbon::createFromFormat('Y-m', $request->get('month', now()->format('Y-m')))->startOfMonth();
         // The CEO is not a payroll line and is excluded from salary summaries.
         $users = User::active()->where('role', '!=', 'ceo')->with(['department:id,name', 'designation:id,title'])->orderBy('name')->get();
@@ -47,7 +47,7 @@ class PayrollController extends Controller
 
     public function update(Request $request, User $user): JsonResponse
     {
-        abort_unless($request->user()->isCeo(), 403);
+        abort_unless($request->user()->isCeo() || $request->user()->isManager(), 403);
         $data = $request->validate([
             'month' => 'required|date_format:Y-m', 'base_salary' => 'required|numeric|min:0|max:999999999',
             'allowances' => 'required|numeric|min:0|max:999999999', 'incentives' => 'required|numeric|min:0|max:999999999',

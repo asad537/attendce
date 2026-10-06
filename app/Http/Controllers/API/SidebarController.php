@@ -50,7 +50,7 @@ class SidebarController extends Controller
 
         // 3. Leave Approvals (pending review)
         try {
-            if ($user->isCeo()) {
+            if ($user->isCeo() || $user->isManager()) {
                 $leaveApprovals = Leave::where('status', 'pending')->count();
             } elseif ($user->isTeamLead()) {
                 $teamIds = User::where('manager_id', $user->id)->pluck('id');
@@ -71,7 +71,7 @@ class SidebarController extends Controller
 
         // 5. WFM Approvals (pending WFH review)
         try {
-            if ($user->isCeo()) {
+            if ($user->isCeo() || $user->isManager()) {
                 $wfhApprovals = WfhRequest::where('status', 'pending')->count();
             } elseif ($user->isTeamLead()) {
                 $teamIds = User::where('manager_id', $user->id)->pluck('id');
@@ -92,7 +92,7 @@ class SidebarController extends Controller
 
         // 7. Resignations (pending resignation count)
         try {
-            if ($user->isCeo()) {
+            if ($user->isCeo() || $user->isManager()) {
                 $pendingResignations = Resignation::where('status', 'pending')->count();
             } elseif ($user->isTeamLead()) {
                 $teamIds = User::where('manager_id', $user->id)->pluck('id')->push($user->id);

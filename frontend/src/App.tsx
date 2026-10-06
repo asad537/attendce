@@ -95,13 +95,17 @@ function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           {/* Managers now see the richer CEO-style dashboard */}
           <Route path="dashboard" element={<CeoDashboard />} />
-          <Route path="attendance" element={<AttendanceHistory />} />
+          <Route path="attendance" element={<CeoAttendance />} />
           <Route path="leave-approvals" element={<ManagerLeaveApprovals />} />
           <Route path="my-leaves" element={<LeaveManagement />} />
           <Route path="team" element={<TeamMembers />} />
           <Route path="wfh" element={<WfhManagement />} />
           <Route path="wfh-approvals" element={<WfhApprovals />} />
           <Route path="reports" element={<CeoReports />} />
+          <Route path="employees" element={<CeoEmployees />} />
+          <Route path="payroll" element={<CeoPayroll />} />
+          <Route path="holidays" element={<CeoHolidays />} />
+          <Route path="audit-logs" element={<CeoAuditLogs />} />
         </Route>
       </Route>
 
