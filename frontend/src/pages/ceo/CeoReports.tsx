@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 import { reportService } from '../../services/reportService';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import { userDisplayTitle } from '../../utils/userDisplay';
+import NotificationBell from '../../components/layout/NotificationBell';
 import { useAuth } from '../../contexts/AuthContext';
 
 type ReportRow = {
@@ -173,6 +174,7 @@ export default function CeoReports({ personal = false }: { personal?: boolean })
         <div className="flex flex-col gap-3 sm:flex-row">
           <label className="relative block sm:w-80"><svg className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#50605a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search anything" className="h-12 w-full rounded-2xl border border-[#edf1ef] bg-white pl-12 pr-4 text-sm outline-none focus:border-[#49b9a2] focus:ring-4 focus:ring-emerald-100" /></label>
           <button onClick={() => exportPdf()} className="h-12 rounded-2xl bg-emerald-100 px-5 text-sm font-bold text-[#245849] ">Export report</button>
+          <NotificationBell />
         </div>
       </header>
 

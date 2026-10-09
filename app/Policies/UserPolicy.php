@@ -14,10 +14,9 @@ class UserPolicy
     public function view(User $auth, User $target): bool
     {
         if ($auth->isCeo()) return true;
-        // Managers administer every employee/TL profile listed in My Team.
-        if ($auth->isManager()) {
-            return $target->id === $auth->id || in_array($target->role, ['employee', 'tl'], true);
-        }
+        // Managers have the same organisation-wide administration access as
+        // the CEO, while retaining the manager role in the UI.
+        if ($auth->isManager()) return true;
         // Team leads can view only their own direct reports.
         if ($auth->isTl()) {
             return $target->id === $auth->id || $target->manager_id === $auth->id;
@@ -46,9 +45,7 @@ class UserPolicy
     public function update(User $auth, User $target): bool
     {
         if ($auth->isCeo()) return true;
-        if ($auth->isManager()) {
-            return $target->id === $auth->id || in_array($target->role, ['tl', 'employee'], true);
-        }
+        if ($auth->isManager()) return true;
         if ($auth->isTl()) {
             return $target->id === $auth->id || $target->manager_id === $auth->id;
         }
@@ -65,11 +62,15 @@ class UserPolicy
     {
         if ($target->id === $auth->id) return false; // no self-delete
 
+        // A replacement CEO may remove the previous CEO, but never leave the
+        // organisation without at least one active CEO account.
+        if ($target->role === 'ceo' && User::where('role', 'ceo')->active()->count() <= 1) {
+            return false;
+        }
+
         if ($auth->isCeo()) return true;
 
-        if ($auth->isManager()) {
-            return in_array($target->role, ['tl', 'employee'], true);
-        }
+        if ($auth->isManager()) return true;
 
         if ($auth->isTl()) {
             // TL can only delete their direct employees

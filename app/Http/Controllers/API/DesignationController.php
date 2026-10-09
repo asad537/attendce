@@ -40,7 +40,7 @@ class DesignationController extends Controller
             'is_active'     => 'boolean',
         ]);
 
-        if (!$request->user()->isCeo() && $request->user()->department_id != $data['department_id']) {
+        if (!$request->user()->isCeo() && !$request->user()->isManager() && $request->user()->department_id != $data['department_id']) {
             abort(403, 'Unauthorized. You can only manage positions in your own department.');
         }
 
@@ -65,7 +65,7 @@ class DesignationController extends Controller
             'is_active'     => 'boolean',
         ]);
 
-        if (!$request->user()->isCeo()) {
+        if (!$request->user()->isCeo() && !$request->user()->isManager()) {
             if ($request->user()->department_id != $designation->department_id) {
                 abort(403, 'Unauthorized. You can only modify positions in your own department.');
             }
@@ -88,7 +88,7 @@ class DesignationController extends Controller
     /** DELETE /api/designations/{designation} */
     public function destroy(Request $request, Designation $designation): JsonResponse
     {
-        if (!$request->user()->isCeo() && $request->user()->department_id != $designation->department_id) {
+        if (!$request->user()->isCeo() && !$request->user()->isManager() && $request->user()->department_id != $designation->department_id) {
             abort(403, 'Unauthorized. You can only delete positions in your own department.');
         }
 

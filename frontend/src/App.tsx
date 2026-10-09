@@ -19,7 +19,6 @@ const RateEmployeesPage = lazy(() => import('./pages/employee/RateEmployeesPage'
 const EmployeePerformance = lazy(() => import('./pages/employee/EmployeePerformance'));
 
 const ManagerDashboard = lazy(() => import('./pages/manager/ManagerDashboard'));
-const ManagerLeaveApprovals = lazy(() => import('./pages/manager/ManagerLeaveApprovals'));
 const WfhApprovals = lazy(() => import('./pages/manager/WfhApprovals'));
 const TeamMembers = lazy(() => import('./pages/shared/TeamMembers'));
 
@@ -96,7 +95,7 @@ function App() {
           {/* Managers now see the richer CEO-style dashboard */}
           <Route path="dashboard" element={<CeoDashboard />} />
           <Route path="attendance" element={<CeoAttendance />} />
-          <Route path="leave-approvals" element={<ManagerLeaveApprovals />} />
+          <Route path="leave-approvals" element={<CeoLeaveApprovals />} />
           <Route path="my-leaves" element={<LeaveManagement />} />
           <Route path="team" element={<TeamMembers />} />
           <Route path="wfh" element={<WfhManagement />} />

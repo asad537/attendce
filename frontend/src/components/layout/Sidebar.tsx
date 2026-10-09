@@ -5,7 +5,6 @@ import { projectService } from '../../services/projectService';
 import { resignationService } from '../../services/resignationService';
 import { sidebarService, SidebarCounts } from '../../services/sidebarService';
 import { Project } from '../../types';
-import { userDisplayTitle } from '../../utils/userDisplay';
 
 interface NavItem {
   label: string;
@@ -196,7 +195,7 @@ const roleLabel: Record<string, string> = {
   employee: 'Employee',
   tl:       'Team Lead',
   manager:  'Manager',
-  ceo:      'President',
+  ceo:      'President / CEO',
 };
 
 interface SidebarProps {
@@ -537,7 +536,7 @@ export default function Sidebar({ onClose, onOpenSettings }: SidebarProps) {
             <p className="text-[11px] text-gray-500 truncate leading-tight w-full">{user?.employee_id}</p>
             <div className="mt-0.5">
               <span className={`inline-flex items-center whitespace-nowrap text-[9px] px-1.5 py-0.5 rounded-md font-semibold ${roleColors[user?.role || 'employee']}`}>
-                {user ? userDisplayTitle(user) : roleLabel.employee}
+                {roleLabel[user?.role || 'employee'] || roleLabel.employee}
               </span>
             </div>
           </div>

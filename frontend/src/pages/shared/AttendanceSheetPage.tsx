@@ -6,6 +6,7 @@ import { reportService, SheetCell } from '../../services/reportService';
 import { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
+import NotificationBell from '../../components/layout/NotificationBell';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 
 const CODE_STYLE: Record<string, string> = {
@@ -81,6 +82,7 @@ export default function AttendanceSheetPage() {
         </label>
         <button onClick={exportCsv} disabled={!data} className="h-11 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white  disabled:opacity-50">Export CSV</button>
         <button onClick={() => window.print()} disabled={!data} className="h-11 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">Print / PDF</button>
+        <NotificationBell />
       </div>
     </header>
 

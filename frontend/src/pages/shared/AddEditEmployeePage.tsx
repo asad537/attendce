@@ -74,7 +74,7 @@ export default function AddEditEmployeePage() {
       const [deptsRes, desigRes, allUsersRes] = await Promise.all([
         departmentService.getAll(),
         designationService.getAll(),
-        authRole === 'ceo' ? userService.getList({ per_page: 500 }) : Promise.resolve({ data: [] }),
+        ['ceo', 'manager'].includes(authRole) ? userService.getList({ per_page: 500 }) : Promise.resolve({ data: [] }),
       ]);
       
       let allowedDepts = deptsRes;
@@ -90,7 +90,7 @@ export default function AddEditEmployeePage() {
       if (!isEdit && allowedDepts.length === 1) {
         setForm(prev => ({ ...prev, department_id: allowedDepts[0].id }));
       }
-      if (authRole === 'ceo') {
+      if (['ceo', 'manager'].includes(authRole)) {
         setAllLeads(allUsersRes.data.filter((u: User) => u.role === 'manager' || u.role === 'tl'));
       }
       
@@ -139,7 +139,6 @@ export default function AddEditEmployeePage() {
   const seniorityBans: Record<string, RegExp> = {
     employee: /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager|lead|team\s*lead|tl)\b/i,
     tl:       /\b(chief|ceo|officer|director|head|vp|vice\s*president|president|manager)\b/i,
-    manager:  /\b(chief|ceo|officer|director|vp|vice\s*president|president)\b/i,
   };
   const filteredDesigs = (() => {
     const byDept = form.department_id
@@ -276,8 +275,10 @@ export default function AddEditEmployeePage() {
     }
     if (authRole === 'manager') {
       return [
-        { value: 'tl',       label: 'Team Lead (TL)' },
         { value: 'employee', label: 'Employee' },
+        { value: 'tl',       label: 'Team Lead (TL)' },
+        { value: 'manager',  label: 'Manager' },
+        { value: 'ceo',      label: 'President' },
       ];
     }
     return [{ value: 'employee', label: 'Employee' }];
@@ -316,7 +317,7 @@ export default function AddEditEmployeePage() {
           departments={departments}
           filteredDesigs={filteredDesigs}
           roleOptions={getRoleOptions()}
-          showManagerSelection={authRole === 'ceo'}
+          showManagerSelection={['ceo', 'manager'].includes(authRole)}
           allLeads={allLeads.filter(m => m.id !== editUser?.id)}
           submitting={submitting}
           onField={handleField}

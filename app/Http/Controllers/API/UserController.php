@@ -26,9 +26,13 @@ class UserController extends Controller
         $query = User::with(['department', 'designation', 'shift', 'manager', 'teamLeads'])
             ->withAvg('assignedTickets as average_rating', 'rating')
             ->withTrashed(false)
-            // The CEO and throwaway call guests never appear in the staff list.
-            ->when(!$request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['ceo', 'guest']))
-            ->when($request->boolean('project_picker'), fn ($q) => $q->whereNotIn('role', ['guest']))
+            // Throwaway call guests are never staff. CEOs/managers can see
+            // CEO accounts when handing over access; other roles cannot.
+            ->where('role', '!=', 'guest')
+            ->when(
+                !$request->boolean('project_picker') && !in_array($auth->role, ['ceo', 'manager'], true),
+                fn ($q) => $q->where('role', '!=', 'ceo')
+            )
             ->orderBy('first_name')
             ->orderBy('last_name');
 
@@ -106,11 +110,11 @@ class UserController extends Controller
         // Default status
         $data['status'] = $data['status'] ?? 'active';
 
-        // If a manager or TL is creating the user, automatically set manager_id
-        // to themselves unless one was explicitly provided
+        // Team leads are restricted to their own team. Managers have the same
+        // organisation-wide assignment access as the CEO.
         $creator = $request->user();
-        if ($creator->isTeamLead()) {
-            $allowedRoles = $creator->isManager() ? ['employee', 'tl'] : ['employee'];
+        if ($creator->isTl()) {
+            $allowedRoles = ['employee'];
             if (!in_array($data['role'], $allowedRoles, true)) {
                 return response()->json(['message' => 'You cannot create a user with that role.'], 403);
             }
@@ -237,10 +241,10 @@ class UserController extends Controller
             }
         }
 
-        // Managers may administer any employee/TL listed in My Team. Team
+        // Managers may administer the organisation just like the CEO. Team
         // leads remain limited to their direct employee reports.
         if (!$actor->isCeo() && $actor->id !== $user->id) {
-            $allowedRoles = $actor->isManager() ? ['employee', 'tl'] : ['employee'];
+            $allowedRoles = $actor->isManager() ? ['employee', 'tl', 'manager', 'ceo'] : ['employee'];
             if (isset($data['role']) && !in_array($data['role'], $allowedRoles, true)) {
                 return response()->json(['message' => 'You cannot assign that role.'], 403);
             }

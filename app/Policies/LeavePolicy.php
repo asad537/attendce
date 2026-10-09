@@ -48,7 +48,7 @@ class LeavePolicy
     /** CEO final decision (after manager/TL approval or rejection) */
     public function ceoReview(User $auth, Leave $leave): bool
     {
-        return $auth->isCeo()
+        return ($auth->isCeo() || $auth->isManager())
             && in_array($leave->status, ['pending', 'manager_approved', 'manager_rejected']);
     }
 

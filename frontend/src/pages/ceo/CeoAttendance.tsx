@@ -6,6 +6,7 @@ import { departmentService, userService } from '../../services/userService';
 import { Attendance, Department, PaginatedResponse, User } from '../../types';
 import { PageLoader } from '../../components/common/LoadingSpinner';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import NotificationBell from '../../components/layout/NotificationBell';
 
 type AttStatus = 'present' | 'absent' | 'late' | 'on_leave' | 'holiday' | '';
 const statusColor: Record<string, string> = {
@@ -57,7 +58,7 @@ export default function CeoAttendance() {
   return <div className="space-y-5 p-4 sm:p-6">
     <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div><div className="mb-2 inline-flex rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">ATTENDANCE</div><h1 className="text-2xl font-bold tracking-tight text-gray-950">Company Attendance</h1><p className="mt-1 text-sm text-gray-500">Track workforce attendance, working hours and punctuality.</p></div>
-      <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 shadow-sm">▣ &nbsp;{format(parseISO(filterDate), 'EEEE, MMMM d, yyyy')}</div>
+      <div className="flex items-center gap-3"><div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 shadow-sm">▣ &nbsp;{format(parseISO(filterDate), 'EEEE, MMMM d, yyyy')}</div><NotificationBell /></div>
     </header>
 
     <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[

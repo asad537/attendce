@@ -11,9 +11,13 @@ export default function CeoHolidays() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   
   React.useEffect(() => {
-    const handleClickOutside = () => setDropdownOpen(null);
+    const handleClickOutside = () => {
+      setDropdownOpen(null);
+      setDropdownPosition(null);
+    };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
@@ -145,7 +149,20 @@ export default function CeoHolidays() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          setDropdownOpen(dropdownOpen === holiday.id ? null : holiday.id);
+                          if (dropdownOpen === holiday.id) {
+                            setDropdownOpen(null);
+                            setDropdownPosition(null);
+                            return;
+                          }
+
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const menuHeight = 88;
+                          const openAbove = window.innerHeight - rect.bottom < menuHeight;
+                          setDropdownPosition({
+                            top: openAbove ? rect.top - menuHeight - 4 : rect.bottom + 4,
+                            left: Math.max(8, rect.right - 128),
+                          });
+                          setDropdownOpen(holiday.id);
                         }} 
                         className="p-2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
                       >
@@ -153,22 +170,6 @@ export default function CeoHolidays() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
                       </button>
-                      {dropdownOpen === holiday.id && (
-                        <div className="absolute right-6 mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-10 py-1" onClick={(e) => e.stopPropagation()}>
-                          <button 
-                            onClick={() => { setDropdownOpen(null); openModal(holiday); }} 
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 flex items-center gap-2"
-                          >
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => { setDropdownOpen(null); handleDelete(holiday.id); }} 
-                            className="w-full text-left px-4 py-2 text-sm text-red-500 flex items-center gap-2"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -177,6 +178,32 @@ export default function CeoHolidays() {
           </table>
         </div>
       </div>
+
+      {dropdownOpen !== null && dropdownPosition && (() => {
+        const holiday = holidays?.find(item => item.id === dropdownOpen);
+        if (!holiday) return null;
+
+        return (
+          <div
+            className="fixed z-40 w-32 rounded-lg border border-gray-100 bg-white py-1 shadow-lg"
+            style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { setDropdownOpen(null); setDropdownPosition(null); openModal(holiday); }}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => { setDropdownOpen(null); setDropdownPosition(null); handleDelete(holiday.id); }}
+              className="w-full px-4 py-2 text-left text-sm text-red-500"
+            >
+              Delete
+            </button>
+          </div>
+        );
+      })()}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">

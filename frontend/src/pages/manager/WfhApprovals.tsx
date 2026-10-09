@@ -6,6 +6,7 @@ import { PageLoader } from '../../components/common/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
+import { plainText } from '../../lib/text';
 
 export default function WfhApprovals() {
   const [data, setData] = useState<any>(null);
@@ -82,7 +83,7 @@ export default function WfhApprovals() {
                       <span className="badge-indigo">Full Day</span>
                     )}
                   </td>
-                  <td className="max-w-xs truncate text-gray-500">{r.reason}</td>
+                  <td className="max-w-xs truncate text-gray-500">{plainText(r.reason)}</td>
                   <td>
                     <div className="flex items-center gap-2">
                       <button
@@ -127,7 +128,7 @@ export default function WfhApprovals() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Reason</span>
-                <span className="text-gray-700 text-right max-w-[200px]">{review.wfh.reason}</span>
+                <span className="text-gray-700 text-right max-w-[200px]">{plainText(review.wfh.reason)}</span>
               </div>
             </div>
 

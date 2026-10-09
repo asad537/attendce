@@ -9,7 +9,6 @@ import StatusBadge from '../../components/common/StatusBadge';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../services/api';
 import { format, parseISO } from 'date-fns';
-import { userDisplayTitle } from '../../utils/userDisplay';
 
 export default function TeamMembers() {
   const navigate = useNavigate();
@@ -63,6 +62,12 @@ export default function TeamMembers() {
     employee: 'bg-emerald-100 text-emerald-700',
     tl:       'bg-cyan-100 text-cyan-700',
     manager:  'bg-blue-100 text-blue-700',
+  };
+  const roleLabels: Record<string, string> = {
+    employee: 'Employee',
+    tl:       'Team Lead',
+    manager:  'Manager',
+    ceo:      'President',
   };
   const pageTitle  = authRole === 'manager' ? 'My Team' : 'My Team Members';
   const pageDesc   = authRole === 'manager'
@@ -188,7 +193,7 @@ export default function TeamMembers() {
                 <h3 className="font-bold text-gray-900 text-lg">{u.name}</h3>
                 <div className="mt-1.5">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${roleColors[u.role] || ''}`}>
-                    {userDisplayTitle(u, u.role)}
+                    {roleLabels[u.role] || 'Employee'}
                   </span>
                 </div>
                 

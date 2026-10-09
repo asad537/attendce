@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import api, { getErrorMessage } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import NotificationBell from '../../components/layout/NotificationBell';
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -246,15 +247,18 @@ export default function CeoDepartments() {
             </p>
           </div>
         </div>
-        {canManageDepts && (
-          <button
-            onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
-            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:brightness-95"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Add Department
-          </button>
-        )}
+        <div className="flex items-center gap-3 self-end sm:self-auto">
+          {canManageDepts && (
+            <button
+              onClick={() => { setDeptForm(emptyDept()); setDeptErrs({}); setDeptAdd(true); }}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3.5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,185,129,0.3)] transition hover:-translate-y-0.5 hover:brightness-95"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Add Department
+            </button>
+          )}
+          <NotificationBell />
+        </div>
       </div>
 
       {/* Stats & Search */}
